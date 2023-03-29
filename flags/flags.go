@@ -8,6 +8,9 @@ import (
 	"github.com/alexandrepasc/ev-chargers-simulator-2/common"
 )
 
+/*
+	Handle the flags supported by the application, with documentation for each one, as the default values
+*/
 func SetFlags() (flags) {
 
 	f := flags{}
@@ -27,12 +30,9 @@ func SetFlags() (flags) {
 	}
 
 	f.HostAddr = *s
-	// f.HostPort = *sp
 	f.ConnTimeout = *t
 	f.CSAddr = *csi
 	f.CSPort = *csp
-	// f.Protocol = *p
-	// f.EvModel = *ev
 	f.ConfFolder = *c
 
 	return f
