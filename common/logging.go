@@ -1,10 +1,9 @@
-package logging
+package common
 
 import (
 	"fmt"
 	"os"
 
-	"github.com/alexandrepasc/ev-chargers-simulator-2/common"
 	"github.com/sirupsen/logrus"
 )
 
@@ -44,7 +43,7 @@ func StartLog() {
 	fmt.Println("               ###########     #####     ###    ###               \"mmm\"   mm#mm   # # #")
 	fmt.Println("               ###              #####   ###    ####")
 	fmt.Println("               ###               ##### ###    #####")
-	fmt.Println("               ############       #######    ###############         version: ", common.Version)
+	fmt.Println("               ############       #######    ###############         version: ", Version)
 	fmt.Println("               #############       #####    ################")
 	fmt.Println("")
 	fmt.Println("")
