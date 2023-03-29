@@ -9,7 +9,7 @@ import (
 )
 
 /*
-	Handle the flags supported by the application, with documentation for each one as the default values.
+Handle the flags supported by the application, with documentation for each one as the default values.
 
 Returns flags structure.
 */
