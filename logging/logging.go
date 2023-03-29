@@ -19,8 +19,7 @@ func init() {
 
 // fn = function name
 // le = logrus entry
-func Log(fn string, le *logrus.Entry) (*logrus.Entry) {
-
+func Log(fn string, le *logrus.Entry) *logrus.Entry {
 	le = le.WithField("Function", fn)
 
 	return le
@@ -28,8 +27,7 @@ func Log(fn string, le *logrus.Entry) (*logrus.Entry) {
 
 // pn = protocol name
 // mn = model name
-func PreLog(pn string, mn string) (*logrus.Entry) {
-
+func PreLog(pn, mn string) *logrus.Entry {
 	var le = log.WithField("Protocol", pn).WithField("Model", mn)
 
 	return le

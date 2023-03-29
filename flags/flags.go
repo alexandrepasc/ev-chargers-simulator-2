@@ -9,18 +9,24 @@ import (
 )
 
 /*
-	Handle the flags supported by the application, with documentation for each one, as the default values
+	Handle the flags supported by the application, with documentation for each one as the default values.
+
+Returns flags structure.
 */
-func SetFlags() (flags) {
+func SetFlags() Flags {
+	f := Flags{}
 
-	f := flags{}
+	var s = flag.String("s", "84.5.7.64", "Simulator host ip address")
 
-	var s *string = flag.String("s", "84.5.7.64", "Simulator host ip address")
-	var t *int = flag.Int("t", 70, "Connection timeout (seconds)")
-	var csi *string = flag.String("csi", "iot-gate-imx8.lan", "Central system ip address")
-	var csp *string = flag.String("csp", "49443", "Central system port")
-	var c *string = flag.String("c", "", "Configuration folder, will ignore files with \"_\" as 1st char")
-	var v *bool = flag.Bool("v", false, "")
+	var t = flag.Int64("t", common.DefTimeout, "Connection timeout (seconds)")
+
+	var csi = flag.String("csi", "iot-gate-imx8.lan", "Central system ip address")
+
+	var csp = flag.String("csp", "49443", "Central system port")
+
+	var c = flag.String("c", "", "Configuration folder, will ignore files with \"_\" as 1st char")
+
+	var v = flag.Bool("v", false, "")
 
 	flag.Parse()
 

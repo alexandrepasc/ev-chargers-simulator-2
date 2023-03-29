@@ -6,7 +6,6 @@ import (
 )
 
 func main() {
-
 	var _ = flags.SetFlags()
 
 	logging.StartLog()
