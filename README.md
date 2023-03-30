@@ -32,6 +32,22 @@ The some rules are set in place to help understand the commits that are done int
 - **style** - changes to code formatting
 - **build** - related to the build system of the application
 
+### Vulnerabilities
+
+Since the project uses opensource packages and with the constant finding of new exploits, we should be more careful with what the project is using to prevent creating security issues to whom uses it.
+
+There is an iniciative from the *Go security team* to have an database where the package maintainers report the vulnerabilities found in their code, and a tool to run against the code to identify the issues.
+
+To install the tool:
+`go install golang.org/x/vuln/cmd/govulncheck@latest`
+
+To run it:
+`govulncheck ./...`
+
+Links:
+[Go blog](https://go.dev/blog/vuln)
+[Vuln documentation](https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck)
+
 ### Setup develop environment
 
 To be easier to maintain the *rules* defined above there are some steps to do before starting to contribute to the project. The linter tool need to be installed in the contributer machine and the git hooks should be set in place, to do that we only need to execute the following script.
