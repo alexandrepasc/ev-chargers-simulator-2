@@ -2,4 +2,4 @@
 
 FILE_PATH="$(dirname "$(realpath $0)")"
 
-ln $FILE_PATH/git_hooks/commit_msg $FILE_PATH/../.git/hooks/commit_msg
+ln -s $FILE_PATH/git_hooks/commit-msg $FILE_PATH/../.git/hooks/commit-msg
