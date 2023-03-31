@@ -2,8 +2,6 @@ name: PreCheck
 
 on:
   push:
-    branches:
-      - '!master'
 
 jobs:
   Linter:
