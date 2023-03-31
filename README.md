@@ -32,6 +32,15 @@ The some rules are set in place to help understand the commits that are done int
 - **style** - changes to code formatting
 - **build** - related to the build system of the application
 
+With what was set in place for this project, the best way to do the commits is using the commad line, because there is a question that will be asked before the commit is done. So it is a good idea to review the commands needed to do this part.
+
+Add a file to *stage*:
+- `git add {path_to_file}`
+
+Commit the staged changes:
+- `git commit -m "message"`
+- `git commit -m "title" -m "description"`
+
 ### Vulnerabilities
 
 Since the project uses opensource packages and with the constant finding of new exploits, we should be more careful with what the project is using to prevent creating security issues to whom uses it.
@@ -48,17 +57,19 @@ Links:
 [Go blog](https://go.dev/blog/vuln)
 [Vuln documentation](https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck)
 
-### Setup develop environment
+### Versioning
+
+To use a automatic way to generate the change logs for each release we need to keep track of the version of the project. At the moment the version is set in the variable `Version` in the file `common/constants.go` and needs to be changed manually, and need to be updated when each task is finished before the merge request is created.
+
+At the moment the verification of the version set it is being forced every commit.
+
+### Setup development environment
 
 To be easier to maintain the *rules* defined above there are some steps to do before starting to contribute to the project. The linter tool need to be installed in the contributer machine and the git hooks should be set in place, to do that we only need to execute the following script.
 
 - `./scripts/setup_environment.sh`
 
 It is better to execute the script in the root project folder, and the *go* bin path needs to be added to the `PATH` variable. After this your go to go.
-
-### Versioning
-
-To use a automatic way to generate the change logs for each version
 
 ## Build and Test
 ## Contribute
