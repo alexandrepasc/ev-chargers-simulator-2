@@ -2,8 +2,8 @@ name: PreCheck
 
 on:
   push:
-    branches:
-      - '!master'
+    branches-ignore:
+      - 'master'
 
 jobs:
   Linter:
