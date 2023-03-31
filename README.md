@@ -56,5 +56,7 @@ To be easier to maintain the *rules* defined above there are some steps to do be
 
 It is better to execute the script in the root project folder, and the *go* bin path needs to be added to the `PATH` variable. After this your go to go.
 
+### Versioning
+
 ## Build and Test
 ## Contribute
