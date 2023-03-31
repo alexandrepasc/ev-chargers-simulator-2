@@ -1,3 +1,26 @@
 #!/bin/bash
 
-golangci-lint run ./...
+version=$(go run . -v | cut -d " " -f 2)
+pwd
+echo "Is the version $version correct? (y/n)":
+
+while : ; do
+
+    read -n 1 k <&1
+    echo ""
+    
+    if [[ $k = n ]] ; then
+        echo "Change the version and run again."
+        exit 1
+    elif [[ $k = y ]]; then
+        output=$(golangci-lint run ./...)
+        if [[ $output != "" ]] ; then
+            echo "$output"
+            exit 1
+        fi
+        break
+    else
+        echo "Wrong key inserted."
+        exit 1
+    fi
+done
