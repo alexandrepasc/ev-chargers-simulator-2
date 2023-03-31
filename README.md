@@ -58,7 +58,7 @@ It is better to execute the script in the root project folder, and the *go* bin 
 
 ### Versioning
 
-To use an automatic way to generate
+To use a automatic way to generate the change logs for each version
 
 ## Build and Test
 ## Contribute
