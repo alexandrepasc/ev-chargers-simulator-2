@@ -58,11 +58,12 @@ jobs:
       - name: Get version
         run: echo "RELEASE_VERSION=$(go run . -v | cut -d " " -f 2)" >> $GITHUB_ENV
 
-      - name: Install git-chglog
-        run: go install github.com/git-chglog/git-chglog/cmd/git-chglog@latest
-
       - name: Create changelog
-        run: git-chglog --output changelog.md v${{ env.RELEASE_VERSION }}
+        uses: nuuday/github-changelog-action@v1.0.1
+        with:
+          tag: 'v${{ env.RELEASE_VERSION }}'
+          next_version: 'v${{ env.RELEASE_VERSION }}'
+          filename: 'changelog.md'
 
       - name: Create release
         uses: "actions/github-script@v6"
