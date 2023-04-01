@@ -20,6 +20,7 @@ jobs:
       - name: Create tag v${{ env.RELEASE_VERSION }}
         uses: actions/github-script@v6
         with:
+          github-token: ${{ secrets.GIT_TOKEN }}
           script: |
             github.rest.git.createRef({
               owner: context.repo.owner,
