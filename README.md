@@ -74,4 +74,4 @@ It is better to execute the script in the root project folder, and the *go* bin 
 ## Build and Test
 ## Contribute
 
-To contribute to the project some "rules" must be set. So to add a change or a fix
+To contribute to the project some "rules" must be set. So to add a change or a fix to the code one *issue* must be created
