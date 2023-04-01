@@ -1,0 +1,29 @@
+name: VersionTag
+
+on:
+  pull_request:
+    types:
+      - closed
+    branches:
+      - 'master'
+
+jobs:
+  CreateTag:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Get version
+        run: echo "RELEASE_VERSION=$(go run . -v | cut -d " " -f 2)" >> $GITHUB_ENV
+      
+      - name: Create tag v${{ env.RELEASE_VERSION }}
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.git.createRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: 'refs/tags/v${{ env.RELEASE_VERSION }}',
+              sha: context.sha
+            })
