@@ -61,7 +61,6 @@ jobs:
       - name: Create changelog
         uses: nuuday/github-changelog-action@v1.0.1
         with:
-          tag: 'v${{ env.RELEASE_VERSION }}'
           next_version: 'v${{ env.RELEASE_VERSION }}'
           filename: 'changelog.md'
 
