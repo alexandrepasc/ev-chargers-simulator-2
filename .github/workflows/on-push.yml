@@ -1,4 +1,4 @@
-name: PreCheck
+name: PreCheckLinter
 
 on:
   push:
