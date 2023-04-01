@@ -1,0 +1,87 @@
+name: Release
+
+on: [workflow_dispatch]
+
+jobs:
+  Build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: 'stable'
+
+      - name: Install dependencies
+        run: go get .
+
+      - name: Get version
+        run: echo "RELEASE_VERSION=$(go run . -v | cut -d " " -f 2)" >> $GITHUB_ENV
+
+      - name: Build Linux AMD 64
+        run: env GOOS=linux GOARCH=amd64 go build -o ./build/ev-chargers-simulator-linux-amd64
+
+      - name: Build Linux ARM 64
+        run: env GOOS=linux GOARCH=arm64 GOARM=7 go build -o ./build/ev-chargers-simulator-linux-arm64
+
+      - name: Create Linux AMD64 Artifact v${{ env.RELEASE_VERSION }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: EV Chargers Simulator Linux AMD64 v${{ env.RELEASE_VERSION }}
+          path: build/ev-chargers-simulator-linux-amd64
+          retention-days: 1
+
+      - name: Create Linux ARM64 Artifact v${{ env.RELEASE_VERSION }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: EV Chargers Simulator Linux ARM64 v${{ env.RELEASE_VERSION }}
+          path: build/ev-chargers-simulator-linux-arm64
+          retention-days: 1
+
+  Release:
+    needs: Build
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: 'stable'
+
+      - name: Get version
+        run: echo "RELEASE_VERSION=$(go run . -v | cut -d " " -f 2)" >> $GITHUB_ENV
+
+      - name: Install git-chglog
+        run: go install github.com/git-chglog/git-chglog/cmd/git-chglog@latest
+
+      - name: Create changelog
+        run: git-chglog --output changelog.md v${{ env.RELEASE_VERSION }}
+
+      - name: Create release
+        uses: "actions/github-script@v6"
+        with:
+          github-token: ${{ secrets.GIT_TOKEN }}
+          script: |
+            try {
+              const response = await github.rest.repos.createRelease({
+                draft: false,
+                generate_release_notes: true,
+                name: v${{ env.RELEASE_VERSION }},
+                owner: context.repo.owner,
+                prerelease: false,
+                repo: context.repo.repo,
+                tag_name: v${{ env.RELEASE_VERSION }},
+              });
+
+              core.exportVariable('RELEASE_ID', response.data.id);
+              core.exportVariable('RELEASE_UPLOAD_URL', response.data.upload_url);
+            } catch (error) {
+              core.setFailed(error.message);
+            }
