@@ -83,7 +83,7 @@ jobs:
                 prerelease: false,
                 repo: context.repo.repo,
                 tag_name: "v${{ env.RELEASE_VERSION }}",
-                body: ${{ env.RELEASE_NOTES }}
+                body: "${{ env.RELEASE_NOTES }}"
               });
 
               core.exportVariable('RELEASE_ID', response.data.id);
