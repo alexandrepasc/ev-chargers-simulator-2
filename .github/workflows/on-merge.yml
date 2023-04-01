@@ -18,13 +18,9 @@ jobs:
         run: echo "RELEASE_VERSION=$(go run . -v | cut -d " " -f 2)" >> $GITHUB_ENV
       
       - name: Create tag v${{ env.RELEASE_VERSION }}
-        uses: actions/github-script@v6
+        uses: rickstaa/action-create-tag@v1
+        id: "tag_create"
         with:
-          github-token: ${{ secrets.GIT_TOKEN }}
-          script: |
-            github.rest.git.createRef({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              ref: 'refs/tags/v${{ env.RELEASE_VERSION }}',
-              sha: context.sha
-            })
+          github_token: ${{ secrets.GIT_TOKEN }}
+          tag: "v${{ env.RELEASE_VERSION }}"
+          force_push_tag: true
