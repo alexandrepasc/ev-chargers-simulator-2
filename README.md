@@ -1,4 +1,9 @@
 # ev-chargers-simulator-2
+[![PreCheckLinter](https://github.com/alexandrepasc/ev-chargers-simulator-2/actions/workflows/on-push.yml/badge.svg)](https://github.com/alexandrepasc/ev-chargers-simulator-2/actions/workflows/on-push.yml)
+
+[![PreCheckSecurity](https://github.com/alexandrepasc/ev-chargers-simulator-2/actions/workflows/on-merge-request.yml/badge.svg)](https://github.com/alexandrepasc/ev-chargers-simulator-2/actions/workflows/on-merge-request.yml)
+
+[![Release](https://github.com/alexandrepasc/ev-chargers-simulator-2/actions/workflows/release.yml/badge.svg)](https://github.com/alexandrepasc/ev-chargers-simulator-2/actions/workflows/release.yml)
 ## Introduction
 ## Getting Started
 
