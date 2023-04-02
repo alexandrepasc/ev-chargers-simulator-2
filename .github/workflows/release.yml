@@ -58,7 +58,8 @@ jobs:
           retention-days: 5
           
       - name: Get release notes
-        run: echo "RELEASE_NOTES='$(cat changelog.md)'" >> $GITHUB_ENV
+        id: release_notes
+        run: echo "RELEASE_NOTES='$(cat changelog.md)'" >> $GITHUB_OUTPUT
 
       - uses: meeDamian/github-release@2.0
         with:
@@ -70,4 +71,4 @@ jobs:
             build/ev-chargers-simulator-linux-amd64
             build/ev-chargers-simulator-linux-arm64
             changelog.md
-          body: ${{ env.RELEASE_NOTES }}
+          body: ${{ steps.release_notes.outputs.RELEASE_NOTES }}
