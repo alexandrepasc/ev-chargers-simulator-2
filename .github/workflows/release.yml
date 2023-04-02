@@ -62,6 +62,7 @@ jobs:
           token: ${{ secrets.GIT_TOKEN }}
           tag: 'v${{ env.RELEASE_VERSION }}'
           name: 'v${{ env.RELEASE_VERSION }}'
+          allow_override: true
           files: >
             build/ev-chargers-simulator-linux-amd64
             build/ev-chargers-simulator-linux-arm64
