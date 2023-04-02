@@ -75,4 +75,4 @@ jobs:
             build/ev-chargers-simulator-linux-amd64
             build/ev-chargers-simulator-linux-arm64
             changelog.md
-          body: ${{ steps.release_notes.outputs.RELEASE_NOTES }}
+          body: ${{ env.RELEASE_NOTES }}
