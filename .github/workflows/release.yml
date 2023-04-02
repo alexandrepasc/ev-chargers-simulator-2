@@ -60,13 +60,6 @@ jobs:
       - name: Get version
         run: echo "RELEASE_VERSION=$(go run . -v | cut -d " " -f 2)" >> $GITHUB_ENV
 
-      - name: Generate changelog
-        id:  change_log_text
-        uses: bdashrad/git-chglog-action@v2.0.3
-        with:
-          git_chglog_version: '0.15.4'
-          next_version: "v${{ env.RELEASE_VERSION }}"
-
       - name: Create release
         uses: "actions/github-script@v6"
         with:
@@ -81,7 +74,7 @@ jobs:
                 prerelease: false,
                 repo: context.repo.repo,
                 tag_name: "v${{ env.RELEASE_VERSION }}",
-                body: ${{ steps.change_log_text.outputs.changelog }}
+                generate_release_notes: true
               });
 
               core.exportVariable('RELEASE_ID', response.data.id);
