@@ -66,8 +66,11 @@ jobs:
       - name: Create changelog
         run: git-chglog --output changelog.md v${{ env.RELEASE_VERSION }}
         
-      - name: Get changelogs text
-        run: echo "RELEASE_NOTES=$(cat changelog.md)" >> $GITHUB_ENV
+      - name: Get changelog text
+        id: change_log_text
+        uses: ffurrer2/extract-release-notes@v1
+        with:
+          release_notes_file: changelog.md
 
       - name: Create release
         uses: "actions/github-script@v6"
@@ -83,7 +86,7 @@ jobs:
                 prerelease: false,
                 repo: context.repo.repo,
                 tag_name: "v${{ env.RELEASE_VERSION }}",
-                body: "${{ env.RELEASE_NOTES }}"
+                body: ${{ steps.change_log_text.outputs.release_notes }}
               });
 
               core.exportVariable('RELEASE_ID', response.data.id);
