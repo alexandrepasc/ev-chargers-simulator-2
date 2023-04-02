@@ -60,18 +60,11 @@ jobs:
       - name: Get version
         run: echo "RELEASE_VERSION=$(go run . -v | cut -d " " -f 2)" >> $GITHUB_ENV
 
-      - name: Install git-chglog
-        run: go install github.com/git-chglog/git-chglog/cmd/git-chglog@latest
-
-      - name: Create changelog
-        run: git-chglog --output changelog.md v${{ env.RELEASE_VERSION }}
-        
-      - name: Get changelog text
-        id: change_log_text
-        uses: ffurrer2/extract-release-notes@v1
+      - name: Generate changelog
+        id:  change_log_text
+        uses: nuuday/github-changelog-action@v1.0.0
         with:
-          changelog_file: changelog.md
-          release_notes_file: RELEASE_NOTES.md
+          tag: "v${{ env.RELEASE_VERSION }}"
 
       - name: Create release
         uses: "actions/github-script@v6"
@@ -87,7 +80,7 @@ jobs:
                 prerelease: false,
                 repo: context.repo.repo,
                 tag_name: "v${{ env.RELEASE_VERSION }}",
-                body: ${{ steps.change_log_text.outputs.release_notes }}
+                body: ${{ steps.change_log_text.outputs.changelog }}
               });
 
               core.exportVariable('RELEASE_ID', response.data.id);
