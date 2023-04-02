@@ -71,6 +71,7 @@ jobs:
         uses: ffurrer2/extract-release-notes@v1
         with:
           changelog_file: changelog.md
+          release_notes_file: RELEASE_NOTES.md
 
       - name: Create release
         uses: "actions/github-script@v6"
