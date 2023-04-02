@@ -55,7 +55,7 @@ jobs:
         with:
           name: 'changelog_v${{ env.RELEASE_VERSION }}.md'
           path: changelog.md
-          retention-days: 5
+          retention-days: 1
           
       - name: Get release notes
         id: release_notes
