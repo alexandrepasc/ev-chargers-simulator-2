@@ -70,7 +70,7 @@ jobs:
         id: change_log_text
         uses: ffurrer2/extract-release-notes@v1
         with:
-          release_notes_file: changelog.md
+          changelog_file: changelog.md
 
       - name: Create release
         uses: "actions/github-script@v6"
