@@ -1,7 +1,9 @@
 package api
 
 import (
+	"github.com/alexandrepasc/ev-chargers-simulator-2/api/configs"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/api/health"
+	"github.com/alexandrepasc/ev-chargers-simulator-2/api/simulators"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/common"
 	"github.com/gin-gonic/gin"
 )
@@ -15,6 +17,8 @@ func New() (router *gin.Engine) {
 	router = buildRouter()
 
 	health.Health(router)
+	configs.Configs(router)
+	simulators.Simulators(router)
 
 	return
 }
@@ -25,7 +29,7 @@ Runs the http server for the api instace
 router	-	framework engine instance (*gin.Engine)
 */
 func Serve(router *gin.Engine) {
-	var err = router.Run("localhost:8000/api")
+	var err = router.Run("localhost:8000")
 
 	if err != nil {
 		common.APILog("Serve").Error(err)
