@@ -59,7 +59,11 @@ jobs:
           
       - name: Get release notes
         id: release_notes
-        run: echo "RELEASE_NOTES='$(cat changelog.md)'" >> $GITHUB_OUTPUT
+        run: |
+          delimiter="$(openssl rand -hex 8)"
+          echo "RELEASE_NOTES<<${delimiter}" >> ${GITHUB_ENV}
+          echo "RELEASE_NOTES='$(cat changelog.md)'" >> ${GITHUB_ENV}
+          echo "${delimiter}" >> ${GITHUB_ENV}
 
       - uses: meeDamian/github-release@2.0
         with:
