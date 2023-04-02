@@ -58,7 +58,7 @@ jobs:
           retention-days: 5
           
       - name: Get release notes
-        run: echo "RELEASE_NOTES=$(cat changelog.md)"#!/bin/bash
+        run: echo "RELEASE_NOTES='$(cat changelog.md)'" >> $GITHUB_ENV
 
       - uses: meeDamian/github-release@2.0
         with:
