@@ -62,8 +62,9 @@ jobs:
 
       - name: Generate changelog
         id:  change_log_text
-        uses: nuuday/github-changelog-action@v1.0.0
+        uses: bdashrad/git-chglog-action@v2.0.3
         with:
+          git_chglog_version: '0.15.4'
           next_version: "v${{ env.RELEASE_VERSION }}"
 
       - name: Create release
