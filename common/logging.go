@@ -45,6 +45,12 @@ func PreLog(pn, mn string) *logrus.Entry {
 	return le
 }
 
+func APILog(fn string) *logrus.Entry {
+	var le = log.WithField("Service", "API").WithField("Function", fn)
+
+	return le
+}
+
 /*
 Print the starting log printed to the cmd.
 */
