@@ -61,7 +61,9 @@ jobs:
         id: release_notes
         run: |
           EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
-          echo "RELEASE_NOTES=${EOF}$(cat changelog.md)${EOF}" >> ${GITHUB_ENV}
+          echo "RELEASE_NOTES<<$EOF" >> $GITHUB_ENV
+          cat changelog.md>> $GITHUB_ENV
+          echo "$EOF" >> $GITHUB_ENV
 
       - uses: meeDamian/github-release@2.0
         with:
