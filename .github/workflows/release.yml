@@ -60,10 +60,10 @@ jobs:
       - name: Get release notes
         id: release_notes
         run: |
-          delimiter="$(openssl rand -hex 8)"
-          echo "RELEASE_NOTES<<${delimiter}" >> ${GITHUB_ENV}
+          EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+          echo "RELEASE_NOTES<<${EOF}" >> ${GITHUB_ENV}
           echo "RELEASE_NOTES='$(cat changelog.md)'" >> ${GITHUB_ENV}
-          echo "${delimiter}" >> ${GITHUB_ENV}
+          echo "${EOF}" >> ${GITHUB_ENV}
 
       - uses: meeDamian/github-release@2.0
         with:
