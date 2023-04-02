@@ -3,18 +3,21 @@ name: Release
 on: [workflow_dispatch]
 
 jobs:
-  Build:
+  Release:
+
     runs-on: self-hosted
 
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - name: Setup Go
         uses: actions/setup-go@v4
         with:
           go-version: 'stable'
-
+        
       - name: Install dependencies
         run: go get .
 
@@ -40,25 +43,6 @@ jobs:
           name: EV Chargers Simulator Linux ARM64 v${{ env.RELEASE_VERSION }}
           path: build/ev-chargers-simulator-linux-arm64
           retention-days: 1
-
-  Release:
-    needs: Build
-
-    runs-on: self-hosted
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-
-      - name: Setup Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: 'stable'
-
-      - name: Get version
-        run: echo "RELEASE_VERSION=$(go run . -v | cut -d " " -f 2)" >> $GITHUB_ENV
         
       - name: Install git-chglog
         run: go install github.com/git-chglog/git-chglog/cmd/git-chglog@latest
@@ -73,25 +57,13 @@ jobs:
           path: changelog.md
           retention-days: 5
 
-      - name: Create release
-        uses: "actions/github-script@v6"
+      - uses: meeDamian/github-release@2.0
         with:
-          github-token: ${{ secrets.GIT_TOKEN }}
-          script: |
-            try {
-              const response = await github.rest.repos.createRelease({
-                draft: false,
-                generate_release_notes: false,
-                name: "v${{ env.RELEASE_VERSION }}",
-                owner: context.repo.owner,
-                prerelease: false,
-                repo: context.repo.repo,
-                tag_name: "v${{ env.RELEASE_VERSION }}",
-                generate_release_notes: true
-              });
-
-              core.exportVariable('RELEASE_ID', response.data.id);
-              core.exportVariable('RELEASE_UPLOAD_URL', response.data.upload_url);
-            } catch (error) {
-              core.setFailed(error.message);
-            }
+          token: ${{ secrets.GIT_TOKEN }}
+          tag: 'v${{ env.RELEASE_VERSION }}'
+          name: 'v${{ env.RELEASE_VERSION }}'
+          files: >
+            build/ev-chargers-simulator-linux-amd64
+            build/ev-chargers-simulator-linux-arm64
+            changelog.md
+          body: echo "$(cat changelog.md)"
