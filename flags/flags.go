@@ -16,15 +16,17 @@ Returns flags structure.
 func SetFlags() Flags {
 	f := Flags{}
 
-	var s = flag.String("s", "84.5.7.64", "Simulator host ip address")
+	var s = flag.String("s", common.DefSimIP, "Simulator host ip address")
 
 	var t = flag.Int64("t", common.DefTimeout, "Connection timeout (seconds)")
 
-	var csi = flag.String("csi", "iot-gate-imx8.lan", "Central system ip address")
+	var csi = flag.String("csi", common.DefCSIP, "Central system ip address")
 
-	var csp = flag.String("csp", "49443", "Central system port")
+	var csp = flag.String("csp", common.DefCSPort, "Central system port")
 
-	var c = flag.String("c", "", "Configuration folder, will ignore files with \"_\" as 1st char")
+	var gs = flag.String("gs", common.DefGSPath, "General configuration folder, store the application general configurations")
+
+	var ss = flag.String("ss", common.DefSCPath, "Simulators configuration folder, store the simulators configurations")
 
 	var v = flag.Bool("v", false, "")
 
@@ -39,7 +41,8 @@ func SetFlags() Flags {
 	f.ConnTimeout = *t
 	f.CSAddr = *csi
 	f.CSPort = *csp
-	f.ConfFolder = *c
+	f.GCFolder = *gs
+	f.SCFolder = *ss
 
 	return f
 }
