@@ -10,9 +10,13 @@ It gets the executable path and add the folder, sent as argument, to the end of 
 
 Returns a string.
 
-f	-	folder to add to the executable path (string)
+f	-	folder/file to add to the executable path (string)
 */
-func getThePath(f string) string {
+func GetThePath(f string) string {
+	if f == "" {
+		return getExecPath()
+	}
+
 	if f[0:1] != "/" {
 		f = "/" + f
 	}

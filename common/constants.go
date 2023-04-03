@@ -11,6 +11,6 @@ const (
 )
 
 var (
-	DefGSPath = getThePath(defGSFolder) // Default general settings path
-	DefSCPath = getThePath(defSCFolder) // Default simulators configurations path
+	DefGSPath = GetThePath(defGSFolder) // Default general settings path
+	DefSCPath = GetThePath(defSCFolder) // Default simulators configurations path
 )
