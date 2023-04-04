@@ -3,7 +3,7 @@ package flags
 /*
 A structure with variables to map with the flags that the application supports.
 
-ForceUpdate	-	Force the update of the configurations with the values in the flags
+ForceUpdate	-	Force the update of the configurations with the values in the flags.
 
 HostAddr	-	The ip address of the machine that will run the application.
 

@@ -16,12 +16,18 @@ Returns flags structure.
 func SetFlags() Flags {
 	f := Flags{}
 
-	var s   = common.DefSimIP
-	var t   = common.DefTimeout
+	var s = common.DefSimIP
+
+	var t = common.DefTimeout
+
 	var csi = common.DefCSIP
+
 	var csp = common.DefCSPort
-	var gs  = common.DefGSPath
-	var ss  = common.DefSCPath
+
+	var gs = common.DefGSPath
+
+	var ss = common.DefSCPath
+
 	var v bool
 
 	var i = flag.Bool("i", false, "Force the update of the configurations with the values in the flags")
@@ -38,7 +44,7 @@ func SetFlags() Flags {
 
 	flag.StringVar(&ss, "ss", common.DefSCPath, "Simulators configuration folder, store the simulators configurations")
 
-	flag.BoolVar(&v, "v", false, "Return the current appication version")
+	flag.BoolVar(&v, "v", false, "Return the current application version")
 
 	flag.Parse()
 
@@ -48,22 +54,32 @@ func SetFlags() Flags {
 	}
 
 	f.ForceUpdate = *i
-	
-	if isFlagPassed("s") { f.HostAddr = s }
-	
+
+	if isFlagPassed("s") {
+		f.HostAddr = s
+	}
+
 	if isFlagPassed("t") {
 		f.ConnTimeout = t
 	} else {
 		f.ConnTimeout = -1
 	}
 
-	if isFlagPassed("csi") { f.CSAddr = csi }
+	if isFlagPassed("csi") {
+		f.CSAddr = csi
+	}
 
-	if isFlagPassed("csp") { f.CSPort = csp }
+	if isFlagPassed("csp") {
+		f.CSPort = csp
+	}
 
-	if isFlagPassed("gs") { f.GCFolder = gs }
+	if isFlagPassed("gs") {
+		f.GCFolder = gs
+	}
 
-	if isFlagPassed("ss") { f.SCFolder = ss }
+	if isFlagPassed("ss") {
+		f.SCFolder = ss
+	}
 
 	return f
 }
@@ -72,9 +88,7 @@ func isFlagPassed(n string) bool {
 	var found = false
 
 	flag.Visit(func(fl *flag.Flag) {
-
 		if fl.Name == n {
-
 			found = true
 		}
 	})
