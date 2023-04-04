@@ -6,5 +6,5 @@ import (
 )
 
 func Settings(fl *flags.Flags) {
-	configs.Configs(fl)
+	var _ = configs.Configs(fl)
 }

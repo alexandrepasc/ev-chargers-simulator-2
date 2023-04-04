@@ -10,11 +10,13 @@ import (
 	"github.com/alexandrepasc/ev-chargers-simulator-2/flags"
 )
 
-func Configs(fl *flags.Flags) {
+func Configs(fl *flags.Flags) Model {
+	var conf Model
+
 	ok, fp := isConfigs()
 
 	if ok {
-		var conf = openConfigsFile(fp)
+		conf = openConfigsFile(fp)
 
 		if fl.ForceUpdate {
 			conf = updateConfigsFile(fl, conf, fp)
@@ -24,8 +26,10 @@ func Configs(fl *flags.Flags) {
 	} else {
 		createConfigsFile(fp)
 
-		updateNewConfigsFile(fl, fp)
+		conf = updateNewConfigsFile(fl, fp)
 	}
+
+	return conf
 }
 
 /*
@@ -56,11 +60,11 @@ func isConfigs() (is bool, c string) {
 }
 
 /*
-Open the configuration file, unmarshal it to a structure and return the configsModel structure.
+Open the configuration file, unmarshal it to a structure and return the Model structure.
 
 f	-	Configuration file path (string)
 */
-func openConfigsFile(f string) configsModel {
+func openConfigsFile(f string) Model {
 	bv, err := os.ReadFile(f)
 
 	if err != nil {
@@ -73,12 +77,12 @@ func openConfigsFile(f string) configsModel {
 }
 
 /*
-Convert configs json file (in bytes) to the configsModel and returns it.
+Convert configs json file (in bytes) to the Model and returns it.
 
 b	-	Json file converted into bytes ([]byte)
 */
-func unmarshalConfigsJSON(b []byte) configsModel {
-	var c configsModel
+func unmarshalConfigsJSON(b []byte) Model {
+	var c Model
 
 	err := json.Unmarshal(b, &c)
 
@@ -113,8 +117,8 @@ fl	-	Flags set in the execution of the application (*flags.Flags)
 
 f	-	Full path and file name for the configuration
 */
-func updateNewConfigsFile(fl *flags.Flags, f string) configsModel {
-	var configs = configsModel{
+func updateNewConfigsFile(fl *flags.Flags, f string) Model {
+	var configs = Model{
 		GeneralConfigFolder:    common.DefGSPath,
 		SimulatorsConfigFolder: common.DefSCPath,
 	}
@@ -143,16 +147,16 @@ func updateNewConfigsFile(fl *flags.Flags, f string) configsModel {
 /*
 Update the configuration file with new data.
 
-Returns the model with the new data, in case of failure return the old data (configsModel).
+Returns the model with the new data, in case of failure return the old data (Model).
 
 fl	-	Flags set in the execution of the application (*flags.Flags)
 
-c	-	Model with the data read from the file (configsModel)
+c	-	Model with the data read from the file (Model)
 
 fp	-	Full path and file name for the configuration (string)
 */
-func updateConfigsFile(fl *flags.Flags, c configsModel, fp string) configsModel {
-	var nc = configsModel{}
+func updateConfigsFile(fl *flags.Flags, c Model, fp string) Model {
+	var nc = Model{}
 
 	if fl.GCFolder != "" {
 		nc.GeneralConfigFolder = fl.GCFolder
@@ -200,13 +204,13 @@ func isSCFolderDefault(v string) bool {
 }
 
 /*
-Deserialize the configsModel to json in an byte array.
+Deserialize the Model to json in an byte array.
 
 Returns []byte.
 
-c	-	The model with the file data (configsModel)
+c	-	The model with the file data (Model)
 */
-func marshalIndent(c configsModel) []byte {
+func marshalIndent(c Model) []byte {
 	b, err := json.MarshalIndent(c, "", " ")
 
 	if err != nil {
