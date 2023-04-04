@@ -3,6 +3,7 @@ package configs
 import (
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"os"
 
 	"github.com/alexandrepasc/ev-chargers-simulator-2/common"
@@ -13,7 +14,11 @@ func Configs(fl *flags.Flags) {
 	ok, fp := isConfigs()
 
 	if ok {
-		var conf = openConfigFile(fp)
+		var conf = openConfigsFile(fp)
+
+		if fl.ForceUpdate {
+			conf = updateConfigsFile(fl, conf, fp)
+		}
 
 		fmt.Println(conf)
 	} else {
@@ -55,7 +60,7 @@ Open the configuration file, unmarshal it to a structure and return the configsM
 
 f	-	Configuration file path (string)
 */
-func openConfigFile(f string) configsModel {
+func openConfigsFile(f string) configsModel {
 	bv, err := os.ReadFile(f)
 
 	if err != nil {
@@ -108,7 +113,7 @@ fl	-	Flags set in the execution of the application (*flags.Flags)
 
 f	-	Full path and file name for the configuration
 */
-func updateNewConfigsFile(fl *flags.Flags, f string) {
+func updateNewConfigsFile(fl *flags.Flags, f string) configsModel {
 	var configs = configsModel{
 		GeneralConfigFolder:    common.DefGSPath,
 		SimulatorsConfigFolder: common.DefSCPath,
@@ -122,21 +127,58 @@ func updateNewConfigsFile(fl *flags.Flags, f string) {
 		configs.SimulatorsConfigFolder = fl.SCFolder
 	}
 
-	b, err := json.MarshalIndent(configs, "", " ")
+	var b = marshalIndent(configs)
+
+	var err = os.WriteFile(f, b, fs.FileMode(common.FilePermissions))
 
 	if err != nil {
 		common.Log("updateNewConfigsFile").Fatal(err)
 	}
 
-	const fs = 0o600
+	common.Log("updateNewConfigsFile").Info("Configurations written to file")
 
-	nok := os.WriteFile(f, b, fs)
+	return configs
+}
 
-	if nok != nil {
-		common.Log("updateNewConfigsFile").Fatal(err)
+/*
+Update the configuration file with new data.
+
+Returns the model with the new data, in case of failure return the old data (configsModel).
+
+fl	-	Flags set in the execution of the application (*flags.Flags)
+
+c	-	Model with the data read from the file (configsModel)
+
+fp	-	Full path and file name for the configuration (string)
+*/
+func updateConfigsFile(fl *flags.Flags, c configsModel, fp string) configsModel {
+	var nc = configsModel{}
+
+	if fl.GCFolder != "" {
+		nc.GeneralConfigFolder = fl.GCFolder
+	} else {
+		nc.GeneralConfigFolder = c.GeneralConfigFolder
 	}
 
-	common.Log("updateNewConfigsFile").Info("Configurations written to file")
+	if fl.SCFolder != "" {
+		nc.SimulatorsConfigFolder = fl.SCFolder
+	} else {
+		nc.SimulatorsConfigFolder = c.SimulatorsConfigFolder
+	}
+
+	var b = marshalIndent(nc)
+
+	var err = os.WriteFile(fp, b, fs.FileMode(common.FilePermissions))
+
+	if err != nil {
+		common.Log("updateConfigsFile").Error(err)
+
+		return c
+	}
+
+	common.Log("updateConfigsFile")
+
+	return nc
 }
 
 /*
@@ -155,4 +197,21 @@ v	-	Value of the configurations folder (string)
 */
 func isSCFolderDefault(v string) bool {
 	return v == common.DefSCPath
+}
+
+/*
+Deserialize the configsModel to json in an byte array.
+
+Returns []byte.
+
+c	-	The model with the file data (configsModel)
+*/
+func marshalIndent(c configsModel) []byte {
+	b, err := json.MarshalIndent(c, "", " ")
+
+	if err != nil {
+		common.Log("marshalIndent").Fatal(err)
+	}
+
+	return b
 }
