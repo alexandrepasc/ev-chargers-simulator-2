@@ -1,7 +1,7 @@
 package api
 
 import (
-	"github.com/alexandrepasc/ev-chargers-simulator-2/api/configs"
+	"github.com/alexandrepasc/ev-chargers-simulator-2/api/config"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/api/health"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/api/simulators"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/common"
@@ -17,7 +17,7 @@ func New() (router *gin.Engine) {
 	router = buildRouter()
 
 	health.Health(router)
-	configs.Configs(router)
+	config.Configs(router)
 	simulators.Simulators(router)
 
 	return

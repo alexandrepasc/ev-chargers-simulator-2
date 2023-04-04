@@ -1,4 +1,4 @@
-package configs
+package config
 
 const (
 	generalEp    string = "/configs/general"    // genral configuration endpoint
