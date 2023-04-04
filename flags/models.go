@@ -3,6 +3,8 @@ package flags
 /*
 A structure with variables to map with the flags that the application supports.
 
+ForceUpdate	-	Force the update of the configurations with the values in the flags
+
 HostAddr	-	The ip address of the machine that will run the application.
 
 ConnTimeout	-	The connection timeout value for all the simulators.
@@ -16,6 +18,7 @@ GCFolder	-	Folder where the application general configuration files are located.
 SCFolder	-	Folder where the simulators configuration files are located.
 */
 type Flags struct {
+	ForceUpdate bool   // Force the update of the configurations with the values in the flags
 	HostAddr    string // The ip address of the machine that will run the application.
 	ConnTimeout int64  // The connection timeout value for all the simulators.
 	CSAddr      string // Central system ip address that the simulators will communicate to.
