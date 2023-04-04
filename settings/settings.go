@@ -66,32 +66,26 @@ func openConfigFile(f string) configsModel {
 		common.Log("openConfigFile").Warn(err)
 	}
 
-	var i = unmarshalJSON(bv)
+	var c = unmarshalConfigsJSON(bv)
 
-	config, ok := i.(configsModel)
-
-	if !ok {
-		common.Log("openConfigFile").Panic("Unmarshal configs file error")
-	}
-
-	return config
+	return c
 }
 
 /*
-Convert a json file (in bytes) to an interface and returns it.
+Convert configs json file (in bytes) to the configsModel and returns it.
 
 b	-	Json file converted into bytes ([]byte)
 */
-func unmarshalJSON(b []byte) interface{} {
-	var p interface{}
+func unmarshalConfigsJSON(b []byte) configsModel {
+	var c configsModel
 
-	err := json.Unmarshal(b, &p)
+	err := json.Unmarshal(b, &c)
 
 	if err != nil {
-		common.Log("unmarshalConfigs").Panic(err)
+		common.Log("unmarshalConfigs").Fatal(err)
 	}
 
-	return p
+	return c
 }
 
 /*
