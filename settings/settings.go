@@ -40,6 +40,8 @@ func isConfigs() (is bool, c string) {
 	s, err := os.Stat(c)
 
 	if err != nil {
+		common.Log("isConfigs").Warn(err)
+
 		return false, c
 	}
 
@@ -47,7 +49,7 @@ func isConfigs() (is bool, c string) {
 		return true, c
 	}
 
-	common.Log("isConfigs").Warn("Configuration file doesn't exist.")
+	common.Log("isConfigs").Warn("Configurations file doesn't exist.")
 
 	return false, c
 }
@@ -105,8 +107,17 @@ func createConfigsFile(p string) {
 	}
 
 	f.Close()
+
+	common.Log("createConfigsFile").Info("Created configuration file")
 }
 
+/*
+Update the new configuration file with data.
+
+fl	-	Flags set in the execution of the application (*flags.Flags)
+
+f	-	Full path and file name for the configuration
+*/
 func updateNewConfigsFile(fl *flags.Flags, f string) {
 	var configs = configsModel{
 		GeneralConfigFolder:    common.DefGSPath,
@@ -134,6 +145,8 @@ func updateNewConfigsFile(fl *flags.Flags, f string) {
 	if nok != nil {
 		common.Log("updateNewConfigsFile").Fatal(err)
 	}
+
+	common.Log("updateNewConfigsFile").Info("Configurations written to file")
 }
 
 /*
