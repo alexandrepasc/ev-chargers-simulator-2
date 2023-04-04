@@ -10,6 +10,11 @@ import (
 	"github.com/alexandrepasc/ev-chargers-simulator-2/flags"
 )
 
+/*
+Package dedicated to manage reading and writing the configs file. This file has the responsibility 
+to store the base configurations that the application uses to work, for example the folder paths 
+to the general and simulators settings.
+*/
 func Configs(fl *flags.Flags) Model {
 	var conf Model
 
