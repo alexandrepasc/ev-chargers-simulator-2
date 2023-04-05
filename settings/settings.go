@@ -1,10 +1,70 @@
 package settings
 
 import (
+	"io/fs"
+	"os"
+
+	"github.com/alexandrepasc/ev-chargers-simulator-2/common"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/flags"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/settings/configs"
 )
 
+// TODO: evaluate if in an update to the configs should only create the new folders, or remove the older ones and create the new
 func Settings(fl *flags.Flags) {
-	var _ = configs.Configs(fl)
+	var confs = configs.Configs(fl)
+
+	checkConfigs(confs)
+}
+
+/*
+Check if the configs folders exist, if not will create them.
+
+configs	-	Configs model with the data to be tested (configs.Model)
+*/
+func checkConfigs(confs configs.Model) {
+	if !isFolder(confs.GeneralConfigFolder) {
+		createFolder(confs.GeneralConfigFolder)
+	}
+
+	if !isFolder(confs.SimulatorsConfigFolder) {
+		createFolder(confs.SimulatorsConfigFolder)
+	}
+}
+
+/*
+Checks if the folder exit.
+
+p	-	Folder path to be checked (string)
+*/
+func isFolder(p string) bool {
+	s, err := os.Stat(p)
+
+	if err != nil {
+		common.Log("isFolder").Warn(err)
+
+		return false
+	}
+
+	if s != nil {
+		return true
+	}
+
+	common.Log("isFolder").Warn("Folder doesn't exist " + p)
+
+	return false
+}
+
+/*
+Create the folder and stops the application if the creation fail.
+
+p	-	Folder path to be created (string)
+*/
+func createFolder(p string) {
+	err := os.MkdirAll(p, fs.FileMode(common.FolderPermissions))
+
+	if err != nil {
+		common.Log("createFolder").Fatal(err)
+	}
+
+	common.Log("createFolder").Info("Folder created " + p)
 }
