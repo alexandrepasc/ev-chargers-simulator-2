@@ -65,7 +65,7 @@ func isConfigs() (is bool, c string) {
 }
 
 /*
-Open the configuration file, unmarshal it to a structure and return the Model structure.
+Open the configuration file, unmarshal it to a structure and return the Model.
 
 f	-	Configuration file path (string)
 */
@@ -73,7 +73,7 @@ func openConfigsFile(f string) Model {
 	bv, err := os.ReadFile(f)
 
 	if err != nil {
-		common.Log("openConfigFile").Warn(err)
+		common.Log("openConfigFile").Fatal(err)
 	}
 
 	var c = unmarshalConfigsJSON(bv)
@@ -115,6 +115,7 @@ func createConfigsFile(p string) {
 	common.Log("createConfigsFile").Info("Created configuration file")
 }
 
+// TODO: review the check for default values, at the moment the flags should return "" or -1 if the user doesnt insert any value
 /*
 Update the new configuration file with data.
 
