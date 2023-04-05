@@ -10,7 +10,10 @@ import (
 )
 
 /*
- */
+Package dedicated to manage reading and writing the general settings of the application. This file
+has the responsibility to store the base general settings that the application uses to work, for
+example the host ip address, the connection timeout, etc....
+*/
 func General(p string, fl *flags.Flags) Model {
 	var gen Model
 
