@@ -7,6 +7,7 @@ import (
 	"github.com/alexandrepasc/ev-chargers-simulator-2/common"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/flags"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/settings/configs"
+	"github.com/alexandrepasc/ev-chargers-simulator-2/settings/general"
 )
 
 // TODO: evaluate if in an update to the configs should only create the new folders, or remove the older ones and create the new
@@ -14,6 +15,8 @@ func Settings(fl *flags.Flags) {
 	var confs = configs.Configs(fl)
 
 	checkConfigs(confs)
+
+	var _ = general.General(confs.GeneralConfigFolder, fl)
 }
 
 /*
