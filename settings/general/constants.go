@@ -1,3 +1,3 @@
 package general
 
-const generalFile string = "general.json"
+const generalFile string = "/general.json"
