@@ -115,7 +115,6 @@ func createConfigsFile(p string) {
 	common.Log("createConfigsFile").Info("Created configuration file")
 }
 
-// TODO: review the check for default values, at the moment the flags should return "" or -1 if the user doesnt insert any value
 /*
 Update the new configuration file with data.
 
@@ -129,11 +128,11 @@ func updateNewConfigsFile(fl *flags.Flags, f string) Model {
 		SimulatorsConfigFolder: common.DefSCPath,
 	}
 
-	if !isGCFolderDefault(fl.GCFolder) {
+	if fl.GCFolder != "" {
 		configs.GeneralConfigFolder = fl.GCFolder
 	}
 
-	if !isSCFolderDefault(fl.SCFolder) {
+	if fl.SCFolder != "" {
 		configs.SimulatorsConfigFolder = fl.SCFolder
 	}
 
@@ -189,24 +188,6 @@ func updateConfigsFile(fl *flags.Flags, c Model, fp string) Model {
 	common.Log("updateConfigsFile")
 
 	return nc
-}
-
-/*
-Check if the general configurations folder is default.
-
-v	-	Value of the configurations folder (string)
-*/
-func isGCFolderDefault(v string) bool {
-	return v == common.DefGSPath
-}
-
-/*
-Check if the simulators configurations folder is default.
-
-v	-	Value of the configurations folder (string)
-*/
-func isSCFolderDefault(v string) bool {
-	return v == common.DefSCPath
 }
 
 /*
