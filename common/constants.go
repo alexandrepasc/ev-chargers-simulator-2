@@ -6,7 +6,7 @@ const (
 	DefTimeout        int64  = 70                  // Default simulators timeout
 	DefCSIP           string = "iot-gate-imx8.lan" // Default central system ip address
 	DefCSPort         string = "49443"             // Default central system port address
-	defGSFolder       string = "/settings"          // Default general settings folder
+	defGSFolder       string = "/settings"         // Default general settings folder
 	defSCFolder       string = "/simConf"          // Default simulators configurations folder
 	FolderPermissions int    = 0o777               // Folder permissions used to the settings folders in octal
 	FilePermissions   int    = 0o600               // File permissions used to the configuration files in octal
