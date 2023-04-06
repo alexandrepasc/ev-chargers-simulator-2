@@ -26,8 +26,19 @@ fn	-	Function entry (string)
 
 le	-	Log entry already created (*logrus.Entry)
 */
-func Log(fn string, le *logrus.Entry) *logrus.Entry {
+func LogLe(fn string, le *logrus.Entry) *logrus.Entry {
 	le = le.WithField("Function", fn)
+
+	return le
+}
+
+/*
+Return a log entry with "Function" as log field
+
+fn	-	Function entry value (string)
+*/
+func Log(fn string) *logrus.Entry {
+	var le = log.WithField("Function", fn)
 
 	return le
 }

@@ -13,3 +13,9 @@
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
+
+# Debug environment
+.vscode/
+configs.json
+debug/
+__debug_bin
