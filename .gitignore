@@ -17,3 +17,5 @@
 # Debug environment
 .vscode/
 configs.json
+debug/
+__debug_bin
