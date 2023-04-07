@@ -14,6 +14,9 @@
 # Dependency directories (remove the comment below to include it)
 # vendor/
 
+# Tests report
+junit.xml
+
 # Debug environment
 .vscode/
 configs.json
