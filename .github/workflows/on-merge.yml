@@ -1,4 +1,4 @@
-name: VersionTag
+name: TestsAndVersion
 
 on:
   pull_request:
@@ -47,6 +47,6 @@ jobs:
       - name: Create tag v${{ env.RELEASE_VERSION }}
         uses: negz/create-tag@v1
         with:
-          token: '${{ secrets.GIT_TOKEN }}'
+          token: '${{ secrets.ACTIONS_TOKEN }}'
           version: 'v${{ env.RELEASE_VERSION }}'
           message: ''
