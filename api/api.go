@@ -1,6 +1,8 @@
 package api
 
 import (
+	"net/http"
+
 	"github.com/alexandrepasc/ev-chargers-simulator-2/api/config"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/api/health"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/api/simulators"
@@ -42,7 +44,30 @@ Creates the engine instance
 Returns the instance (*gin.Engine)
 */
 func buildRouter() *gin.Engine {
-	router := gin.Default()
+	eng := gin.Default()
 
-	return router
+	eng.HandleMethodNotAllowed = true
+
+	eng.NoMethod(func(ctx *gin.Context) { methodNotAllowed(ctx) })
+	eng.NoRoute(func(ctx *gin.Context) { routeNotFound(ctx) })
+
+	return eng
+}
+
+/*
+Handles the method not allowed response
+
+c	-	Gin context (*gin.Context)
+*/
+func methodNotAllowed(c *gin.Context) {
+	c.JSON(http.StatusMethodNotAllowed, gin.H{"message": "Method not allowed."})
+}
+
+/*
+Handles the route not found response
+
+c	-	Gin context (*gin.Context)
+*/
+func routeNotFound(c *gin.Context) {
+	c.JSON(http.StatusNotFound, gin.H{"message": "Route not found"})
 }
