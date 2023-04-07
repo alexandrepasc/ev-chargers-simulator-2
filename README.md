@@ -3,6 +3,8 @@
 
 [![PreCheckSecurity](https://github.com/alexandrepasc/ev-chargers-simulator-2/actions/workflows/on-merge-request.yml/badge.svg)](https://github.com/alexandrepasc/ev-chargers-simulator-2/actions/workflows/on-merge-request.yml)
 
+[![TestsAndVersion](https://github.com/alexandrepasc/ev-chargers-simulator-2/actions/workflows/on-merge.yml/badge.svg)](https://github.com/alexandrepasc/ev-chargers-simulator-2/actions/workflows/on-merge.yml)
+
 [![Release](https://github.com/alexandrepasc/ev-chargers-simulator-2/actions/workflows/release.yml/badge.svg)](https://github.com/alexandrepasc/ev-chargers-simulator-2/actions/workflows/release.yml)
 ## Introduction
 ## Getting Started
