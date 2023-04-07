@@ -8,6 +8,32 @@ on:
       - 'master'
 
 jobs:
+  RunTests:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: 'stable'
+
+      - name: Install gotestsum
+        run: go install gotest.tools/gotestsum@latest
+
+      - name: Install dependencies
+        run: go get .
+
+      - name: Run tests
+        run: gotestsum --format testname --format-hide-empty-pkg --format-hivis --junitfile ./junit.xml --junitfile-hide-empty-pkg --junitfile-testcase-classname short --junitfile-testsuite-name short
+
+      - name: Publish test results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: always()
+        with:
+          files: ./junit.xml
+
   CreateTag:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
