@@ -17,7 +17,7 @@ const (
 	simulatorFolder string = "/simulator"
 )
 
-func TestConfigsNoFile(t *testing.T) {
+func TestConfigs(t *testing.T) {
 	fl := flags.Flags{
 		ForceUpdate: false,
 		HostAddr:    "",
