@@ -19,3 +19,18 @@ k	-	key identifying the text to be retrieved (text.Key)
 func (t Translation) Get(k text.Key) string {
 	return location[t.L].(map[text.Key]string)[k]
 }
+
+/*
+List the languages supported by the application.
+
+Returns an array with the keys of the language location ([]string)
+*/
+func (t Translation) List() []string {
+	keys := make([]string, 0, len(location))
+
+	for k := range location {
+		keys = append(keys, string(k))
+	}
+
+	return keys
+}
