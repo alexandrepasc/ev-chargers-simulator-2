@@ -86,4 +86,14 @@ It is better to execute the script in the root project folder, and the *go* bin 
 ## Build and Test
 ## Contribute
 
-To contribute to the project some "rules" must be set. So to add a change or a fix to the code one *issue* must be created, with
+To contribute to the project some "rules" must be set. So to add a change or a fix to the code one *issue* must be created, with a clear objective, the relevant information needed to fulfil the objective.
+
+Who contribute to the project needs to have access to the project and the project [board](https://github.com/users/alexandrepasc/projects/4/views/1) where the issues are managed.
+
+A new issue is created in the board and it will be added to the *New* column, after adding the description with the necessary information and added to the project, it will be moved to the *Backlog* column. In this stage the issue needs to be review and if approved moved to *Ready*.
+
+This behaviour will be used to bug fixes to.
+
+Every new feature or change should have in mind the objective of the project, and all the people contributing in it should be involved in the decision.
+
+The code added to the project need to have in mind the way it was set and not doing implementations using other way or approach without a discussion with the rest of the envolved. There is a linter set in the pipeline to prevent some miss behave.
