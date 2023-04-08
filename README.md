@@ -7,6 +7,11 @@
 
 [![Release](https://github.com/alexandrepasc/ev-chargers-simulator-2/actions/workflows/release.yml/badge.svg)](https://github.com/alexandrepasc/ev-chargers-simulator-2/actions/workflows/release.yml)
 ## Introduction
+To help the developement and test some type of applications, like an electric management system or a charging station operator, giving the ability to have a simulated electric vehicle charger that could be controlled by the user.
+
+This project is developed using *go* and at the moment using `goroutine` to generate the simulators.
+
+This development has in mind the ability to run multiple simulators, with different communication protocols, be able to control the data that the simulators sends, to retreive metrics, and to run in a container.
 ## Getting Started
 
 ### Code linter
