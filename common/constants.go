@@ -10,6 +10,7 @@ const (
 	defSCFolder       string = "/simConf"          // Default simulators configurations folder
 	FolderPermissions int    = 0o777               // Folder permissions used to the settings folders in octal
 	FilePermissions   int    = 0o600               // File permissions used to the configuration files in octal
+	DefLanguage       string = "en-GB"             // Default language definition
 )
 
 var (
