@@ -184,6 +184,12 @@ func updateGeneralFile(fl *flags.Flags, c Model, fp string) Model {
 		nc.CSPort = c.CSPort
 	}
 
+	if fl.Language != "" {
+		nc.Lang = fl.Language
+	} else {
+		nc.Lang = c.Lang
+	}
+
 	var b = marshalIndentGeneral(nc)
 
 	var err = os.WriteFile(fp, b, fs.FileMode(common.FilePermissions))
