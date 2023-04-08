@@ -69,5 +69,5 @@ Handles the route not found response
 c	-	Gin context (*gin.Context)
 */
 func routeNotFound(c *gin.Context) {
-	c.JSON(http.StatusNotFound, gin.H{"message": "Route not found"})
+	c.JSON(http.StatusNotFound, gin.H{"message": "Route not found."})
 }
