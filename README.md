@@ -7,7 +7,6 @@
 
 [![Release](https://github.com/alexandrepasc/ev-chargers-simulator-2/actions/workflows/release.yml/badge.svg)](https://github.com/alexandrepasc/ev-chargers-simulator-2/actions/workflows/release.yml)
 
-[[_TOC_]]
 ## Introduction
 To help the development and test some type of applications, like an electric management system or a charging station operator, giving the ability to have a simulated electric vehicle charger that could be controlled by the user.
 
