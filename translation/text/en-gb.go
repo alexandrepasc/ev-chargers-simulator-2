@@ -1,7 +1,7 @@
 package text
 
 /*
-EnGb maps the keys defined with the message for the language/location en-GB
+EnGB maps the keys defined with the message for the language/location en-GB
 */
 var EnGB = map[Key]string{
 	RouteNotFound:    "Route not found.",
