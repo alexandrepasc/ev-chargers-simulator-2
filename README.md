@@ -84,6 +84,26 @@ To be easier to maintain the *rules* defined above there are some steps to do be
 It is better to execute the script in the root project folder, and the *go* bin path needs to be added to the `PATH` variable. After this your go to go.
 
 ## Build and Test
+To build and test the project the *go* needs to be installed in the machine, to do this we could use the information in this [page](https://go.dev/doc/install).
+
+To be able to run it in containerized mode we the [Docker Engine](https://docs.docker.com/engine/install/) needs to be installed.
+
+Install project dependencies:
+- `go get .`
+
+Run the project locally:
+- `go run .`
+
+Install a go package:
+- `go install {package_name}`
+
+Run the tests:
+- `go test ./...`
+
+To reduce the issues when committing new code, we should run the linter previously to do the commit using:
+- `./scripts/run_linter.sh`
+
+The commits need to be execute in the command line, since there are some git hooks that require feedback from the user.
 ## Contribute
 
 To contribute to the project some "rules" must be set. So to add a change or a fix to the code one *issue* must be created, with a clear objective, the relevant information needed to fulfil the objective.
