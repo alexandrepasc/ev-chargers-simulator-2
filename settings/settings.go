@@ -11,12 +11,21 @@ import (
 )
 
 // TODO: evaluate if in an update to the configs should only create the new folders, or remove the older ones and create the new
-func Settings(fl *flags.Flags) {
+/*
+Handles the logic to create and edit the application settings.
+
+Returns the configurations and the general models with the data set in the files (configs.Model, general.Model)
+
+fl	-	The flags that the user set when executing the application (*flags.Flags)
+*/
+func Settings(fl *flags.Flags) (c configs.Model, g general.Model) {
 	var confs = configs.Configs(fl)
 
 	checkConfigs(confs)
 
-	var _ = general.General(confs.GeneralConfigFolder, fl)
+	var gen = general.General(confs.GeneralConfigFolder, fl)
+
+	return confs, gen
 }
 
 /*
