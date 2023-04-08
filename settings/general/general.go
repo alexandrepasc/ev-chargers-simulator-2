@@ -110,6 +110,7 @@ func updateNewGeneralFile(fl *flags.Flags, fp string) Model {
 		ConnTimeout: common.DefTimeout,
 		CSAddr:      common.DefCSIP,
 		CSPort:      common.DefCSPort,
+		Lang:        common.DefLanguage,
 	}
 
 	if fl.HostAddr != "" {
@@ -126,6 +127,10 @@ func updateNewGeneralFile(fl *flags.Flags, fp string) Model {
 
 	if fl.CSPort != "" {
 		configs.CSPort = fl.CSPort
+	}
+
+	if fl.Language != "" {
+		configs.Lang = fl.Language
 	}
 
 	var b = marshalIndentGeneral(configs)
