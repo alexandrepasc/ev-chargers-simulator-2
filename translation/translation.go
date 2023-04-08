@@ -1,6 +1,9 @@
 package translation
 
-import "github.com/alexandrepasc/ev-chargers-simulator-2/translation/text"
+import (
+	"github.com/alexandrepasc/ev-chargers-simulator-2/common"
+	"github.com/alexandrepasc/ev-chargers-simulator-2/translation/text"
+)
 
 /*
 Structure used to set the language.
@@ -33,4 +36,22 @@ func (t Translation) List() []string {
 	}
 
 	return keys
+}
+
+/*
+Get the location key using the string associated to it, this is useful when getting the string from
+the general settings and converting to the location key.
+
+It returns the matching key, in case there is no matching key it will return the default one.
+
+s	-	The string from the general settings file (string)
+*/
+func (t Translation) GetKey(s string) Local {
+	for k := range location {
+		if string(k) == s {
+			return k
+		}
+	}
+
+	return Local(common.DefLanguage)
 }
