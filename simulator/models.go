@@ -13,12 +13,12 @@ type Asset struct {
 }
 
 type Evse struct {
-	Id         int64       `json:"id"`         // Evse identifier number
+	ID         int64       `json:"id"`         // Evse identifier number
 	Connectors []Connector `json:"connectors"` // The list of connectors of the evse
 }
 
 type Connector struct {
-	Id      int64  `json:"id"` // Connector identifier number
+	ID      int64  `json:"id"` // Connector identifier number
 	Enabled bool   // Since only one connector can be chargin this is just to control that state
 	Data    []Data `json:"data"` // The loop of data
 }
