@@ -15,11 +15,15 @@ type Translation struct {
 /*
 Will use the language set in the structure and a key to retrieve the text from the map.
 
-Returns a string with the text associated to the key.
+Returns a string with the text associated to the key. In case no key is set log fatal.
 
 k	-	key identifying the text to be retrieved (text.Key)
 */
 func (t Translation) Get(k text.Key) string {
+	if t.L == "" {
+		common.Log("Get").Fatal(location[EnGb].(map[text.Key]string)[text.LocalizationNotSet])
+	}
+
 	return location[t.L].(map[text.Key]string)[k]
 }
 
