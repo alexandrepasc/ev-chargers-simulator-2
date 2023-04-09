@@ -8,6 +8,8 @@ import (
 
 	"github.com/alexandrepasc/ev-chargers-simulator-2/common"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/flags"
+	"github.com/alexandrepasc/ev-chargers-simulator-2/translation"
+	"github.com/alexandrepasc/ev-chargers-simulator-2/translation/text"
 )
 
 /*
@@ -59,7 +61,7 @@ func isConfigs() (is bool, c string) {
 		return true, c
 	}
 
-	common.Log("isConfigs").Warn("Configurations file doesn't exist.")
+	common.Log("isConfigs").Warn(translation.Translation{L: translation.EnGb}.Get(text.ConfigsNotExist))
 
 	return false, c
 }
@@ -112,7 +114,7 @@ func createConfigsFile(p string) {
 
 	f.Close()
 
-	common.Log("createConfigsFile").Info("Created configuration file")
+	common.Log("createConfigsFile").Info(translation.Translation{L: translation.EnGb}.Get(text.ConfigsCreated))
 }
 
 /*
@@ -144,7 +146,7 @@ func updateNewConfigsFile(fl *flags.Flags, f string) Model {
 		common.Log("updateNewConfigsFile").Fatal(err)
 	}
 
-	common.Log("updateNewConfigsFile").Info("Configurations written to file")
+	common.Log("updateNewConfigsFile").Info(translation.Translation{L: translation.EnGb}.Get(text.ConfigsWritten))
 
 	return configs
 }
@@ -185,7 +187,7 @@ func updateConfigsFile(fl *flags.Flags, c Model, fp string) Model {
 		return c
 	}
 
-	common.Log("updateConfigsFile")
+	common.Log("updateConfigsFile").Info(translation.Translation{L: translation.EnGb}.Get(text.ConfigsWritten))
 
 	return nc
 }
