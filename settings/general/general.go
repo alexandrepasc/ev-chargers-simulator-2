@@ -7,6 +7,8 @@ import (
 
 	"github.com/alexandrepasc/ev-chargers-simulator-2/common"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/flags"
+	"github.com/alexandrepasc/ev-chargers-simulator-2/translation"
+	"github.com/alexandrepasc/ev-chargers-simulator-2/translation/text"
 )
 
 /*
@@ -58,7 +60,7 @@ func isGeneral(p string) (is bool, fp string) {
 		return true, fp
 	}
 
-	common.Log("isGeneral").Warn("General configuration file doesn't exist.")
+	common.Log("isGeneral").Warn(translation.Translation{L: translation.EnGb}.Get(text.GeneralNotExist))
 
 	return false, fp
 }
@@ -94,7 +96,7 @@ func createGeneralFile(fp string) {
 
 	f.Close()
 
-	common.Log("createGeneralFile").Info("Created general configuration file")
+	common.Log("createGeneralFile").Info(translation.Translation{L: translation.EnGb}.Get(text.GeneralCreated))
 }
 
 /*
@@ -110,6 +112,7 @@ func updateNewGeneralFile(fl *flags.Flags, fp string) Model {
 		ConnTimeout: common.DefTimeout,
 		CSAddr:      common.DefCSIP,
 		CSPort:      common.DefCSPort,
+		Lang:        common.DefLanguage,
 	}
 
 	if fl.HostAddr != "" {
@@ -128,6 +131,10 @@ func updateNewGeneralFile(fl *flags.Flags, fp string) Model {
 		configs.CSPort = fl.CSPort
 	}
 
+	if fl.Language != "" {
+		configs.Lang = fl.Language
+	}
+
 	var b = marshalIndentGeneral(configs)
 
 	var err = os.WriteFile(fp, b, fs.FileMode(common.FilePermissions))
@@ -136,7 +143,7 @@ func updateNewGeneralFile(fl *flags.Flags, fp string) Model {
 		common.Log("updateNewGeneralFile").Fatal(err)
 	}
 
-	common.Log("updateNewGeneralFile").Info("General configurations written to file")
+	common.Log("updateNewGeneralFile").Info(translation.Translation{L: translation.EnGb}.Get(text.GeneralWritten))
 
 	return configs
 }
@@ -179,6 +186,12 @@ func updateGeneralFile(fl *flags.Flags, c Model, fp string) Model {
 		nc.CSPort = c.CSPort
 	}
 
+	if fl.Language != "" {
+		nc.Lang = fl.Language
+	} else {
+		nc.Lang = c.Lang
+	}
+
 	var b = marshalIndentGeneral(nc)
 
 	var err = os.WriteFile(fp, b, fs.FileMode(common.FilePermissions))
@@ -189,7 +202,7 @@ func updateGeneralFile(fl *flags.Flags, c Model, fp string) Model {
 		return c
 	}
 
-	common.Log("updateGeneralFile")
+	common.Log("updateGeneralFile").Info(translation.Translation{L: translation.EnGb}.Get(text.GeneralWritten))
 
 	return nc
 }

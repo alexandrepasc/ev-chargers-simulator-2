@@ -8,15 +8,26 @@ import (
 	"github.com/alexandrepasc/ev-chargers-simulator-2/flags"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/settings/configs"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/settings/general"
+	"github.com/alexandrepasc/ev-chargers-simulator-2/translation"
+	"github.com/alexandrepasc/ev-chargers-simulator-2/translation/text"
 )
 
 // TODO: evaluate if in an update to the configs should only create the new folders, or remove the older ones and create the new
-func Settings(fl *flags.Flags) {
+/*
+Handles the logic to create and edit the application settings.
+
+Returns the configurations and the general models with the data set in the files (configs.Model, general.Model)
+
+fl	-	The flags that the user set when executing the application (*flags.Flags)
+*/
+func Settings(fl *flags.Flags) (c configs.Model, g general.Model) {
 	var confs = configs.Configs(fl)
 
 	checkConfigs(confs)
 
-	var _ = general.General(confs.GeneralConfigFolder, fl)
+	var gen = general.General(confs.GeneralConfigFolder, fl)
+
+	return confs, gen
 }
 
 /*
@@ -52,7 +63,7 @@ func isFolder(p string) bool {
 		return true
 	}
 
-	common.Log("isFolder").Warn("Folder doesn't exist " + p)
+	common.Log("isFolder").Warn(translation.Translation{L: translation.EnGb}.Get(text.FolderNotExist) + p)
 
 	return false
 }
@@ -69,5 +80,5 @@ func createFolder(p string) {
 		common.Log("createFolder").Fatal(err)
 	}
 
-	common.Log("createFolder").Info("Folder created " + p)
+	common.Log("createFolder").Info(translation.Translation{L: translation.EnGb}.Get(text.FolderCreated) + p)
 }

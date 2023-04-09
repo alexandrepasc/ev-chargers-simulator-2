@@ -16,6 +16,8 @@ CSPort		-	Central system port the that simulators will communicate to.
 GCFolder	-	Folder where the application general configuration files are located.
 
 SCFolder	-	Folder where the simulators configuration files are located.
+
+Language	-	The language used by the application.
 */
 type Flags struct {
 	ForceUpdate bool   // Force the update of the configurations with the values in the flags
@@ -25,4 +27,5 @@ type Flags struct {
 	CSPort      string // Central system port the that simulators will communicate to.
 	GCFolder    string // Folder where the application general configuration files are located.
 	SCFolder    string // Folder where the simulators configuration files are located.
+	Language    string // The language used by the application.
 }

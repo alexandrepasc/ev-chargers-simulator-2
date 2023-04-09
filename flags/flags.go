@@ -4,8 +4,10 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/alexandrepasc/ev-chargers-simulator-2/common"
+	"github.com/alexandrepasc/ev-chargers-simulator-2/translation"
 )
 
 /*
@@ -28,6 +30,8 @@ func SetFlags() Flags {
 
 	var ss = common.DefSCPath
 
+	var l = common.DefLanguage
+
 	var v bool
 
 	var i = flag.Bool("i", false, "Force the update of the configurations with the values in the flags")
@@ -43,6 +47,8 @@ func SetFlags() Flags {
 	flag.StringVar(&gs, "gs", common.DefGSPath, "General configuration folder, store the application general configurations")
 
 	flag.StringVar(&ss, "ss", common.DefSCPath, "Simulators configuration folder, store the simulators configurations")
+
+	flag.StringVar(&l, "l", common.DefLanguage, "Language used by the application ["+strings.Join(translation.Translation{}.List(), ", ")+"]")
 
 	flag.BoolVar(&v, "v", false, "Return the current application version")
 
@@ -79,6 +85,10 @@ func SetFlags() Flags {
 
 	if isFlagPassed("ss") {
 		f.SCFolder = ss
+	}
+
+	if isFlagPassed("l") {
+		f.Language = l
 	}
 
 	return f

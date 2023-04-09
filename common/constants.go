@@ -1,7 +1,7 @@
 package common
 
 const (
-	Version           string = "0.3.2"             // Application version
+	Version           string = "0.4.2"             // Application version
 	DefSimIP          string = "84.5.7.64"         // Default simulator ip address from the machine that is running the application
 	DefTimeout        int64  = 70                  // Default simulators timeout
 	DefCSIP           string = "iot-gate-imx8.lan" // Default central system ip address
@@ -10,6 +10,7 @@ const (
 	defSCFolder       string = "/simConf"          // Default simulators configurations folder
 	FolderPermissions int    = 0o777               // Folder permissions used to the settings folders in octal
 	FilePermissions   int    = 0o600               // File permissions used to the configuration files in octal
+	DefLanguage       string = "en-GB"             // Default language definition
 )
 
 var (
