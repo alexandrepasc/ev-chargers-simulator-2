@@ -1,15 +1,15 @@
 package simulator
 
 type Asset struct {
-	Type          string `json:"type"`          // Type of the asset that the configuration will be used to (evc, pm)
-	Protocol      string `json:"protocol"`      // Protocol used by the asset
-	Model         string `json:"model"`         // The name of the configuration file set in the model's folder
-	Port          string `json:"port"`          // Communication ip port
-	CPId          string `json:"cPId"`          // Charge point id to identify the unit (used in the ocpp protocol)
-	StartCharging bool   `json:"startCharging"` // Set the asset to start charging behaviour by itself
-	Phases        int64  `json:"phases"`        // Phases number
-	CurrentType   string `json:"curentType"`    // Type of current of the asset (AC or DC)
-	Evses         []Evse `json:"evses"`         // List of evses that the asset has
+	Type          AssetType   `json:"type" validate:"required"`  // Type of the asset that the configuration will be used to (evc, pm)
+	Protocol      Protocol    `json:"protocol"`                  // Protocol used by the asset
+	Model         string      `json:"model"`                     // The name of the configuration file set in the model's folder
+	Port          string      `json:"port,omitempty"`            // Communication ip port
+	CPId          string      `json:"cPId,omitempty"`            // Charge point id to identify the unit (used in the ocpp protocol)
+	StartCharging bool        `json:"startCharging"`             // Set the asset to start charging behaviour by itself
+	Phases        int64       `json:"phases"`                    // Phases number
+	CurrentType   CurrentType `json:"curentType"`                // Type of current of the asset (AC or DC)
+	Evses         []Evse      `json:"evses" validate:"required"` // List of evses that the asset has
 }
 
 type Evse struct {
@@ -18,9 +18,9 @@ type Evse struct {
 }
 
 type Connector struct {
-	ID      int64  `json:"id"` // Connector identifier number
-	Enabled bool   // Since only one connector can be charging this is just to control that state
-	Data    []Data `json:"data"` // The loop of data
+	ID      int64  `json:"id"`        // Connector identifier number
+	Enabled bool   `json:"omitempty"` // Since only one connector can be charging this is just to control that state
+	Data    []Data `json:"data"`      // The loop of data
 }
 
 // TODO: evaluate if the charging state should be a number or the name of the state
