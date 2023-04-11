@@ -15,6 +15,8 @@ import (
 type Simulator struct {
 	Scp string                  // simulator configuration path
 	L   translation.Translation // Translation language setting
+	Al  []Asset
+	Oml []model.OcppModel
 }
 
 /*
@@ -22,7 +24,7 @@ Get the simulators configuration files and the model type files, read them and c
 
 Returns the lists of structures related to the two types of files.
 */
-func (s Simulator) GetSimsConfs() (al []Asset, oml []model.OcppModel) {
+func (s *Simulator) GetSimsConfs() (al []Asset, oml []model.OcppModel) {
 	var f = s.getSimConfigFIles()
 
 	al = s.readSimConfigFiles(f)
@@ -30,6 +32,10 @@ func (s Simulator) GetSimsConfs() (al []Asset, oml []model.OcppModel) {
 	f = s.getModelsCofigFiles()
 
 	oml = s.readModelsConfigFiles(f)
+
+	s.Al = al
+
+	s.Oml = oml
 
 	return al, oml
 }
@@ -39,7 +45,7 @@ Get the list of files that are stored in the simulator configurations folder.
 
 Returns an array of the file system entries stored in the folder ([]fs.DirEntry)
 */
-func (s Simulator) getSimConfigFIles() []fs.DirEntry {
+func (s *Simulator) getSimConfigFIles() []fs.DirEntry {
 	common.Log("getSimConfigFIles").Info(s.L.Get(text.GetSimsConfsFiles))
 
 	f, err := os.ReadDir(s.Scp)
@@ -56,7 +62,7 @@ Read the configuration files, unmarshal each to the Asset struct, and return and
 
 f	-	File system entries list ([]fs.DirEntry)
 */
-func (s Simulator) readSimConfigFiles(f []fs.DirEntry) (as []Asset) {
+func (s *Simulator) readSimConfigFiles(f []fs.DirEntry) (as []Asset) {
 	common.Log("readSimConfigFiles").Info(s.L.Get(text.ReadSimsConfsFiles))
 
 	for _, entry := range f {
@@ -102,7 +108,7 @@ Get the list of files that are stored in the simulator model folder.
 
 Returns an array of the file system entries stored in the folder ([]fs.DirEntry)
 */
-func (s Simulator) getModelsCofigFiles() []fs.DirEntry {
+func (s *Simulator) getModelsCofigFiles() []fs.DirEntry {
 	common.Log("getModelsCofigFiles").Info(s.L.Get(text.GetModelsConfsFiles))
 
 	f, err := os.ReadDir(s.Scp + common.DefMCFolder)
@@ -120,7 +126,7 @@ Read the models files, unmarshal each to the OcppModel struct, and return and as
 
 f	-	File system entries list ([]fs.DirEntry)
 */
-func (s Simulator) readModelsConfigFiles(f []fs.DirEntry) (oms []model.OcppModel) {
+func (s *Simulator) readModelsConfigFiles(f []fs.DirEntry) (oms []model.OcppModel) {
 	common.Log("readModelsConfigFiles").Info(s.L.Get(text.ReadModelsConfsFiles))
 
 	var p = s.Scp + common.DefMCFolder
