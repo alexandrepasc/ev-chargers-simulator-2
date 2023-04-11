@@ -18,9 +18,9 @@ import (
 API structure to store the settings to the package.
 */
 type API struct {
-	Lang      translation.Translation // Translation language setting
-	General   general.Model           // General configurations model
-	Sim       simulator.Simulator     // Simulator model
+	Lang    translation.Translation // Translation language setting
+	General general.Model           // General configurations model
+	Sim     simulator.Simulator     // Simulator model
 }
 
 /*
