@@ -15,80 +15,78 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const defSCFolder string = "/simConf"
+
 func TestGetSimulatorData(t *testing.T) {
-	createFolders()
+	tmp := t.TempDir()
 
-	s := before()
+	createFolders(tmp)
 
-	generateAssetConfFiles(1)
+	s := before(tmp)
 
-	generateModelConfFiles(1)
+	generateAssetConfFiles(1, tmp)
+
+	generateModelConfFiles(1, tmp)
 
 	al, ml := s.GetSimsConfs()
 
 	assert.Equal(t, 1, len(al))
 
 	assert.Equal(t, 1, len(ml))
-
-	after()
 }
 
 func TestGetSimulatorDataNoFiles(t *testing.T) {
-	createFolders()
+	tmp := t.TempDir()
 
-	s := before()
+	createFolders(tmp)
+
+	s := before(tmp)
 
 	al, ml := s.GetSimsConfs()
 
 	assert.Equal(t, 0, len(al))
 
 	assert.Equal(t, 0, len(ml))
-
-	after()
 }
 
 func TestSimulatorModelWrongType(t *testing.T) {
-	createFolders()
+	tmp := t.TempDir()
 
-	s := before()
+	createFolders(tmp)
 
-	generateAssetConfFiles(1)
+	s := before(tmp)
 
-	generateInvalidModelConfFile()
+	generateAssetConfFiles(1, tmp)
+
+	generateInvalidModelConfFile(tmp)
 
 	al, ml := s.GetSimsConfs()
 
 	assert.Equal(t, 1, len(al))
 
 	assert.Equal(t, 0, len(ml))
-
-	after()
 }
 
-func before() simulator.Simulator {
+func before(tmp string) simulator.Simulator {
 	t := translation.Translation{
 		L: translation.Translation{}.GetKey("en-GB"),
 	}
 
 	s := simulator.Simulator{
-		Scp: common.DefSCPath,
+		Scp: tmp + defSCFolder,
 		L:   t,
 	}
 
 	return s
 }
 
-func after() {
-	os.RemoveAll(common.DefSCPath)
+func createFolders(tmp string) {
+	os.Mkdir(tmp+defSCFolder, fs.FileMode(common.FolderPermissions))
+
+	os.Mkdir(tmp+defSCFolder+common.DefMCFolder, fs.FileMode(common.FolderPermissions))
 }
 
-func createFolders() {
-	os.Mkdir(common.DefSCPath, fs.FileMode(common.FolderPermissions))
-
-	os.Mkdir(common.DefSCPath+common.DefMCFolder, fs.FileMode(common.FolderPermissions))
-}
-
-func generateAssetConfFiles(n int64) {
+func generateAssetConfFiles(n int64, tmp string) {
 	for i := int64(0); i < n; i++ {
 		a := simulator.Asset{
 			Type:     simulator.Evc,
@@ -96,7 +94,7 @@ func generateAssetConfFiles(n int64) {
 			Phases:   1,
 		}
 
-		p := common.DefSCPath + "/sim" + strconv.FormatInt(i, 10) + ".json"
+		p := tmp + defSCFolder + "/sim" + strconv.FormatInt(i, 10) + ".json"
 
 		f, _ := os.Create(p)
 		f.Close()
@@ -107,14 +105,14 @@ func generateAssetConfFiles(n int64) {
 	}
 }
 
-func generateModelConfFiles(n int64) {
+func generateModelConfFiles(n int64, tmp string) {
 	for i := int64(0); i < n; i++ {
 		m := model.OcppModel{
 			SerialNumb: "123456789",
 			Model:      "model",
 		}
 
-		p := common.DefSCPath + common.DefMCFolder + "/model" + strconv.FormatInt(i, 10) + "_ocpp.json"
+		p := tmp + defSCFolder + common.DefMCFolder + "/model" + strconv.FormatInt(i, 10) + "_ocpp.json"
 
 		f, _ := os.Create(p)
 		f.Close()
@@ -125,13 +123,13 @@ func generateModelConfFiles(n int64) {
 	}
 }
 
-func generateInvalidModelConfFile() {
+func generateInvalidModelConfFile(tmp string) {
 	m := model.OcppModel{
 		SerialNumb: "123456789",
 		Model:      "model",
 	}
 
-	p := common.DefSCPath + common.DefMCFolder + "/model_invalid.json"
+	p := tmp + defSCFolder + common.DefMCFolder + "/model_invalid.json"
 
 	f, _ := os.Create(p)
 	f.Close()
