@@ -26,7 +26,7 @@ Sets the get simulators endpoint controller
 c	-	request  context (*gin.context)
 */
 func (s Simulators) getSimulators(c *gin.Context) {
-	resp := getSimulatorsTemp{
+	resp := GetSimulatorsTemp{
 		Total:  int64(len(s.Al)),
 		Assets: s.Al,
 	}
