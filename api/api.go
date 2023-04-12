@@ -35,7 +35,8 @@ func (a *API) New() (r *gin.Engine) {
 	config.Configs(r)
 
 	s := simulators.Simulators{
-		Al: a.Sim.Al,
+		Al:  a.Sim.Al,
+		Oml: a.Sim.Oml,
 	}
 	s.Simulators(r)
 
