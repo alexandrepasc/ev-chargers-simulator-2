@@ -10,6 +10,8 @@ import (
 	"github.com/alexandrepasc/ev-chargers-simulator-2/simulator/model"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/translation"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/translation/text"
+	"github.com/go-playground/validator/v10"
+	"github.com/google/uuid"
 )
 
 type Simulator struct {
@@ -38,6 +40,33 @@ func (s *Simulator) GetSimsConfs() (al []Asset, oml []model.OcppModel) {
 	s.Oml = oml
 
 	return al, oml
+}
+
+/**/
+func (s *Simulator) CreateSimConf(a *Asset) (ok bool, msg string, na *Asset) {
+	id := uuid.New()
+
+	a.SimID = id
+
+	err := validator.New().Struct(a)
+
+	if err != nil {
+		common.Log("CreateSimConf").Error(err)
+
+		return false, err.Error(), na
+	}
+
+	ok, f := generateFile(s.Scp, a.Name, s.L)
+
+	if !ok {
+		return ok, s.L.Get(text.CreateSimConfFileError), na
+	}
+
+	if !writeFile(f, a) {
+		return false, s.L.Get(text.CreateSimConfFileError), na
+	}
+
+	return true, "", a
 }
 
 /*
@@ -205,4 +234,77 @@ func checkModel(n string) (ok bool, mt string) {
 	}
 
 	return false, ""
+}
+
+/*
+Create a new json file with the configuration of a simulator.
+
+It returns true and the file (*os.File), if not returns false and nil.
+
+p	-	Path where the file will be created (string).
+
+n	-	Name for the file (string).
+*/
+func generateFile(p, n string, l translation.Translation) (ok bool, f *os.File) {
+	f, err := os.Create(p + "/" + n + ".json")
+
+	if err != nil {
+		common.Log("generateFile").Error(err)
+
+		defer f.Close()
+
+		return false, nil
+	}
+
+	common.Log("generateFile").Info(l.Get(text.CreateSimConfFile))
+
+	return true, f
+}
+
+/*
+Write to file the data for the new simulator.
+
+Returns true if nothing fails, and false if it fails.
+
+f	-	The file created to store the new simulator configurations (*os.File)
+
+a	-	Asset structure with the data to store to file (Asset)
+*/
+func writeFile(f *os.File, a *Asset) bool {
+	ok, b := marshalAssetToJSON(a)
+
+	if !ok {
+		return false
+	}
+
+	_, err := f.Write(b)
+
+	defer f.Close()
+
+	if err != nil {
+		common.Log("writeFile").Error(err)
+
+		return false
+	}
+
+	return true
+}
+
+/*
+Marshal the asset structure to byte.
+
+Returns true and the asset in bytes, if fails returns false and nil.
+
+a	- Asset structure (Asset)
+*/
+func marshalAssetToJSON(a *Asset) (ok bool, b []byte) {
+	b, err := json.MarshalIndent(a, "", " ")
+
+	if err != nil {
+		common.Log("marshalAssetToJson").Error(err)
+
+		return false, nil
+	}
+
+	return true, b
 }
