@@ -43,6 +43,8 @@ Sets the get models endpoint controller
 c	-	request  context (*gin.context)
 */
 func (s *Simulators) getModels(c *gin.Context) {
+	s.Sim.GetSimsConfs()
+
 	resp := GetModelsTemp{
 		Total:  int64(len(s.Sim.Oml)),
 		Models: s.Sim.Oml,

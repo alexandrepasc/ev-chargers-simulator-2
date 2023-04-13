@@ -197,7 +197,7 @@ func TestGetSimModelsNoModels(t *testing.T) {
 
 	assert.Equal(t, int64(0), a.Total)
 
-	assert.Equal(t, 0, len(a.Models.([]interface{})))
+	assert.Nil(t, a.Models)
 }
 
 // func TestPostSimulators(t *testing.T) {
@@ -252,7 +252,7 @@ func generateConfFiles(tmp string, al []simulator.Asset, oml []model.OcppModel) 
 	}
 
 	for i := 0; i < len(oml); i++ {
-		p := tmp + "/simConf" + common.DefMCFolder + "/model" + strconv.Itoa(i) + ".json"
+		p := tmp + "/simConf" + common.DefMCFolder + "/model" + strconv.Itoa(i) + "_ocpp.json"
 
 		f, _ := os.Create(p)
 		f.Close()
