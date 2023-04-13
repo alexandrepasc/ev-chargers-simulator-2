@@ -21,6 +21,7 @@ type Simulator struct {
 	Oml []model.OcppModel
 }
 
+// TODO: this should be splited into get sim configurations and get model configurations
 /*
 Get the simulators configuration files and the model type files, read them and convert to structures.
 
@@ -42,7 +43,18 @@ func (s *Simulator) GetSimsConfs() (al []Asset, oml []model.OcppModel) {
 	return al, oml
 }
 
-/**/
+/*
+Receive the Asset structure, generates the uuid for the new simulator, and with the Name field
+creates the file to store the new configurations.
+
+It will return a boolean as true if the process goes well and false otherwise (bool).
+
+Will return an error message in case it fails, or an empty message (string).
+
+The last returned value will be the Asset structure with the uuid, or empty one in fail case.
+
+a	-	The new asset configurations (Asset)
+*/
 func (s *Simulator) CreateSimConf(a *Asset) (ok bool, msg string, na *Asset) {
 	id := uuid.New()
 

@@ -3,13 +3,18 @@ package simulators_test
 
 import (
 	"encoding/json"
+	"io/fs"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"strconv"
 	"testing"
 
 	"github.com/alexandrepasc/ev-chargers-simulator-2/api/simulators"
+	"github.com/alexandrepasc/ev-chargers-simulator-2/common"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/simulator"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/simulator/model"
+	"github.com/alexandrepasc/ev-chargers-simulator-2/translation"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 )
@@ -24,19 +29,30 @@ func TestGetSimulators(t *testing.T) {
 
 	al := []simulator.Asset{
 		{
-			Type:     simulator.Evc,
-			Protocol: simulator.Ocpp201,
-			Model:    "a",
+			Name:        "a_name",
+			Type:        simulator.Evc,
+			Protocol:    simulator.Ocpp201,
+			Model:       "a",
+			Phases:      simulator.One,
+			CurrentType: simulator.Ac,
+			Evses:       []simulator.Evse{},
 		},
 		{
-			Type:     simulator.Evc,
-			Protocol: simulator.Ocpp16,
-			Model:    "b",
+			Name:        "b_name",
+			Type:        simulator.Evc,
+			Protocol:    simulator.Ocpp16,
+			Model:       "b",
+			Phases:      simulator.One,
+			CurrentType: simulator.Ac,
+			Evses:       []simulator.Evse{},
 		},
 	}
+	ml := []model.OcppModel{}
+
+	sim := before(t, al, ml)
 
 	s := simulators.Simulators{
-		Al: al,
+		Sim: sim,
 	}
 
 	s.Simulators(r)
@@ -68,9 +84,12 @@ func TestGetSimulatorsNoAssets(t *testing.T) {
 	r := gin.Default()
 
 	al := []simulator.Asset{}
+	ml := []model.OcppModel{}
+
+	sim := before(t, al, ml)
 
 	s := simulators.Simulators{
-		Al: al,
+		Sim: sim,
 	}
 
 	s.Simulators(r)
@@ -89,7 +108,7 @@ func TestGetSimulatorsNoAssets(t *testing.T) {
 
 	assert.Equal(t, int64(0), a.Total)
 
-	assert.Equal(t, 0, len(a.Assets.([]interface{})))
+	assert.Nil(t, a.Assets)
 }
 
 func TestGetSimModels(t *testing.T) {
@@ -111,9 +130,13 @@ func TestGetSimModels(t *testing.T) {
 		},
 	}
 
+	sim := before(t, al, ml)
+
+	sim.Al = al
+	sim.Oml = ml
+
 	s := simulators.Simulators{
-		Al:  al,
-		Oml: ml,
+		Sim: sim,
 	}
 
 	s.Simulators(r)
@@ -149,9 +172,13 @@ func TestGetSimModelsNoModels(t *testing.T) {
 	al := []simulator.Asset{}
 	ml := []model.OcppModel{}
 
+	sim := before(t, al, ml)
+
+	sim.Al = al
+	sim.Oml = ml
+
 	s := simulators.Simulators{
-		Al:  al,
-		Oml: ml,
+		Sim: sim,
 	}
 
 	s.Simulators(r)
@@ -171,4 +198,67 @@ func TestGetSimModelsNoModels(t *testing.T) {
 	assert.Equal(t, int64(0), a.Total)
 
 	assert.Equal(t, 0, len(a.Models.([]interface{})))
+}
+
+// func TestPostSimulators(t *testing.T) {
+// 	r := gin.Default()
+
+// 	al := []simulator.Asset{}
+// 	ml := []model.OcppModel{}
+
+// 	s := simulators.Simulators{
+// 		Al:  al,
+// 		Oml: ml,
+// 	}
+
+// 	s.Simulators(r)
+
+// 	w := httptest.NewRecorder()
+// }
+
+func before(t *testing.T, al []simulator.Asset, oml []model.OcppModel) simulator.Simulator {
+	t.Helper()
+
+	tmp := t.TempDir()
+
+	os.Mkdir(tmp+"/simConf", fs.FileMode(common.FolderPermissions))
+
+	os.Mkdir(tmp+"/simConf"+common.DefMCFolder, fs.FileMode(common.FolderPermissions))
+
+	generateConfFiles(tmp, al, oml)
+
+	l := translation.Translation{
+		L: translation.Translation{}.GetKey("en-GB"),
+	}
+
+	s := simulator.Simulator{
+		Scp: tmp + "/simConf",
+		L:   l,
+	}
+
+	return s
+}
+
+func generateConfFiles(tmp string, al []simulator.Asset, oml []model.OcppModel) {
+	for i := 0; i < len(al); i++ {
+		p := tmp + "/simConf" + "/" + al[i].Name + ".json"
+
+		f, _ := os.Create(p)
+		f.Close()
+
+		b, _ := json.MarshalIndent(al[i], "", " ")
+
+		os.WriteFile(p, b, fs.FileMode(common.FilePermissions))
+	}
+
+	for i := 0; i < len(oml); i++ {
+		p := tmp + "/simConf" + common.DefMCFolder + "/model" + strconv.Itoa(i) + ".json"
+
+		f, _ := os.Create(p)
+		f.Close()
+
+		b, _ := json.MarshalIndent(oml[i], "", " ")
+
+		os.WriteFile(p, b, fs.FileMode(common.FilePermissions))
+	}
 }

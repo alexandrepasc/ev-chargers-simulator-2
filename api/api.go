@@ -20,7 +20,7 @@ API structure to store the settings to the package.
 type API struct {
 	Lang    translation.Translation // Translation language setting
 	General general.Model           // General configurations model
-	Sim     simulator.Simulator     // Simulator model
+	Sim     simulator.Simulator     // Simulator package
 }
 
 /*
@@ -35,8 +35,7 @@ func (a *API) New() (r *gin.Engine) {
 	config.Configs(r)
 
 	s := simulators.Simulators{
-		Al:  a.Sim.Al,
-		Oml: a.Sim.Oml,
+		Sim: a.Sim,
 	}
 	s.Simulators(r)
 
