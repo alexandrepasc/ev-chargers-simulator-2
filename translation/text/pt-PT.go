@@ -13,4 +13,5 @@ var PtPT = map[Key]string{
 	CreateSimConfFile:      "Fichheiro de configuração do simulador criado.",
 	CreateSimConfFileError: "Erro inesperado ao criar o ficheiro de configuração do simulador.",
 	InternalServerError:    "Algo correu muito mal.",
+	RequestBodyDoesntMatch: "O corpo do pedido está mal formado.",
 }

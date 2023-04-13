@@ -22,4 +22,5 @@ var EnGB = map[Key]string{
 	CreateSimConfFile:      "Created simulator configuration file.",
 	CreateSimConfFileError: "Unexpected error creating the simulator configuration file.",
 	InternalServerError:    "Something went very wrong.",
+	RequestBodyDoesntMatch: "The request body is malformed.",
 }
