@@ -67,6 +67,189 @@ func TestSimulatorModelWrongType(t *testing.T) {
 	assert.Equal(t, 0, len(ml))
 }
 
+func TestCreateSimulator(t *testing.T) {
+	tmp := t.TempDir()
+
+	createFolders(tmp)
+
+	s := before(tmp)
+
+	sim := simulator.Asset{
+		Name:        "sim1",
+		Type:        simulator.Evc,
+		Protocol:    simulator.Ocpp201,
+		Model:       "model",
+		Phases:      simulator.One,
+		CurrentType: simulator.Ac,
+		Evses: []simulator.Evse{
+			{
+				ID: 1,
+				Connectors: []simulator.Connector{
+					{
+						ID: 1,
+						Data: []simulator.Data{
+							{
+								Duration:      20,
+								ChargingState: 2,
+								ErrorCode:     0,
+								PowerFactor:   900,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	s.CreateSimConf(&sim)
+
+	nf := tmp + defSCFolder + "/" + sim.Name + ".json"
+
+	assert.FileExists(t, nf)
+
+	a := readFile(nf)
+
+	assert.NotEmpty(t, a.SimID)
+
+	assert.Equal(t, sim.Name, a.Name)
+
+	assert.Equal(t, sim.Type, a.Type)
+
+	assert.Equal(t, sim, a)
+}
+
+func TestCreateEmptySimulator(t *testing.T) {
+	tmp := t.TempDir()
+
+	createFolders(tmp)
+
+	s := before(tmp)
+
+	sim := simulator.Asset{}
+
+	s.CreateSimConf(&sim)
+
+	nf := tmp + defSCFolder + "/" + sim.Name + ".json"
+
+	assert.NoFileExists(t, nf)
+}
+
+func TestCreateSimulatorRequiredFields(t *testing.T) {
+	tmp := t.TempDir()
+
+	createFolders(tmp)
+
+	s := before(tmp)
+
+	// name
+	sim := simulator.Asset{
+		Type: simulator.Evc,
+		Protocol: simulator.Modbus,
+		Model: "asd",
+		Phases: simulator.One,
+		CurrentType: simulator.Ac,
+		Evses: []simulator.Evse{},
+	}
+
+	ok, _, _ := s.CreateSimConf(&sim)
+
+	nf := tmp + defSCFolder + "/" + sim.Name + ".json"
+
+	assert.NoFileExists(t, nf)
+
+	assert.False(t, ok)
+
+	// type
+	sim = simulator.Asset{
+		Name: "name",
+		Protocol: simulator.Modbus,
+		Model: "asd",
+		Phases: simulator.One,
+		CurrentType: simulator.Ac,
+		Evses: []simulator.Evse{},
+	}
+
+	ok, _, _ = s.CreateSimConf(&sim)
+
+	nf = tmp + defSCFolder + "/" + sim.Name + ".json"
+
+	assert.NoFileExists(t, nf)
+
+	assert.False(t, ok)
+
+	// protocol
+	sim = simulator.Asset{
+		Name: "name",
+		Type: simulator.Evc,
+		Model: "asd",
+		Phases: simulator.One,
+		CurrentType: simulator.Ac,
+		Evses: []simulator.Evse{},
+	}
+
+	ok, _, _ = s.CreateSimConf(&sim)
+
+	nf = tmp + defSCFolder + "/" + sim.Name + ".json"
+
+	assert.NoFileExists(t, nf)
+
+	assert.False(t, ok)
+
+	// phases
+	sim = simulator.Asset{
+		Name: "name",
+		Type: simulator.Evc,
+		Protocol: simulator.Modbus,
+		Model: "asd",
+		CurrentType: simulator.Ac,
+		Evses: []simulator.Evse{},
+	}
+
+	ok, _, _ = s.CreateSimConf(&sim)
+
+	nf = tmp + defSCFolder + "/" + sim.Name + ".json"
+
+	assert.NoFileExists(t, nf)
+
+	assert.False(t, ok)
+
+	// current type
+	sim = simulator.Asset{
+		Name: "name",
+		Type: simulator.Evc,
+		Protocol: simulator.Modbus,
+		Model: "asd",
+		Phases: simulator.One,
+		Evses: []simulator.Evse{},
+	}
+
+	ok, _, _ = s.CreateSimConf(&sim)
+
+	nf = tmp + defSCFolder + "/" + sim.Name + ".json"
+
+	assert.NoFileExists(t, nf)
+
+	assert.False(t, ok)
+
+	// evses
+	sim = simulator.Asset{
+		Name: "name",
+		Type: simulator.Evc,
+		Protocol: simulator.Modbus,
+		Model: "asd",
+		Phases: simulator.One,
+		CurrentType: simulator.Ac,
+	}
+
+	ok, _, _ = s.CreateSimConf(&sim)
+
+	nf = tmp + defSCFolder + "/" + sim.Name + ".json"
+
+	assert.NoFileExists(t, nf)
+
+	assert.False(t, ok)
+}
+
 func before(tmp string) simulator.Simulator {
 	t := translation.Translation{
 		L: translation.Translation{}.GetKey("en-GB"),
@@ -137,4 +320,12 @@ func generateInvalidModelConfFile(tmp string) {
 	b, _ := json.MarshalIndent(m, "", " ")
 
 	os.WriteFile(p, b, fs.FileMode(common.FilePermissions))
+}
+
+func readFile(p string) (a simulator.Asset) {
+	b, _ := os.ReadFile(p)
+
+	json.Unmarshal(b, &a)
+
+	return a
 }
