@@ -12,6 +12,7 @@ import (
 	"github.com/alexandrepasc/ev-chargers-simulator-2/translation"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/translation/text"
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 )
 
 /*
@@ -77,7 +78,19 @@ Handles the method not allowed response
 c	-	Gin context (*gin.Context)
 */
 func (a *API) methodNotAllowed(c *gin.Context) {
-	c.JSON(http.StatusMethodNotAllowed, gin.H{"message": a.Lang.Get(text.MethodNotAllowed)})
+	var r = ErroMsg{
+		Message: a.Lang.Get(text.MethodNotAllowed),
+	}
+
+	err := validator.New().Struct(r)
+
+	if err != nil {
+		common.Log("routeNotFound").Error(err)
+
+		internalServerError(c, a.Lang)
+	}
+
+	c.JSON(http.StatusMethodNotAllowed, r)
 }
 
 /*
@@ -86,5 +99,31 @@ Handles the route not found response
 c	-	Gin context (*gin.Context)
 */
 func (a *API) routeNotFound(c *gin.Context) {
-	c.JSON(http.StatusNotFound, gin.H{"message": a.Lang.Get(text.RouteNotFound)})
+	var r = ErroMsg{
+		Message: a.Lang.Get(text.RouteNotFound),
+	}
+
+	err := validator.New().Struct(r)
+
+	if err != nil {
+		common.Log("routeNotFound").Error(err)
+
+		internalServerError(c, a.Lang)
+	}
+
+	c.JSON(http.StatusNotFound, r)
+}
+
+func internalServerError(c *gin.Context, t translation.Translation) {
+	var r = ErroMsg{
+		Message: t.Get(text.InternalServerError),
+	}
+
+	err := validator.New().Struct(r)
+
+	if err != nil {
+		common.Log("internalServerError").Fatal(err)
+	}
+
+	c.JSON(http.StatusInternalServerError, r)
 }
