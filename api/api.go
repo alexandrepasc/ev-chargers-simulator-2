@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/alexandrepasc/ev-chargers-simulator-2/api/config"
+	"github.com/alexandrepasc/ev-chargers-simulator-2/api/errors"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/api/health"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/api/simulators"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/common"
@@ -36,7 +37,8 @@ func (a *API) New() (r *gin.Engine) {
 	config.Configs(r)
 
 	s := simulators.Simulators{
-		Sim: a.Sim,
+		Sim:  a.Sim,  // Simulator package
+		Lang: a.Lang, // Translation language setting
 	}
 	s.Simulators(r)
 
@@ -78,7 +80,7 @@ Handles the method not allowed response
 c	-	Gin context (*gin.Context)
 */
 func (a *API) methodNotAllowed(c *gin.Context) {
-	var r = ErroMsg{
+	var r = errors.ErroMsg{
 		Message: a.Lang.Get(text.MethodNotAllowed),
 	}
 
@@ -87,10 +89,10 @@ func (a *API) methodNotAllowed(c *gin.Context) {
 	if err != nil {
 		common.Log("routeNotFound").Error(err)
 
-		internalServerError(c, a.Lang)
+		errors.InternalServerError(c, a.Lang)
+	} else {
+		c.JSON(http.StatusMethodNotAllowed, r)
 	}
-
-	c.JSON(http.StatusMethodNotAllowed, r)
 }
 
 /*
@@ -99,7 +101,7 @@ Handles the route not found response
 c	-	Gin context (*gin.Context)
 */
 func (a *API) routeNotFound(c *gin.Context) {
-	var r = ErroMsg{
+	var r = errors.ErroMsg{
 		Message: a.Lang.Get(text.RouteNotFound),
 	}
 
@@ -108,22 +110,8 @@ func (a *API) routeNotFound(c *gin.Context) {
 	if err != nil {
 		common.Log("routeNotFound").Error(err)
 
-		internalServerError(c, a.Lang)
+		errors.InternalServerError(c, a.Lang)
+	} else {
+		c.JSON(http.StatusNotFound, r)
 	}
-
-	c.JSON(http.StatusNotFound, r)
-}
-
-func internalServerError(c *gin.Context, t translation.Translation) {
-	var r = ErroMsg{
-		Message: t.Get(text.InternalServerError),
-	}
-
-	err := validator.New().Struct(r)
-
-	if err != nil {
-		common.Log("internalServerError").Fatal(err)
-	}
-
-	c.JSON(http.StatusInternalServerError, r)
 }

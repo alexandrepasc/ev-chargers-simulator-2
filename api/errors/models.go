@@ -1,4 +1,4 @@
-package api
+package errors
 
 /*
 Model for the api response body, with the informative message.
