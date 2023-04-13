@@ -143,12 +143,12 @@ func TestCreateSimulatorRequiredFields(t *testing.T) {
 
 	// name
 	sim := simulator.Asset{
-		Type: simulator.Evc,
-		Protocol: simulator.Modbus,
-		Model: "asd",
-		Phases: simulator.One,
+		Type:        simulator.Evc,
+		Protocol:    simulator.Modbus,
+		Model:       "asd",
+		Phases:      simulator.One,
 		CurrentType: simulator.Ac,
-		Evses: []simulator.Evse{},
+		Evses:       []simulator.Evse{},
 	}
 
 	ok, _, _ := s.CreateSimConf(&sim)
@@ -161,12 +161,12 @@ func TestCreateSimulatorRequiredFields(t *testing.T) {
 
 	// type
 	sim = simulator.Asset{
-		Name: "name",
-		Protocol: simulator.Modbus,
-		Model: "asd",
-		Phases: simulator.One,
+		Name:        "name",
+		Protocol:    simulator.Modbus,
+		Model:       "asd",
+		Phases:      simulator.One,
 		CurrentType: simulator.Ac,
-		Evses: []simulator.Evse{},
+		Evses:       []simulator.Evse{},
 	}
 
 	ok, _, _ = s.CreateSimConf(&sim)
@@ -179,12 +179,12 @@ func TestCreateSimulatorRequiredFields(t *testing.T) {
 
 	// protocol
 	sim = simulator.Asset{
-		Name: "name",
-		Type: simulator.Evc,
-		Model: "asd",
-		Phases: simulator.One,
+		Name:        "name",
+		Type:        simulator.Evc,
+		Model:       "asd",
+		Phases:      simulator.One,
 		CurrentType: simulator.Ac,
-		Evses: []simulator.Evse{},
+		Evses:       []simulator.Evse{},
 	}
 
 	ok, _, _ = s.CreateSimConf(&sim)
@@ -197,12 +197,12 @@ func TestCreateSimulatorRequiredFields(t *testing.T) {
 
 	// phases
 	sim = simulator.Asset{
-		Name: "name",
-		Type: simulator.Evc,
-		Protocol: simulator.Modbus,
-		Model: "asd",
+		Name:        "name",
+		Type:        simulator.Evc,
+		Protocol:    simulator.Modbus,
+		Model:       "asd",
 		CurrentType: simulator.Ac,
-		Evses: []simulator.Evse{},
+		Evses:       []simulator.Evse{},
 	}
 
 	ok, _, _ = s.CreateSimConf(&sim)
@@ -215,12 +215,12 @@ func TestCreateSimulatorRequiredFields(t *testing.T) {
 
 	// current type
 	sim = simulator.Asset{
-		Name: "name",
-		Type: simulator.Evc,
+		Name:     "name",
+		Type:     simulator.Evc,
 		Protocol: simulator.Modbus,
-		Model: "asd",
-		Phases: simulator.One,
-		Evses: []simulator.Evse{},
+		Model:    "asd",
+		Phases:   simulator.One,
+		Evses:    []simulator.Evse{},
 	}
 
 	ok, _, _ = s.CreateSimConf(&sim)
@@ -233,11 +233,11 @@ func TestCreateSimulatorRequiredFields(t *testing.T) {
 
 	// evses
 	sim = simulator.Asset{
-		Name: "name",
-		Type: simulator.Evc,
-		Protocol: simulator.Modbus,
-		Model: "asd",
-		Phases: simulator.One,
+		Name:        "name",
+		Type:        simulator.Evc,
+		Protocol:    simulator.Modbus,
+		Model:       "asd",
+		Phases:      simulator.One,
 		CurrentType: simulator.Ac,
 	}
 
