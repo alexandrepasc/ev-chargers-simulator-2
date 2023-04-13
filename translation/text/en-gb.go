@@ -21,4 +21,5 @@ var EnGB = map[Key]string{
 	ReadModelsConfsFiles:   "Read models configuration files.",
 	CreateSimConfFile:      "Created simulator configuration file.",
 	CreateSimConfFileError: "Unexpected error creating the simulator configuration file.",
+	InternalServerError:    "Something went very wrong.",
 }

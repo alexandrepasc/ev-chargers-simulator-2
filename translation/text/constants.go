@@ -23,4 +23,5 @@ const (
 	ReadModelsConfsFiles   Key = "ReadModelsConfsFiles"   // Read the models configuration files
 	CreateSimConfFile      Key = "CreateSimConfFile"      // Create a new simulator configuration file
 	CreateSimConfFileError Key = "CreateSimConfFileError" // Unable to create the simulator configuration file
+	InternalServerError    Key = "InternalServerError"    // API message returned when something breaks
 )

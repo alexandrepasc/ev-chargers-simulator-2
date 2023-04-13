@@ -12,4 +12,5 @@ var PtPT = map[Key]string{
 	ReadModelsConfsFiles:   "Ler os arquivos de configuração dos modelos.",
 	CreateSimConfFile:      "Fichheiro de configuração do simulador criado.",
 	CreateSimConfFileError: "Erro inesperado ao criar o ficheiro de configuração do simulador.",
+	InternalServerError:    "Algo correu muito mal.",
 }
