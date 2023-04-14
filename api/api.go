@@ -13,7 +13,6 @@ import (
 	"github.com/alexandrepasc/ev-chargers-simulator-2/translation"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/translation/text"
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
 )
 
 /*
@@ -84,13 +83,9 @@ func (a *API) methodNotAllowed(c *gin.Context) {
 		Message: a.Lang.Get(text.MethodNotAllowed),
 	}
 
-	err := validator.New().Struct(r)
+	ok := errors.StructValidate(r, c, a.Lang)
 
-	if err != nil {
-		common.Log("routeNotFound").Error(err)
-
-		errors.InternalServerError(c, a.Lang)
-	} else {
+	if ok {
 		c.JSON(http.StatusMethodNotAllowed, r)
 	}
 }
@@ -105,13 +100,9 @@ func (a *API) routeNotFound(c *gin.Context) {
 		Message: a.Lang.Get(text.RouteNotFound),
 	}
 
-	err := validator.New().Struct(r)
+	ok := errors.StructValidate(r, c, a.Lang)
 
-	if err != nil {
-		common.Log("routeNotFound").Error(err)
-
-		errors.InternalServerError(c, a.Lang)
-	} else {
+	if ok {
 		c.JSON(http.StatusNotFound, r)
 	}
 }

@@ -10,6 +10,20 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
+func StructValidate(e ErroMsg, c *gin.Context, t translation.Translation) bool {
+	err := validator.New().Struct(e)
+
+	if err != nil {
+		common.Log("StructValidate").Error(err)
+
+		InternalServerError(c, t)
+
+		return false
+	}
+
+	return true
+}
+
 func InternalServerError(c *gin.Context, t translation.Translation) {
 	var r = ErroMsg{
 		Message: t.Get(text.InternalServerError),
