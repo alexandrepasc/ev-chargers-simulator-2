@@ -2,6 +2,7 @@
 package simulators_test
 
 import (
+	"bytes"
 	"encoding/json"
 	"io/fs"
 	"net/http"
@@ -10,12 +11,15 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/alexandrepasc/ev-chargers-simulator-2/api/errors"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/api/simulators"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/common"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/simulator"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/simulator/model"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/translation"
+	"github.com/alexandrepasc/ev-chargers-simulator-2/translation/text"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -27,7 +31,7 @@ const (
 func TestGetSimulators(t *testing.T) {
 	r := gin.Default()
 
-	al := []simulator.Asset{
+	al := []*simulator.Asset{
 		{
 			Name:        "a_name",
 			Type:        simulator.Evc,
@@ -49,7 +53,7 @@ func TestGetSimulators(t *testing.T) {
 	}
 	ml := []model.OcppModel{}
 
-	sim := before(t, al, ml)
+	sim, _ := before(t, al, ml)
 
 	s := simulators.Simulators{
 		Sim: sim,
@@ -83,10 +87,10 @@ func TestGetSimulators(t *testing.T) {
 func TestGetSimulatorsNoAssets(t *testing.T) {
 	r := gin.Default()
 
-	al := []simulator.Asset{}
+	al := []*simulator.Asset{}
 	ml := []model.OcppModel{}
 
-	sim := before(t, al, ml)
+	sim, _ := before(t, al, ml)
 
 	s := simulators.Simulators{
 		Sim: sim,
@@ -114,7 +118,7 @@ func TestGetSimulatorsNoAssets(t *testing.T) {
 func TestGetSimModels(t *testing.T) {
 	r := gin.Default()
 
-	al := []simulator.Asset{}
+	al := []*simulator.Asset{}
 	ml := []model.OcppModel{
 		{
 			SerialNumb: "123qwe",
@@ -130,7 +134,7 @@ func TestGetSimModels(t *testing.T) {
 		},
 	}
 
-	sim := before(t, al, ml)
+	sim, _ := before(t, al, ml)
 
 	sim.Al = al
 	sim.Oml = ml
@@ -169,10 +173,10 @@ func TestGetSimModels(t *testing.T) {
 func TestGetSimModelsNoModels(t *testing.T) {
 	r := gin.Default()
 
-	al := []simulator.Asset{}
+	al := []*simulator.Asset{}
 	ml := []model.OcppModel{}
 
-	sim := before(t, al, ml)
+	sim, _ := before(t, al, ml)
 
 	sim.Al = al
 	sim.Oml = ml
@@ -200,26 +204,263 @@ func TestGetSimModelsNoModels(t *testing.T) {
 	assert.Nil(t, a.Models)
 }
 
-// func TestPostSimulators(t *testing.T) {
-// 	r := gin.Default()
+func TestPostSimulators(t *testing.T) {
+	r := gin.Default()
 
-// 	al := []simulator.Asset{}
-// 	ml := []model.OcppModel{}
+	al := []*simulator.Asset{}
+	ml := []model.OcppModel{}
 
-// 	s := simulators.Simulators{
-// 		Al:  al,
-// 		Oml: ml,
-// 	}
+	sim, tmp := before(t, al, ml)
 
-// 	s.Simulators(r)
+	sim.Al = al
+	sim.Oml = ml
 
-// 	w := httptest.NewRecorder()
-// }
+	s := simulators.Simulators{
+		Sim: sim,
+	}
 
-func before(t *testing.T, al []simulator.Asset, oml []model.OcppModel) simulator.Simulator {
+	body := simulator.Asset{
+		Name:          "name",
+		Type:          simulator.Evc,
+		Protocol:      simulator.Modbus,
+		StartCharging: true,
+		Phases:        simulator.One,
+		CurrentType:   simulator.Ac,
+		Evses: []simulator.Evse{
+			{
+				ID: 1,
+				Connectors: []simulator.Connector{
+					{
+						ID: 1,
+					},
+				},
+			},
+		},
+	}
+
+	j, _ := json.Marshal(body)
+	b := bytes.NewReader(j)
+
+	s.Simulators(r)
+
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest("POST", ep, b)
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusCreated, w.Code)
+
+	a := simulator.Asset{}
+	json.Unmarshal(w.Body.Bytes(), &a)
+
+	_, err := uuid.Parse(a.SimID.String())
+	assert.Nil(t, err)
+
+	assert.Equal(t, body.Name, a.Name)
+
+	assert.Equal(t, body.Type, a.Type)
+
+	assert.Equal(t, body.Protocol, a.Protocol)
+
+	assert.Equal(t, body.Phases, a.Phases)
+
+	assert.Equal(t, body.CurrentType, a.CurrentType)
+
+	assert.Equal(t, body.Evses, a.Evses)
+
+	assert.FileExists(t, tmp+"/simConf/"+body.Name+".json")
+}
+
+func TestPostSimulatorsRequiredFields(t *testing.T) {
+	r := gin.Default()
+
+	al := []*simulator.Asset{}
+	ml := []model.OcppModel{}
+
+	sim, _ := before(t, al, ml)
+
+	sim.Al = al
+	sim.Oml = ml
+
+	s := simulators.Simulators{
+		Sim: sim,
+	}
+
+	bn, bt, bp, bst, bph, bc, be := postSimulatorsRequiredFields()
+
+	// name
+	j, _ := json.Marshal(bn)
+	b := bytes.NewReader(j)
+
+	s.Simulators(r)
+
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest("POST", ep, b)
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+
+	// type
+	j, _ = json.Marshal(bt)
+	b = bytes.NewReader(j)
+
+	req, _ = http.NewRequest("POST", ep, b)
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+
+	// protocol
+	j, _ = json.Marshal(bp)
+	b = bytes.NewReader(j)
+
+	req, _ = http.NewRequest("POST", ep, b)
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+
+	// start charging
+	j, _ = json.Marshal(bst)
+	b = bytes.NewReader(j)
+
+	req, _ = http.NewRequest("POST", ep, b)
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+
+	// phases
+	j, _ = json.Marshal(bph)
+	b = bytes.NewReader(j)
+
+	req, _ = http.NewRequest("POST", ep, b)
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+
+	// current type
+	j, _ = json.Marshal(bc)
+	b = bytes.NewReader(j)
+
+	req, _ = http.NewRequest("POST", ep, b)
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+
+	// evses
+	j, _ = json.Marshal(be)
+	b = bytes.NewReader(j)
+
+	req, _ = http.NewRequest("POST", ep, b)
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestPostSimulatorsBadRequestBody(t *testing.T) {
+	r := gin.Default()
+
+	al := []*simulator.Asset{}
+	ml := []model.OcppModel{}
+
+	sim, _ := before(t, al, ml)
+
+	sim.Al = al
+	sim.Oml = ml
+
+	s := simulators.Simulators{
+		Sim:  sim,
+		Lang: translation.Translation{L: translation.EnGb},
+	}
+
+	j, _ := json.Marshal("{nothing: atall}")
+	b := bytes.NewReader(j)
+
+	s.Simulators(r)
+
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest("POST", ep, b)
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+
+	a := errors.ErroMsg{}
+	json.Unmarshal(w.Body.Bytes(), &a)
+
+	assert.Equal(t, translation.Translation{L: translation.EnGb}.Get(text.RequestBodyDoesntMatch), a.Message)
+}
+
+func TestNotAblePostSimulatorsSameName(t *testing.T) {
+	r := gin.Default()
+
+	al := []*simulator.Asset{
+		{
+			Name: "test1",
+		},
+	}
+	ml := []model.OcppModel{}
+
+	sim, _ := before(t, al, ml)
+
+	sim.Al = al
+	sim.Oml = ml
+
+	s := simulators.Simulators{
+		Sim:  sim,
+		Lang: translation.Translation{L: translation.EnGb},
+	}
+
+	body := simulator.Asset{
+		Name:          "test1",
+		Type:          simulator.Evc,
+		Protocol:      simulator.Modbus,
+		StartCharging: true,
+		Phases:        simulator.One,
+		CurrentType:   simulator.Ac,
+		Evses: []simulator.Evse{
+			{
+				ID: 1,
+				Connectors: []simulator.Connector{
+					{
+						ID: 1,
+					},
+				},
+			},
+		},
+	}
+
+	j, _ := json.Marshal(body)
+	b := bytes.NewReader(j)
+
+	s.Simulators(r)
+
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest("POST", ep, b)
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+
+	a := errors.ErroMsg{}
+	json.Unmarshal(w.Body.Bytes(), &a)
+
+	assert.Equal(t, translation.Translation{L: translation.EnGb}.Get(text.CreateSimConfFileNameExists), a.Message)
+}
+
+func before(t *testing.T, al []*simulator.Asset, oml []model.OcppModel) (s simulator.Simulator, tmp string) {
 	t.Helper()
 
-	tmp := t.TempDir()
+	tmp = t.TempDir()
 
 	os.Mkdir(tmp+"/simConf", fs.FileMode(common.FolderPermissions))
 
@@ -231,15 +472,15 @@ func before(t *testing.T, al []simulator.Asset, oml []model.OcppModel) simulator
 		L: translation.Translation{}.GetKey("en-GB"),
 	}
 
-	s := simulator.Simulator{
+	s = simulator.Simulator{
 		Scp: tmp + "/simConf",
 		L:   l,
 	}
 
-	return s
+	return s, tmp
 }
 
-func generateConfFiles(tmp string, al []simulator.Asset, oml []model.OcppModel) {
+func generateConfFiles(tmp string, al []*simulator.Asset, oml []model.OcppModel) {
 	for i := 0; i < len(al); i++ {
 		p := tmp + "/simConf" + "/" + al[i].Name + ".json"
 
@@ -261,4 +502,78 @@ func generateConfFiles(tmp string, al []simulator.Asset, oml []model.OcppModel) 
 
 		os.WriteFile(p, b, fs.FileMode(common.FilePermissions))
 	}
+}
+
+func postSimulatorsRequiredFields() (bn, bt, bp, bst, bph, bc, be simulator.Asset) { //nolint:gocritic // because tests
+	// name
+	bn = simulator.Asset{
+		Type:          simulator.Evc,
+		Protocol:      simulator.Modbus,
+		StartCharging: true,
+		Phases:        simulator.One,
+		CurrentType:   simulator.Ac,
+		Evses:         []simulator.Evse{},
+	}
+
+	// type
+	bt = simulator.Asset{
+		Name:          "name",
+		Protocol:      simulator.Modbus,
+		StartCharging: true,
+		Phases:        simulator.One,
+		CurrentType:   simulator.Ac,
+		Evses:         []simulator.Evse{},
+	}
+
+	// protocol
+	bp = simulator.Asset{
+		Name:          "name",
+		Type:          simulator.Evc,
+		StartCharging: true,
+		Phases:        simulator.One,
+		CurrentType:   simulator.Ac,
+		Evses:         []simulator.Evse{},
+	}
+
+	// start charging
+	bst = simulator.Asset{
+		Name:        "name",
+		Type:        simulator.Evc,
+		Protocol:    simulator.Modbus,
+		Phases:      simulator.One,
+		CurrentType: simulator.Ac,
+		Evses:       []simulator.Evse{},
+	}
+
+	// phases
+	bph = simulator.Asset{
+		Name:          "name",
+		Type:          simulator.Evc,
+		Protocol:      simulator.Modbus,
+		StartCharging: true,
+		CurrentType:   simulator.Ac,
+		Evses:         []simulator.Evse{},
+	}
+
+	// current type
+	bc = simulator.Asset{
+		Name:          "name",
+		Type:          simulator.Evc,
+		Protocol:      simulator.Modbus,
+		StartCharging: true,
+		Phases:        simulator.One,
+		Evses:         []simulator.Evse{},
+	}
+
+	// evses
+	be = simulator.Asset{
+		Name:          "name",
+		Type:          simulator.Evc,
+		Protocol:      simulator.Modbus,
+		StartCharging: true,
+		Phases:        simulator.One,
+		CurrentType:   simulator.Ac,
+	}
+
+	return bn, bt, bp, bst, bph, bc, be
 }
