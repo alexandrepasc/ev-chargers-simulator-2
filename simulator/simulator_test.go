@@ -251,6 +251,64 @@ func TestCreateSimulatorRequiredFields(t *testing.T) {
 	assert.False(t, ok)
 }
 
+func TestCanNotCreateSimulatorSameName(t *testing.T) {
+	tmp := t.TempDir()
+
+	createFolders(tmp)
+
+	s := before(tmp)
+
+	generateAssetConfFiles(1, tmp)
+
+	sim := simulator.Asset{
+		Name:          "sim0",
+		Type:          simulator.Pm,
+		Protocol:      simulator.Ocpp16,
+		Model:         "model",
+		StartCharging: true,
+		Phases:        simulator.Three,
+		CurrentType:   simulator.Dc,
+		Evses: []simulator.Evse{
+			{
+				ID: 1,
+				Connectors: []simulator.Connector{
+					{
+						ID: 1,
+						Data: []simulator.Data{
+							{
+								Duration:      20,
+								ChargingState: 2,
+								ErrorCode:     0,
+								PowerFactor:   900,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	ok, _, _ := s.CreateSimConf(&sim)
+
+	assert.False(t, ok)
+
+	nf := tmp + defSCFolder + "/" + sim.Name + ".json"
+
+	assert.FileExists(t, nf)
+
+	a := readFile(nf)
+
+	assert.Empty(t, a.SimID)
+
+	assert.NotEqual(t, sim.Type, a.Type)
+
+	assert.NotEqual(t, sim.Protocol, a.Protocol)
+
+	assert.NotEqual(t, sim.Phases, a.Phases)
+
+	assert.NotEqual(t, sim, a)
+}
+
 func before(tmp string) simulator.Simulator {
 	t := translation.Translation{
 		L: translation.Translation{}.GetKey("en-GB"),
@@ -273,9 +331,10 @@ func createFolders(tmp string) {
 func generateAssetConfFiles(n int64, tmp string) {
 	for i := int64(0); i < n; i++ {
 		a := simulator.Asset{
+			Name:     "sim0",
 			Type:     simulator.Evc,
 			Protocol: simulator.Ocpp201,
-			Phases:   1,
+			Phases:   simulator.One,
 		}
 
 		p := tmp + defSCFolder + "/sim" + strconv.FormatInt(i, 10) + ".json"

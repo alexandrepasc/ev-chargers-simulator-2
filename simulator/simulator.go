@@ -17,7 +17,7 @@ import (
 type Simulator struct {
 	Scp string                  // simulator configuration path
 	L   translation.Translation // Translation language setting
-	Al  []Asset
+	Al  []*Asset
 	Oml []model.OcppModel
 }
 
@@ -27,7 +27,7 @@ Get the simulators configuration files and the model type files, read them and c
 
 Returns the lists of structures related to the two types of files.
 */
-func (s *Simulator) GetSimsConfs() (al []Asset, oml []model.OcppModel) {
+func (s *Simulator) GetSimsConfs() (al []*Asset, oml []model.OcppModel) {
 	var f = s.getSimConfigFIles()
 
 	al = s.readSimConfigFiles(f)
@@ -41,6 +41,21 @@ func (s *Simulator) GetSimsConfs() (al []Asset, oml []model.OcppModel) {
 	s.Oml = oml
 
 	return al, oml
+}
+
+/*
+Get the simulator configuration files, reads them and convert them into an Asset model array.
+
+Returns the array of the Asset with the data from the files ([]Asset).
+*/
+func (s *Simulator) GetSimulators() (al []*Asset) {
+	var f = s.getSimConfigFIles()
+
+	al = s.readSimConfigFiles(f)
+
+	s.Al = al
+
+	return al
 }
 
 /*
@@ -66,6 +81,20 @@ func (s *Simulator) CreateSimConf(a *Asset) (ok bool, msg string, na *Asset) {
 		common.Log("CreateSimConf").Error(err)
 
 		return false, err.Error(), na
+	}
+
+	var al = s.GetSimulators()
+	
+	var nm = true
+
+	for _, i := range al {
+		if i.Name == a.Name {
+			nm = false
+		}
+	}
+
+	if !nm {
+		return false, s.L.Get(text.CreateSimConfFileNameExists), na
 	}
 
 	ok, f := generateFile(s.Scp, a.Name, s.L)
@@ -103,7 +132,7 @@ Read the configuration files, unmarshal each to the Asset struct, and return and
 
 f	-	File system entries list ([]fs.DirEntry)
 */
-func (s *Simulator) readSimConfigFiles(f []fs.DirEntry) (as []Asset) {
+func (s *Simulator) readSimConfigFiles(f []fs.DirEntry) (as []*Asset) {
 	common.Log("readSimConfigFiles").Info(s.L.Get(text.ReadSimsConfsFiles))
 
 	for _, entry := range f {
@@ -117,7 +146,7 @@ func (s *Simulator) readSimConfigFiles(f []fs.DirEntry) (as []Asset) {
 			a, e := unmarshalAssetJSON(bv)
 
 			if e {
-				as = append(as, a)
+				as = append(as, &a)
 			}
 		}
 	}
