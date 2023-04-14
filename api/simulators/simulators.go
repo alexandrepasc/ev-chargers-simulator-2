@@ -63,7 +63,7 @@ func (s *Simulators) postSimulators(c *gin.Context) {
 		ok := errors.StructValidate(r, c, s.Lang)
 
 		if ok {
-			c.JSON(http.StatusBadRequest, r)
+			c.IndentedJSON(http.StatusBadRequest, r)
 		}
 
 		return
@@ -81,7 +81,7 @@ func (s *Simulators) postSimulators(c *gin.Context) {
 		}
 		v := errors.StructValidate(r, c, s.Lang)
 		if v {
-			c.JSON(http.StatusBadRequest, r)
+			c.IndentedJSON(http.StatusBadRequest, r)
 		}
 	}
 }
