@@ -75,12 +75,13 @@ func TestCreateSimulator(t *testing.T) {
 	s := before(tmp)
 
 	sim := simulator.Asset{
-		Name:        "sim1",
-		Type:        simulator.Evc,
-		Protocol:    simulator.Ocpp201,
-		Model:       "model",
-		Phases:      simulator.One,
-		CurrentType: simulator.Ac,
+		Name:          "sim1",
+		Type:          simulator.Evc,
+		Protocol:      simulator.Ocpp201,
+		Model:         "model",
+		StartCharging: true,
+		Phases:        simulator.One,
+		CurrentType:   simulator.Ac,
 		Evses: []simulator.Evse{
 			{
 				ID: 1,
