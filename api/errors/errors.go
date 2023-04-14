@@ -35,5 +35,5 @@ func InternalServerError(c *gin.Context, t translation.Translation) {
 		common.Log("internalServerError").Fatal(err)
 	}
 
-	c.JSON(http.StatusInternalServerError, r)
+	c.IndentedJSON(http.StatusInternalServerError, r)
 }

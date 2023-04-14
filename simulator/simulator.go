@@ -84,7 +84,7 @@ func (s *Simulator) CreateSimConf(a *Asset) (ok bool, msg string, na *Asset) {
 	}
 
 	var al = s.GetSimulators()
-	
+
 	var nm = true
 
 	for _, i := range al {

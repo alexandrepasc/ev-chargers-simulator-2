@@ -86,7 +86,7 @@ func (a *API) methodNotAllowed(c *gin.Context) {
 	ok := errors.StructValidate(r, c, a.Lang)
 
 	if ok {
-		c.JSON(http.StatusMethodNotAllowed, r)
+		c.IndentedJSON(http.StatusMethodNotAllowed, r)
 	}
 }
 
@@ -103,6 +103,6 @@ func (a *API) routeNotFound(c *gin.Context) {
 	ok := errors.StructValidate(r, c, a.Lang)
 
 	if ok {
-		c.JSON(http.StatusNotFound, r)
+		c.IndentedJSON(http.StatusNotFound, r)
 	}
 }
