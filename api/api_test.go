@@ -31,11 +31,13 @@ func TestNotFound(t *testing.T) {
 
 	req, _ := http.NewRequest("GET", iep, http.NoBody)
 
+	e := "{\n    \"message\": \"Route not found.\"\n}"
+
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusNotFound, w.Code)
 
-	assert.Equal(t, "{\"message\":\"Route not found.\"}", w.Body.String())
+	assert.Equal(t, e, w.Body.String())
 }
 
 func TestNotAllowed(t *testing.T) {
@@ -43,11 +45,13 @@ func TestNotAllowed(t *testing.T) {
 
 	req, _ := http.NewRequest("POST", ep, http.NoBody)
 
+	e := "{\n    \"message\": \"Method not allowed.\"\n}"
+
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusMethodNotAllowed, w.Code)
 
-	assert.Equal(t, "{\"message\":\"Method not allowed.\"}", w.Body.String())
+	assert.Equal(t, e, w.Body.String())
 }
 
 func TestPtLanguage(t *testing.T) {
@@ -65,11 +69,13 @@ func TestPtLanguage(t *testing.T) {
 
 	req, _ := http.NewRequest("POST", ep, http.NoBody)
 
+	e := "{\n    \"message\": \"Método não permitido.\"\n}"
+
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusMethodNotAllowed, w.Code)
 
-	assert.Equal(t, "{\"message\":\"Método não permitido.\"}", w.Body.String())
+	assert.Equal(t, e, w.Body.String())
 }
 
 func beforeEach() (r *gin.Engine, w *httptest.ResponseRecorder) {
