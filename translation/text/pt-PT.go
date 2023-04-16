@@ -13,6 +13,10 @@ var PtPT = map[Key]string{
 	CreateSimConfFile:           "Fichheiro de configuração do simulador criado.",
 	CreateSimConfFileError:      "Erro inesperado ao criar o ficheiro de configuração do simulador.",
 	CreateSimConfFileNameExists: "O nome do simulador já existe.",
+	UpdateSimConfFileNotFoud:    "Simulador não encontrado.",
+	UpdateSimConfFile:           "Actualiza o ficheiro de configuração do simulador.",
+	OpenSimConfFileError:        "Erro a abrir o ficheiro de configuração do simulador.",
+	WriteSimConfFileError:       "Erro a escrever no ficheiro de configuração do simulador.",
 	InternalServerError:         "Algo correu muito mal.",
 	RequestBodyDoesntMatch:      "O corpo do pedido está mal formado.",
 }

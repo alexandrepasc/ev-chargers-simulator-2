@@ -22,6 +22,10 @@ var EnGB = map[Key]string{
 	CreateSimConfFile:           "Created simulator configuration file.",
 	CreateSimConfFileError:      "Unexpected error creating the simulator configuration file.",
 	CreateSimConfFileNameExists: "The simulator name already exists.",
+	UpdateSimConfFileNotFoud:    "Simulator not found.",
+	UpdateSimConfFile:           "Update simulator configuration file.",
+	OpenSimConfFileError:        "Error opening the simulator configuration file.",
+	WriteSimConfFileError:       "Error writing the simulator configuration file.",
 	InternalServerError:         "Something went very wrong.",
 	RequestBodyDoesntMatch:      "The request body is malformed.",
 }

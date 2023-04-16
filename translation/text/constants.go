@@ -24,6 +24,10 @@ const (
 	CreateSimConfFile           Key = "CreateSimConfFile"          // Create a new simulator configuration file
 	CreateSimConfFileError      Key = "CreateSimConfFileError"     // Unable to create the simulator configuration file
 	CreateSimConfFileNameExists Key = "CreateSimConfFileNameExist" // The name of the new asset already exists
+	UpdateSimConfFileNotFoud    Key = "UpdateSimConfFileNotFoud"   // Not found the configuration file
+	UpdateSimConfFile           Key = "UpdateSimConfFile"          // Update simulator configuration file
+	OpenSimConfFileError        Key = "OpenSimConfFileError"       // Error opening the simulator configuration file
+	WriteSimConfFileError       Key = "WriteSimConfFileError"      // Error writing the simulator configuration file
 	InternalServerError         Key = "InternalServerError"        // API message returned when something breaks
 	RequestBodyDoesntMatch      Key = "RequestBodyDoesntMatch"     // API message returned when the request body doesn't bind to the model
 )
