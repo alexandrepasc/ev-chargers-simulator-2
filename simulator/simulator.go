@@ -111,6 +111,59 @@ func (s *Simulator) CreateSimConf(a *Asset) (ok bool, msg string, na *Asset) {
 }
 
 /*
+Receive the uuid of the simulator the will be updated and the changes. This will replace the
+configurations entirely, it will not modify the only one value.
+
+Returns true (bool), an empty string (string), and the new configuration in case of success
+(*Asset).
+
+Will return false, the error message, and an empty Asset.
+
+id	-	Simulator identifier (uuid.UUID)
+
+a	-	Asset structure with the new configuration (*Asset)
+*/
+func (s *Simulator) UpdateSimConf(id uuid.UUID, a *Asset) (ok bool, msg string, na *Asset) {
+	var al = s.GetSimulators()
+
+	for _, i := range al {
+		if i.SimID != id {
+			continue
+		}
+
+		na = a
+
+		na.SimID = i.SimID
+
+		na.Name = i.Name
+
+		e := validator.New().Struct(a)
+
+		if e != nil {
+			common.Log("UpdateSimConf").Error(e)
+
+			return false, s.L.Get(text.RequestBodyDoesntMatch), &Asset{}
+		}
+
+		common.Log("UpdateSimConf").Info(s.L.Get(text.UpdateSimConfFile))
+
+		_, b := marshalAssetToJSON(na)
+
+		err := os.WriteFile(s.Scp+"/"+na.Name+".json", b, fs.FileMode(common.FilePermissions))
+
+		if err != nil {
+			common.Log("UpdateSimConf").Error(err)
+
+			return false, s.L.Get(text.WriteSimConfFileError), &Asset{}
+		}
+
+		return true, "", na
+	}
+
+	return false, s.L.Get(text.UpdateSimConfFileNotFoud), &Asset{}
+}
+
+/*
 Get the list of files that are stored in the simulator configurations folder.
 
 Returns an array of the file system entries stored in the folder ([]fs.DirEntry)

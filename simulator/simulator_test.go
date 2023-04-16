@@ -12,6 +12,8 @@ import (
 	"github.com/alexandrepasc/ev-chargers-simulator-2/simulator"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/simulator/model"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/translation"
+	"github.com/alexandrepasc/ev-chargers-simulator-2/translation/text"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -298,7 +300,9 @@ func TestCanNotCreateSimulatorSameName(t *testing.T) {
 
 	a := readFile(nf)
 
-	assert.Empty(t, a.SimID)
+	eid, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0")
+
+	assert.Equal(t, eid, a.SimID)
 
 	assert.NotEqual(t, sim.Type, a.Type)
 
@@ -307,6 +311,185 @@ func TestCanNotCreateSimulatorSameName(t *testing.T) {
 	assert.NotEqual(t, sim.Phases, a.Phases)
 
 	assert.NotEqual(t, sim, a)
+}
+
+func TestUpdateSimulator(t *testing.T) {
+	tmp := t.TempDir()
+
+	createFolders(tmp)
+
+	s := before(tmp)
+
+	generateAssetConfFiles(1, tmp)
+
+	id, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0")
+
+	a := simulator.Asset{
+		Type:        simulator.Pm,
+		Protocol:    simulator.Ocpp16,
+		Phases:      simulator.Three,
+		CurrentType: simulator.Dc,
+		Evses:       []simulator.Evse{},
+	}
+
+	ab, _, aa := s.UpdateSimConf(id, &a)
+
+	assert.True(t, ab)
+
+	assert.Equal(t, id, aa.SimID)
+
+	assert.Equal(t, "sim0", aa.Name)
+
+	assert.Equal(t, simulator.Pm, aa.Type)
+
+	assert.Equal(t, simulator.Ocpp16, aa.Protocol)
+
+	assert.Equal(t, simulator.Three, aa.Phases)
+
+	p := tmp + defSCFolder + "/sim0.json"
+
+	af := readFile(p)
+
+	assert.Equal(t, id, af.SimID)
+
+	assert.Equal(t, "sim0", af.Name)
+
+	assert.Equal(t, simulator.Pm, af.Type)
+
+	assert.Equal(t, simulator.Ocpp16, af.Protocol)
+
+	assert.Equal(t, simulator.Three, af.Phases)
+}
+
+func TestUpdateSimulatorWithWrongId(t *testing.T) {
+	tmp := t.TempDir()
+
+	createFolders(tmp)
+
+	s := before(tmp)
+
+	generateAssetConfFiles(1, tmp)
+
+	id, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa9")
+
+	a := simulator.Asset{
+		Type:     simulator.Pm,
+		Protocol: simulator.Ocpp16,
+		Phases:   simulator.Three,
+	}
+
+	ab, am, aa := s.UpdateSimConf(id, &a)
+
+	assert.False(t, ab)
+
+	assert.Equal(t, s.L.Get(text.UpdateSimConfFileNotFoud), am)
+
+	assert.Empty(t, aa)
+
+	p := tmp + defSCFolder + "/sim0.json"
+
+	af := readFile(p)
+
+	eid, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0")
+
+	assert.Equal(t, eid, af.SimID)
+
+	assert.Equal(t, "sim0", af.Name)
+
+	assert.Equal(t, simulator.Evc, af.Type)
+
+	assert.Equal(t, simulator.Ocpp201, af.Protocol)
+
+	assert.Equal(t, simulator.One, af.Phases)
+}
+
+func TestUpdateSimulatorEmpty(t *testing.T) {
+	tmp := t.TempDir()
+
+	createFolders(tmp)
+
+	s := before(tmp)
+
+	generateAssetConfFiles(1, tmp)
+
+	id, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0")
+
+	a := simulator.Asset{}
+
+	ab, am, _ := s.UpdateSimConf(id, &a)
+
+	assert.False(t, ab)
+
+	assert.Equal(t, s.L.Get(text.RequestBodyDoesntMatch), am)
+
+	p := tmp + defSCFolder + "/sim0.json"
+
+	af := readFile(p)
+
+	eid, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0")
+
+	assert.Equal(t, eid, af.SimID)
+
+	assert.Equal(t, "sim0", af.Name)
+
+	assert.Equal(t, simulator.Evc, af.Type)
+
+	assert.Equal(t, simulator.Ocpp201, af.Protocol)
+
+	assert.Equal(t, simulator.One, af.Phases)
+}
+
+func TestUpdateSimulatorChangeName(t *testing.T) {
+	tmp := t.TempDir()
+
+	createFolders(tmp)
+
+	s := before(tmp)
+
+	generateAssetConfFiles(1, tmp)
+
+	id, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0")
+
+	a := simulator.Asset{
+		Name:        "asdasd",
+		Type:        simulator.Pm,
+		Protocol:    simulator.Ocpp16,
+		Phases:      simulator.Three,
+		CurrentType: simulator.Dc,
+		Evses:       []simulator.Evse{},
+	}
+
+	ab, am, aa := s.UpdateSimConf(id, &a)
+
+	assert.True(t, ab)
+
+	assert.Equal(t, "", am)
+
+	assert.Equal(t, id, aa.SimID)
+
+	assert.Equal(t, "sim0", aa.Name)
+
+	assert.Equal(t, simulator.Pm, aa.Type)
+
+	assert.Equal(t, simulator.Ocpp16, aa.Protocol)
+
+	assert.Equal(t, simulator.Three, aa.Phases)
+
+	p := tmp + defSCFolder + "/sim0.json"
+
+	af := readFile(p)
+
+	eid, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0")
+
+	assert.Equal(t, eid, af.SimID)
+
+	assert.Equal(t, "sim0", af.Name)
+
+	assert.Equal(t, simulator.Pm, af.Type)
+
+	assert.Equal(t, simulator.Ocpp16, af.Protocol)
+
+	assert.Equal(t, simulator.Three, af.Phases)
 }
 
 func before(tmp string) simulator.Simulator {
@@ -328,10 +511,13 @@ func createFolders(tmp string) {
 	os.Mkdir(tmp+defSCFolder+common.DefMCFolder, fs.FileMode(common.FolderPermissions))
 }
 
-func generateAssetConfFiles(n int64, tmp string) {
+func generateAssetConfFiles(n int64, tmp string) { //nolint:unparam // because is a test
 	for i := int64(0); i < n; i++ {
+		id, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa" + strconv.FormatInt(i, 10))
+
 		a := simulator.Asset{
-			Name:     "sim0",
+			SimID:    id,
+			Name:     "sim" + strconv.FormatInt(i, 10),
 			Type:     simulator.Evc,
 			Protocol: simulator.Ocpp201,
 			Phases:   simulator.One,
