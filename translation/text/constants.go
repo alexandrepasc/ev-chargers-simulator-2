@@ -27,6 +27,7 @@ const (
 	UpdateSimConfFileNotFound   Key = "UpdateSimConfFileNotFound"  // Not found the configuration file
 	UpdateSimConfFile           Key = "UpdateSimConfFile"          // Update simulator configuration file
 	DeleteSimConfFileNotFound   Key = "DeleteSimConfFileNotFound"  // Configuration ID not found
+	DeleteSimConfFileError      Key = "DeleteSimConfFileError"     // Not able to delete the configuration file
 	OpenSimConfFileError        Key = "OpenSimConfFileError"       // Error opening the simulator configuration file
 	WriteSimConfFileError       Key = "WriteSimConfFileError"      // Error writing the simulator configuration file
 	InternalServerError         Key = "InternalServerError"        // API message returned when something breaks

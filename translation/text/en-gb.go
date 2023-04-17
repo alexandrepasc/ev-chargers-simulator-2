@@ -25,6 +25,7 @@ var EnGB = map[Key]string{
 	UpdateSimConfFileNotFound:   "Simulator not found.",
 	UpdateSimConfFile:           "Update simulator configuration file.",
 	DeleteSimConfFileNotFound:   "Simulator not found.",
+	DeleteSimConfFileError:      "Unexpected error deleting the simulator configuration file.",
 	OpenSimConfFileError:        "Error opening the simulator configuration file.",
 	WriteSimConfFileError:       "Error writing the simulator configuration file.",
 	InternalServerError:         "Something went very wrong.",

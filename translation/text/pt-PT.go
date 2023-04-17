@@ -16,6 +16,7 @@ var PtPT = map[Key]string{
 	UpdateSimConfFileNotFound:   "Simulador não encontrado.",
 	UpdateSimConfFile:           "Actualiza o ficheiro de configuração do simulador.",
 	DeleteSimConfFileNotFound:   "Simulador não encontrado.",
+	DeleteSimConfFileError:      "Erro inesperado ao apagar o ficheiro de configuração do simulador.",
 	OpenSimConfFileError:        "Erro a abrir o ficheiro de configuração do simulador.",
 	WriteSimConfFileError:       "Erro a escrever no ficheiro de configuração do simulador.",
 	InternalServerError:         "Algo correu muito mal.",
