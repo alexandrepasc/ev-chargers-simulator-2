@@ -164,7 +164,27 @@ func (s *Simulator) UpdateSimConf(id uuid.UUID, a *Asset) (ok bool, msg string, 
 	return false, s.L.Get(text.UpdateSimConfFileNotFound), http.StatusNotFound, &Asset{}
 }
 
-// func (s *Simulator) DeleteSimConf(id uuid.UUID) (ok bool, msg string, code int) {}
+func (s *Simulator) DeleteSimConf(id uuid.UUID) (ok bool, msg string, code int) {
+	var al = s.GetSimulators()
+
+	for _, i := range al {
+		if i.SimID != id {
+			continue
+		}
+
+		err := os.Remove(s.Scp + "/" + i.Name + ".json")
+
+		if err != nil {
+			common.Log("DeleteSimConf").Error(err)
+
+			return false, s.L.Get(text.DeleteSimConfFileError), http.StatusBadRequest
+		}
+
+		return true, "", http.StatusNoContent
+	}
+
+	return false, s.L.Get(text.DeleteSimConfFileNotFound), http.StatusNotFound
+}
 
 /*
 Get the list of files that are stored in the simulator configurations folder.

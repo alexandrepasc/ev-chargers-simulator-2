@@ -544,11 +544,11 @@ func TestDeleteSimulatorWrongId(t *testing.T) {
 	p0 := tmp + defSCFolder + "/sim0.json"
 	p1 := tmp + defSCFolder + "/sim1.json"
 
-	assert.True(t, ab)
+	assert.False(t, ab)
 
-	assert.Empty(t, am)
+	assert.Equal(t, translation.Translation{L: translation.EnGb}.Get(text.DeleteSimConfFileNotFound), am)
 
-	assert.Equal(t, http.StatusNoContent, ac)
+	assert.Equal(t, http.StatusNotFound, ac)
 
 	assert.FileExists(t, p0)
 
@@ -574,7 +574,7 @@ func createFolders(tmp string) {
 	os.Mkdir(tmp+defSCFolder+common.DefMCFolder, fs.FileMode(common.FolderPermissions))
 }
 
-func generateAssetConfFiles(n int64, tmp string) { //nolint:unparam // because is a test
+func generateAssetConfFiles(n int64, tmp string) { //nolint:unparam,nolintlint // because is a test
 	for i := int64(0); i < n; i++ {
 		id, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa" + strconv.FormatInt(i, 10))
 
