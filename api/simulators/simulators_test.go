@@ -1,4 +1,4 @@
-//nolint:errcheck //because they are tests
+//nolint:errcheck,dupl //because they are tests
 package simulators_test
 
 import (
@@ -455,6 +455,303 @@ func TestNotAblePostSimulatorsSameName(t *testing.T) {
 	json.Unmarshal(w.Body.Bytes(), &a)
 
 	assert.Equal(t, translation.Translation{L: translation.EnGb}.Get(text.CreateSimConfFileNameExists), a.Message)
+}
+
+func TestPutSimulators(t *testing.T) {
+	r := gin.Default()
+
+	al := []*simulator.Asset{
+		{
+			SimID:         uuid.New(),
+			Name:          "test1",
+			Type:          simulator.Evc,
+			Protocol:      simulator.Ocpp201,
+			StartCharging: true,
+			Phases:        simulator.One,
+			CurrentType:   simulator.Dc,
+			Evses:         []simulator.Evse{},
+		},
+	}
+	ml := []model.OcppModel{}
+
+	sim, _ := before(t, al, ml)
+
+	sim.Al = al
+	sim.Oml = ml
+
+	s := simulators.Simulators{
+		Sim:  sim,
+		Lang: translation.Translation{L: translation.EnGb},
+	}
+
+	e := simulator.Asset{
+		Type:          simulator.Pm,
+		Protocol:      simulator.Ocpp16,
+		StartCharging: false,
+		Phases:        simulator.Three,
+		CurrentType:   simulator.Ac,
+		Evses:         []simulator.Evse{},
+	}
+
+	j, _ := json.Marshal(e)
+	b := bytes.NewReader(j)
+
+	s.Simulators(r)
+
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest("PUT", ep+"/"+al[0].SimID.String(), b)
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	a := simulator.Asset{}
+	json.Unmarshal(w.Body.Bytes(), &a)
+
+	assert.Equal(t, al[0].SimID, a.SimID)
+
+	assert.Equal(t, al[0].Name, a.Name)
+
+	assert.Equal(t, e.Type, a.Type)
+
+	assert.Equal(t, e.Protocol, a.Protocol)
+
+	assert.Equal(t, e.StartCharging, a.StartCharging)
+
+	assert.Equal(t, e.Phases, a.Phases)
+
+	assert.Equal(t, e.CurrentType, a.CurrentType)
+}
+
+func TestPutSimulatorsWrongID(t *testing.T) {
+	r := gin.Default()
+
+	al := []*simulator.Asset{
+		{
+			SimID:         uuid.New(),
+			Name:          "test1",
+			Type:          simulator.Evc,
+			Protocol:      simulator.Ocpp201,
+			StartCharging: true,
+			Phases:        simulator.One,
+			CurrentType:   simulator.Dc,
+			Evses:         []simulator.Evse{},
+		},
+	}
+	ml := []model.OcppModel{}
+
+	sim, _ := before(t, al, ml)
+
+	sim.Al = al
+	sim.Oml = ml
+
+	s := simulators.Simulators{
+		Sim:  sim,
+		Lang: translation.Translation{L: translation.EnGb},
+	}
+
+	e := simulator.Asset{
+		Type:          simulator.Pm,
+		Protocol:      simulator.Ocpp16,
+		StartCharging: false,
+		Phases:        simulator.Three,
+		CurrentType:   simulator.Ac,
+		Evses:         []simulator.Evse{},
+	}
+
+	j, _ := json.Marshal(e)
+	b := bytes.NewReader(j)
+
+	s.Simulators(r)
+
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest("PUT", ep+"/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0", b)
+
+	r.ServeHTTP(w, req)
+
+	a := errors.ErroMsg{}
+	json.Unmarshal(w.Body.Bytes(), &a)
+
+	assert.Equal(t, http.StatusNotFound, w.Code)
+
+	assert.Equal(t, sim.L.Get(text.UpdateSimConfFileNotFoud), a.Message)
+}
+
+func TestPutSimulatorsInvalidID(t *testing.T) {
+	r := gin.Default()
+
+	al := []*simulator.Asset{
+		{
+			SimID:         uuid.New(),
+			Name:          "test1",
+			Type:          simulator.Evc,
+			Protocol:      simulator.Ocpp201,
+			StartCharging: true,
+			Phases:        simulator.One,
+			CurrentType:   simulator.Dc,
+			Evses:         []simulator.Evse{},
+		},
+	}
+	ml := []model.OcppModel{}
+
+	sim, _ := before(t, al, ml)
+
+	sim.Al = al
+	sim.Oml = ml
+
+	s := simulators.Simulators{
+		Sim:  sim,
+		Lang: translation.Translation{L: translation.EnGb},
+	}
+
+	e := simulator.Asset{
+		Type:          simulator.Pm,
+		Protocol:      simulator.Ocpp16,
+		StartCharging: false,
+		Phases:        simulator.Three,
+		CurrentType:   simulator.Ac,
+		Evses:         []simulator.Evse{},
+	}
+
+	j, _ := json.Marshal(e)
+	b := bytes.NewReader(j)
+
+	s.Simulators(r)
+
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest("PUT", ep+"/asd", b)
+
+	r.ServeHTTP(w, req)
+
+	a := errors.ErroMsg{}
+	json.Unmarshal(w.Body.Bytes(), &a)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+
+	assert.Equal(t, sim.L.Get(text.UUIDParsingError), a.Message)
+}
+
+func TestPutSimulatorsChangeNameID(t *testing.T) {
+	r := gin.Default()
+
+	al := []*simulator.Asset{
+		{
+			SimID:         uuid.New(),
+			Name:          "test1",
+			Type:          simulator.Evc,
+			Protocol:      simulator.Ocpp201,
+			StartCharging: true,
+			Phases:        simulator.One,
+			CurrentType:   simulator.Dc,
+			Evses:         []simulator.Evse{},
+		},
+	}
+	ml := []model.OcppModel{}
+
+	sim, _ := before(t, al, ml)
+
+	sim.Al = al
+	sim.Oml = ml
+
+	s := simulators.Simulators{
+		Sim:  sim,
+		Lang: translation.Translation{L: translation.EnGb},
+	}
+
+	eid, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa9")
+	e := simulator.Asset{
+		SimID:         eid,
+		Name:          "testing",
+		Type:          simulator.Pm,
+		Protocol:      simulator.Ocpp16,
+		StartCharging: false,
+		Phases:        simulator.Three,
+		CurrentType:   simulator.Ac,
+		Evses:         []simulator.Evse{},
+	}
+
+	j, _ := json.Marshal(e)
+	b := bytes.NewReader(j)
+
+	s.Simulators(r)
+
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest("PUT", ep+"/"+al[0].SimID.String(), b)
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	a := simulator.Asset{}
+	json.Unmarshal(w.Body.Bytes(), &a)
+
+	assert.Equal(t, al[0].SimID, a.SimID)
+
+	assert.Equal(t, al[0].Name, a.Name)
+
+	assert.Equal(t, e.Type, a.Type)
+
+	assert.Equal(t, e.Protocol, a.Protocol)
+
+	assert.Equal(t, e.StartCharging, a.StartCharging)
+
+	assert.Equal(t, e.Phases, a.Phases)
+
+	assert.Equal(t, e.CurrentType, a.CurrentType)
+}
+
+func TestPutSimulatorsBadRequestBody(t *testing.T) {
+	r := gin.Default()
+
+	al := []*simulator.Asset{
+		{
+			SimID:         uuid.New(),
+			Name:          "test1",
+			Type:          simulator.Evc,
+			Protocol:      simulator.Ocpp201,
+			StartCharging: true,
+			Phases:        simulator.One,
+			CurrentType:   simulator.Dc,
+			Evses:         []simulator.Evse{},
+		},
+	}
+	ml := []model.OcppModel{}
+
+	sim, _ := before(t, al, ml)
+
+	sim.Al = al
+	sim.Oml = ml
+
+	s := simulators.Simulators{
+		Sim:  sim,
+		Lang: translation.Translation{L: translation.EnGb},
+	}
+
+	e := simulator.Asset{
+		Type: simulator.Pm,
+	}
+
+	j, _ := json.Marshal(e)
+	b := bytes.NewReader(j)
+
+	s.Simulators(r)
+
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest("PUT", ep+"/"+al[0].SimID.String(), b)
+
+	r.ServeHTTP(w, req)
+
+	a := errors.ErroMsg{}
+	json.Unmarshal(w.Body.Bytes(), &a)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+
+	assert.Equal(t, sim.L.Get(text.RequestBodyDoesntMatch), a.Message)
 }
 
 func before(t *testing.T, al []*simulator.Asset, oml []model.OcppModel) (s simulator.Simulator, tmp string) {

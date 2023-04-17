@@ -9,6 +9,7 @@ import (
 	"github.com/alexandrepasc/ev-chargers-simulator-2/translation"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/translation/text"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 type Simulators struct {
@@ -24,6 +25,7 @@ r	-	api engine (*gin.Engine)
 func (s *Simulators) Simulators(r *gin.Engine) {
 	r.GET(simulatorsEp, s.getSimulators)
 	r.POST(simulatorsEp, s.postSimulators)
+	r.PUT(simulatorsIDEp, s.putSimulators)
 	r.GET(simModelsEp, s.getModels)
 }
 
@@ -82,6 +84,70 @@ func (s *Simulators) postSimulators(c *gin.Context) {
 		v := errors.StructValidate(r, c, s.Lang)
 		if v {
 			c.IndentedJSON(http.StatusBadRequest, r)
+		}
+	}
+}
+
+/*
+Sets the put simulators endpoint controller, it will replace the current configurations with what
+was sent by the user.
+
+c	-	request  context (*gin.context)
+*/
+func (s *Simulators) putSimulators(c *gin.Context) {
+	var id, errP = uuid.Parse(c.Param("id"))
+
+	if errP != nil {
+		common.Log("putSimulators").Error(errP)
+
+		var r = errors.ErroMsg{
+			Message: s.Lang.Get(text.UUIDParsingError),
+		}
+
+		v := errors.StructValidate(r, c, s.Lang)
+
+		if v {
+			c.IndentedJSON(http.StatusBadRequest, r)
+		}
+
+		return
+	}
+
+	var req = simulator.Asset{}
+
+	err := c.BindJSON(&req)
+
+	if err != nil {
+		common.Log("putSimulators").Error(err)
+
+		var r = errors.ErroMsg{
+			Message: s.Lang.Get(text.RequestBodyDoesntMatch),
+		}
+
+		v := errors.StructValidate(r, c, s.Lang)
+
+		if v {
+			c.IndentedJSON(http.StatusBadRequest, r)
+		}
+
+		return
+	}
+
+	ok, msg, code, r := s.Sim.UpdateSimConf(id, &req)
+
+	if ok {
+		c.IndentedJSON(http.StatusOK, r)
+	} else {
+		common.Log("putSimulators").Error(msg)
+
+		var r = errors.ErroMsg{
+			Message: msg,
+		}
+
+		v := errors.StructValidate(r, c, s.Lang)
+
+		if v {
+			c.IndentedJSON(code, r)
 		}
 	}
 }
