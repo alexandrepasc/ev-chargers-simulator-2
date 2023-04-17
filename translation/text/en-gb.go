@@ -28,4 +28,5 @@ var EnGB = map[Key]string{
 	WriteSimConfFileError:       "Error writing the simulator configuration file.",
 	InternalServerError:         "Something went very wrong.",
 	RequestBodyDoesntMatch:      "The request body is malformed.",
+	UUIDParsingError:            "The id could not be parsed to UUID.",
 }

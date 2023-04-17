@@ -30,4 +30,5 @@ const (
 	WriteSimConfFileError       Key = "WriteSimConfFileError"      // Error writing the simulator configuration file
 	InternalServerError         Key = "InternalServerError"        // API message returned when something breaks
 	RequestBodyDoesntMatch      Key = "RequestBodyDoesntMatch"     // API message returned when the request body doesn't bind to the model
+	UUIDParsingError            Key = "UUIDParsingError"           // API message returned when couldn't parse the id to uuid
 )

@@ -19,4 +19,5 @@ var PtPT = map[Key]string{
 	WriteSimConfFileError:       "Erro a escrever no ficheiro de configuração do simulador.",
 	InternalServerError:         "Algo correu muito mal.",
 	RequestBodyDoesntMatch:      "O corpo do pedido está mal formado.",
+	UUIDParsingError:            "O id não pôde ser convertido para UUID.",
 }
