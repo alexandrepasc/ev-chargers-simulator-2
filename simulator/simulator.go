@@ -3,6 +3,7 @@ package simulator
 import (
 	"encoding/json"
 	"io/fs"
+	"net/http"
 	"os"
 	"strings"
 
@@ -123,7 +124,7 @@ id	-	Simulator identifier (uuid.UUID)
 
 a	-	Asset structure with the new configuration (*Asset)
 */
-func (s *Simulator) UpdateSimConf(id uuid.UUID, a *Asset) (ok bool, msg string, na *Asset) {
+func (s *Simulator) UpdateSimConf(id uuid.UUID, a *Asset) (ok bool, msg string, code int, na *Asset) {
 	var al = s.GetSimulators()
 
 	for _, i := range al {
@@ -142,7 +143,7 @@ func (s *Simulator) UpdateSimConf(id uuid.UUID, a *Asset) (ok bool, msg string, 
 		if e != nil {
 			common.Log("UpdateSimConf").Error(e)
 
-			return false, s.L.Get(text.RequestBodyDoesntMatch), &Asset{}
+			return false, s.L.Get(text.RequestBodyDoesntMatch), http.StatusBadRequest, &Asset{}
 		}
 
 		common.Log("UpdateSimConf").Info(s.L.Get(text.UpdateSimConfFile))
@@ -154,13 +155,13 @@ func (s *Simulator) UpdateSimConf(id uuid.UUID, a *Asset) (ok bool, msg string, 
 		if err != nil {
 			common.Log("UpdateSimConf").Error(err)
 
-			return false, s.L.Get(text.WriteSimConfFileError), &Asset{}
+			return false, s.L.Get(text.WriteSimConfFileError), http.StatusTeapot, &Asset{}
 		}
 
-		return true, "", na
+		return true, "", http.StatusOK, na
 	}
 
-	return false, s.L.Get(text.UpdateSimConfFileNotFoud), &Asset{}
+	return false, s.L.Get(text.UpdateSimConfFileNotFoud), http.StatusNotFound, &Asset{}
 }
 
 /*

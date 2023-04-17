@@ -4,6 +4,7 @@ package simulator_test
 import (
 	"encoding/json"
 	"io/fs"
+	"net/http"
 	"os"
 	"strconv"
 	"testing"
@@ -332,9 +333,11 @@ func TestUpdateSimulator(t *testing.T) {
 		Evses:       []simulator.Evse{},
 	}
 
-	ab, _, aa := s.UpdateSimConf(id, &a)
+	ab, _, c, aa := s.UpdateSimConf(id, &a)
 
 	assert.True(t, ab)
+
+	assert.Equal(t, http.StatusOK, c)
 
 	assert.Equal(t, id, aa.SimID)
 
@@ -378,11 +381,13 @@ func TestUpdateSimulatorWithWrongId(t *testing.T) {
 		Phases:   simulator.Three,
 	}
 
-	ab, am, aa := s.UpdateSimConf(id, &a)
+	ab, am, c, aa := s.UpdateSimConf(id, &a)
 
 	assert.False(t, ab)
 
 	assert.Equal(t, s.L.Get(text.UpdateSimConfFileNotFoud), am)
+
+	assert.Equal(t, http.StatusNotFound, c)
 
 	assert.Empty(t, aa)
 
@@ -416,9 +421,11 @@ func TestUpdateSimulatorEmpty(t *testing.T) {
 
 	a := simulator.Asset{}
 
-	ab, am, _ := s.UpdateSimConf(id, &a)
+	ab, am, c, _ := s.UpdateSimConf(id, &a)
 
 	assert.False(t, ab)
+
+	assert.Equal(t, http.StatusBadRequest, c)
 
 	assert.Equal(t, s.L.Get(text.RequestBodyDoesntMatch), am)
 
@@ -459,11 +466,13 @@ func TestUpdateSimulatorChangeName(t *testing.T) {
 		Evses:       []simulator.Evse{},
 	}
 
-	ab, am, aa := s.UpdateSimConf(id, &a)
+	ab, am, c, aa := s.UpdateSimConf(id, &a)
 
 	assert.True(t, ab)
 
 	assert.Equal(t, "", am)
+
+	assert.Equal(t, http.StatusOK, c)
 
 	assert.Equal(t, id, aa.SimID)
 
