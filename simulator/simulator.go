@@ -161,8 +161,10 @@ func (s *Simulator) UpdateSimConf(id uuid.UUID, a *Asset) (ok bool, msg string, 
 		return true, "", http.StatusOK, na
 	}
 
-	return false, s.L.Get(text.UpdateSimConfFileNotFoud), http.StatusNotFound, &Asset{}
+	return false, s.L.Get(text.UpdateSimConfFileNotFound), http.StatusNotFound, &Asset{}
 }
+
+// func (s *Simulator) DeleteSimConf(id uuid.UUID) (ok bool, msg string, code int) {}
 
 /*
 Get the list of files that are stored in the simulator configurations folder.

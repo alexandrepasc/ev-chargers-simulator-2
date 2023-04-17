@@ -576,7 +576,7 @@ func TestPutSimulatorsWrongID(t *testing.T) {
 
 	assert.Equal(t, http.StatusNotFound, w.Code)
 
-	assert.Equal(t, sim.L.Get(text.UpdateSimConfFileNotFoud), a.Message)
+	assert.Equal(t, sim.L.Get(text.UpdateSimConfFileNotFound), a.Message)
 }
 
 func TestPutSimulatorsInvalidID(t *testing.T) {

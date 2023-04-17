@@ -385,7 +385,7 @@ func TestUpdateSimulatorWithWrongId(t *testing.T) {
 
 	assert.False(t, ab)
 
-	assert.Equal(t, s.L.Get(text.UpdateSimConfFileNotFoud), am)
+	assert.Equal(t, s.L.Get(text.UpdateSimConfFileNotFound), am)
 
 	assert.Equal(t, http.StatusNotFound, c)
 
@@ -499,6 +499,60 @@ func TestUpdateSimulatorChangeName(t *testing.T) {
 	assert.Equal(t, simulator.Ocpp16, af.Protocol)
 
 	assert.Equal(t, simulator.Three, af.Phases)
+}
+
+func TestDeleteSimulator(t *testing.T) {
+	tmp := t.TempDir()
+
+	createFolders(tmp)
+
+	s := before(tmp)
+
+	generateAssetConfFiles(2, tmp)
+
+	id, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0")
+
+	ab, am, ac := s.DeleteSimConf(id)
+
+	p0 := tmp + defSCFolder + "/sim0.json"
+	p1 := tmp + defSCFolder + "/sim1.json"
+
+	assert.True(t, ab)
+
+	assert.Empty(t, am)
+
+	assert.Equal(t, http.StatusNoContent, ac)
+
+	assert.NoFileExists(t, p0)
+
+	assert.FileExists(t, p1)
+}
+
+func TestDeleteSimulatorWrongId(t *testing.T) {
+	tmp := t.TempDir()
+
+	createFolders(tmp)
+
+	s := before(tmp)
+
+	generateAssetConfFiles(2, tmp)
+
+	id, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-bbbb-aaaaaaaaaaa0")
+
+	ab, am, ac := s.DeleteSimConf(id)
+
+	p0 := tmp + defSCFolder + "/sim0.json"
+	p1 := tmp + defSCFolder + "/sim1.json"
+
+	assert.True(t, ab)
+
+	assert.Empty(t, am)
+
+	assert.Equal(t, http.StatusNoContent, ac)
+
+	assert.FileExists(t, p0)
+
+	assert.FileExists(t, p1)
 }
 
 func before(tmp string) simulator.Simulator {
