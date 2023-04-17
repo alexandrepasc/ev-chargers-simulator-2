@@ -1,32 +1,34 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/alexandrepasc/ev-chargers-simulator-2/api"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/common"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/flags"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/settings"
+	"github.com/alexandrepasc/ev-chargers-simulator-2/simulator"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/translation"
-	"github.com/alexandrepasc/ev-chargers-simulator-2/translation/text"
 )
 
 func main() {
 	var fl = flags.SetFlags()
 
-	fmt.Println(fl)
-
 	common.StartLog()
 
-	_, g := settings.Settings(&fl)
+	c, g := settings.Settings(&fl)
 
 	t := translation.Translation{
 		L: translation.Translation{}.GetKey(g.Lang),
 	}
-	fmt.Println(t.Get(text.MethodNotAllowed))
+
+	s := simulator.Simulator{
+		Scp: c.SimulatorsConfigFolder,
+		L:   t,
+	}
 
 	var a = api.API{
-		Lang: t,
+		Lang:    t,
+		General: g,
+		Sim:     s,
 	}
 
 	var srv = a.New()
