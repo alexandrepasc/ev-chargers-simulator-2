@@ -112,13 +112,13 @@ func (s *Simulator) CreateSimConf(a *Asset) (ok bool, msg string, na *Asset) {
 }
 
 /*
-Receive the uuid of the simulator the will be updated and the changes. This will replace the
+Receive the uuid of the simulator that will be updated and the changes. This will replace the
 configurations entirely, it will not modify the only one value.
 
-Returns true (bool), an empty string (string), and the new configuration in case of success
-(*Asset).
+Returns true (bool), an empty string (string), the http code (int), and the new configuration
+(*Asset) in case of success.
 
-Will return false, the error message, and an empty Asset.
+Will return false, the error message, the http code, and an empty Asset.
 
 id	-	Simulator identifier (uuid.UUID)
 
@@ -164,6 +164,16 @@ func (s *Simulator) UpdateSimConf(id uuid.UUID, a *Asset) (ok bool, msg string, 
 	return false, s.L.Get(text.UpdateSimConfFileNotFound), http.StatusNotFound, &Asset{}
 }
 
+/*
+Receive the uuid of the simulator that will be deleted. This will remove the configuration file
+that matches the id.
+
+Returns true (bool), an empty string (string) and the http code (int) in case of success.
+
+Will return false, the error message, and the http code.
+
+id	-	Simulator identifier (uuid.UUID)
+*/
 func (s *Simulator) DeleteSimConf(id uuid.UUID) (ok bool, msg string, code int) {
 	var al = s.GetSimulators()
 
