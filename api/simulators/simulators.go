@@ -26,6 +26,7 @@ func (s *Simulators) Simulators(r *gin.Engine) {
 	r.GET(simulatorsEp, s.getSimulators)
 	r.POST(simulatorsEp, s.postSimulators)
 	r.PUT(simulatorsIDEp, s.putSimulators)
+	r.DELETE(simulatorsIDEp, s.deleteSimulators)
 	r.GET(simModelsEp, s.getModels)
 }
 
@@ -148,6 +149,50 @@ func (s *Simulators) putSimulators(c *gin.Context) {
 
 		if v {
 			c.IndentedJSON(code, r)
+		}
+	}
+}
+
+/*
+Sets the delete simulators endpoint controller, it will enable the user to delete one simulator
+configuration file.
+
+c	-	request  context (*gin.context)
+*/
+func (s *Simulators) deleteSimulators(c *gin.Context) {
+	var id, errP = uuid.Parse(c.Param("id"))
+
+	if errP != nil {
+		common.Log("deleteSimulators").Error(errP)
+
+		var r = errors.ErroMsg{
+			Message: s.Lang.Get(text.UUIDParsingError),
+		}
+
+		v := errors.StructValidate(r, c, s.Lang)
+
+		if v {
+			c.IndentedJSON(http.StatusBadRequest, r)
+		}
+
+		return
+	}
+
+	ok, msg, cod := s.Sim.DeleteSimConf(id)
+
+	if ok {
+		c.IndentedJSON(cod, http.NoBody)
+	} else {
+		common.Log("deleteSimulators").Error(msg)
+
+		var r = errors.ErroMsg{
+			Message: msg,
+		}
+
+		v := errors.StructValidate(r, c, s.Lang)
+
+		if v {
+			c.IndentedJSON(cod, r)
 		}
 	}
 }

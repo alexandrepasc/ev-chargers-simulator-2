@@ -180,6 +180,8 @@ func (s *Simulator) DeleteSimConf(id uuid.UUID) (ok bool, msg string, code int) 
 			return false, s.L.Get(text.DeleteSimConfFileError), http.StatusBadRequest
 		}
 
+		common.Log("DeleteSimConf").Info(s.L.Get(text.DeleteSimConfFile))
+
 		return true, "", http.StatusNoContent
 	}
 

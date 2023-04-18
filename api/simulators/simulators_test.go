@@ -23,9 +23,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+type method string
+
 const (
 	ep       string = "/simulators"
 	modelsEp string = ep + "/models"
+	mGet     method = "GET"
+	mPost    method = "POST"
+	mPut     method = "PUT"
+	mDelete  method = "DELETE"
 )
 
 func TestGetSimulators(t *testing.T) {
@@ -63,7 +69,7 @@ func TestGetSimulators(t *testing.T) {
 
 	w := httptest.NewRecorder()
 
-	req, _ := http.NewRequest("GET", ep, http.NoBody)
+	req, _ := http.NewRequest(string(mGet), ep, http.NoBody)
 
 	r.ServeHTTP(w, req)
 
@@ -100,7 +106,7 @@ func TestGetSimulatorsNoAssets(t *testing.T) {
 
 	w := httptest.NewRecorder()
 
-	req, _ := http.NewRequest("GET", ep, http.NoBody)
+	req, _ := http.NewRequest(string(mGet), ep, http.NoBody)
 
 	r.ServeHTTP(w, req)
 
@@ -147,7 +153,7 @@ func TestGetSimModels(t *testing.T) {
 
 	w := httptest.NewRecorder()
 
-	req, _ := http.NewRequest("GET", modelsEp, http.NoBody)
+	req, _ := http.NewRequest(string(mGet), modelsEp, http.NoBody)
 
 	r.ServeHTTP(w, req)
 
@@ -189,7 +195,7 @@ func TestGetSimModelsNoModels(t *testing.T) {
 
 	w := httptest.NewRecorder()
 
-	req, _ := http.NewRequest("GET", modelsEp, http.NoBody)
+	req, _ := http.NewRequest(string(mGet), modelsEp, http.NoBody)
 
 	r.ServeHTTP(w, req)
 
@@ -245,7 +251,7 @@ func TestPostSimulators(t *testing.T) {
 
 	w := httptest.NewRecorder()
 
-	req, _ := http.NewRequest("POST", ep, b)
+	req, _ := http.NewRequest(string(mPost), ep, b)
 
 	r.ServeHTTP(w, req)
 
@@ -297,7 +303,7 @@ func TestPostSimulatorsRequiredFields(t *testing.T) {
 
 	w := httptest.NewRecorder()
 
-	req, _ := http.NewRequest("POST", ep, b)
+	req, _ := http.NewRequest(string(mPost), ep, b)
 
 	r.ServeHTTP(w, req)
 
@@ -307,7 +313,7 @@ func TestPostSimulatorsRequiredFields(t *testing.T) {
 	j, _ = json.Marshal(bt)
 	b = bytes.NewReader(j)
 
-	req, _ = http.NewRequest("POST", ep, b)
+	req, _ = http.NewRequest(string(mPost), ep, b)
 
 	r.ServeHTTP(w, req)
 
@@ -317,7 +323,7 @@ func TestPostSimulatorsRequiredFields(t *testing.T) {
 	j, _ = json.Marshal(bp)
 	b = bytes.NewReader(j)
 
-	req, _ = http.NewRequest("POST", ep, b)
+	req, _ = http.NewRequest(string(mPost), ep, b)
 
 	r.ServeHTTP(w, req)
 
@@ -327,7 +333,7 @@ func TestPostSimulatorsRequiredFields(t *testing.T) {
 	j, _ = json.Marshal(bst)
 	b = bytes.NewReader(j)
 
-	req, _ = http.NewRequest("POST", ep, b)
+	req, _ = http.NewRequest(string(mPost), ep, b)
 
 	r.ServeHTTP(w, req)
 
@@ -337,7 +343,7 @@ func TestPostSimulatorsRequiredFields(t *testing.T) {
 	j, _ = json.Marshal(bph)
 	b = bytes.NewReader(j)
 
-	req, _ = http.NewRequest("POST", ep, b)
+	req, _ = http.NewRequest(string(mPost), ep, b)
 
 	r.ServeHTTP(w, req)
 
@@ -347,7 +353,7 @@ func TestPostSimulatorsRequiredFields(t *testing.T) {
 	j, _ = json.Marshal(bc)
 	b = bytes.NewReader(j)
 
-	req, _ = http.NewRequest("POST", ep, b)
+	req, _ = http.NewRequest(string(mPost), ep, b)
 
 	r.ServeHTTP(w, req)
 
@@ -357,7 +363,7 @@ func TestPostSimulatorsRequiredFields(t *testing.T) {
 	j, _ = json.Marshal(be)
 	b = bytes.NewReader(j)
 
-	req, _ = http.NewRequest("POST", ep, b)
+	req, _ = http.NewRequest(string(mPost), ep, b)
 
 	r.ServeHTTP(w, req)
 
@@ -387,7 +393,7 @@ func TestPostSimulatorsBadRequestBody(t *testing.T) {
 
 	w := httptest.NewRecorder()
 
-	req, _ := http.NewRequest("POST", ep, b)
+	req, _ := http.NewRequest(string(mPost), ep, b)
 
 	r.ServeHTTP(w, req)
 
@@ -445,7 +451,7 @@ func TestNotAblePostSimulatorsSameName(t *testing.T) {
 
 	w := httptest.NewRecorder()
 
-	req, _ := http.NewRequest("POST", ep, b)
+	req, _ := http.NewRequest(string(mPost), ep, b)
 
 	r.ServeHTTP(w, req)
 
@@ -500,7 +506,7 @@ func TestPutSimulators(t *testing.T) {
 
 	w := httptest.NewRecorder()
 
-	req, _ := http.NewRequest("PUT", ep+"/"+al[0].SimID.String(), b)
+	req, _ := http.NewRequest(string(mPut), ep+"/"+al[0].SimID.String(), b)
 
 	r.ServeHTTP(w, req)
 
@@ -567,7 +573,7 @@ func TestPutSimulatorsWrongID(t *testing.T) {
 
 	w := httptest.NewRecorder()
 
-	req, _ := http.NewRequest("PUT", ep+"/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0", b)
+	req, _ := http.NewRequest(string(mPut), ep+"/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0", b)
 
 	r.ServeHTTP(w, req)
 
@@ -622,7 +628,7 @@ func TestPutSimulatorsInvalidID(t *testing.T) {
 
 	w := httptest.NewRecorder()
 
-	req, _ := http.NewRequest("PUT", ep+"/asd", b)
+	req, _ := http.NewRequest(string(mPut), ep+"/asd", b)
 
 	r.ServeHTTP(w, req)
 
@@ -680,7 +686,7 @@ func TestPutSimulatorsChangeNameID(t *testing.T) {
 
 	w := httptest.NewRecorder()
 
-	req, _ := http.NewRequest("PUT", ep+"/"+al[0].SimID.String(), b)
+	req, _ := http.NewRequest(string(mPut), ep+"/"+al[0].SimID.String(), b)
 
 	r.ServeHTTP(w, req)
 
@@ -742,7 +748,7 @@ func TestPutSimulatorsBadRequestBody(t *testing.T) {
 
 	w := httptest.NewRecorder()
 
-	req, _ := http.NewRequest("PUT", ep+"/"+al[0].SimID.String(), b)
+	req, _ := http.NewRequest(string(mPut), ep+"/"+al[0].SimID.String(), b)
 
 	r.ServeHTTP(w, req)
 
@@ -752,6 +758,188 @@ func TestPutSimulatorsBadRequestBody(t *testing.T) {
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 
 	assert.Equal(t, sim.L.Get(text.RequestBodyDoesntMatch), a.Message)
+}
+
+func TestDeleteSimulators(t *testing.T) {
+	r := gin.Default()
+
+	al := []*simulator.Asset{
+		{
+			SimID:         uuid.New(),
+			Name:          "test1",
+			Type:          simulator.Evc,
+			Protocol:      simulator.Ocpp201,
+			StartCharging: true,
+			Phases:        simulator.One,
+			CurrentType:   simulator.Dc,
+			Evses:         []simulator.Evse{},
+		},
+		{
+			SimID:         uuid.New(),
+			Name:          "test2",
+			Type:          simulator.Evc,
+			Protocol:      simulator.Ocpp201,
+			StartCharging: true,
+			Phases:        simulator.One,
+			CurrentType:   simulator.Dc,
+			Evses:         []simulator.Evse{},
+		},
+	}
+	ml := []model.OcppModel{}
+
+	sim, _ := before(t, al, ml)
+
+	sim.Al = al
+	sim.Oml = ml
+
+	s := simulators.Simulators{
+		Sim:  sim,
+		Lang: translation.Translation{L: translation.EnGb},
+	}
+
+	s.Simulators(r)
+
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest(string(mDelete), ep+"/"+al[0].SimID.String(), http.NoBody)
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNoContent, w.Code)
+
+	assert.Empty(t, w.Body.String())
+
+	req, _ = http.NewRequest(string(mGet), ep, http.NoBody)
+
+	r.ServeHTTP(w, req)
+
+	a := simulators.GetSimulatorsTemp{}
+
+	json.Unmarshal(w.Body.Bytes(), &a)
+
+	assert.Equal(t, int64(1), a.Total)
+
+	assert.Equal(t, al[1].SimID.String(), a.Assets.([]interface{})[0].(map[string]interface{})["simId"])
+
+	assert.Equal(t, al[1].Name, a.Assets.([]interface{})[0].(map[string]interface{})["name"])
+}
+
+func TestDeleteSimulatorsWrongId(t *testing.T) {
+	r := gin.Default()
+
+	al := []*simulator.Asset{
+		{
+			SimID:         uuid.New(),
+			Name:          "test1",
+			Type:          simulator.Evc,
+			Protocol:      simulator.Ocpp201,
+			StartCharging: true,
+			Phases:        simulator.One,
+			CurrentType:   simulator.Dc,
+			Evses:         []simulator.Evse{},
+		},
+	}
+	ml := []model.OcppModel{}
+
+	sim, _ := before(t, al, ml)
+
+	sim.Al = al
+	sim.Oml = ml
+
+	s := simulators.Simulators{
+		Sim:  sim,
+		Lang: translation.Translation{L: translation.EnGb},
+	}
+
+	s.Simulators(r)
+
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest(string(mDelete), ep+"/aaaaaaaa-aaaa-bbbb-aaaa-aaaaaaaaaaa0", http.NoBody)
+
+	r.ServeHTTP(w, req)
+
+	a := errors.ErroMsg{}
+	json.Unmarshal(w.Body.Bytes(), &a)
+
+	assert.Equal(t, http.StatusNotFound, w.Code)
+
+	assert.Equal(t, s.Lang.Get(text.DeleteSimConfFileNotFound), a.Message)
+
+	w = httptest.NewRecorder()
+
+	req, _ = http.NewRequest(string(mGet), ep, http.NoBody)
+
+	r.ServeHTTP(w, req)
+
+	ag := simulators.GetSimulatorsTemp{}
+
+	json.Unmarshal(w.Body.Bytes(), &ag)
+
+	assert.Equal(t, int64(1), ag.Total)
+
+	assert.Equal(t, al[0].SimID.String(), ag.Assets.([]interface{})[0].(map[string]interface{})["simId"])
+
+	assert.Equal(t, al[0].Name, ag.Assets.([]interface{})[0].(map[string]interface{})["name"])
+}
+
+func TestDeleteSimulatorsInvalidId(t *testing.T) {
+	r := gin.Default()
+
+	al := []*simulator.Asset{
+		{
+			SimID:         uuid.New(),
+			Name:          "test1",
+			Type:          simulator.Evc,
+			Protocol:      simulator.Ocpp201,
+			StartCharging: true,
+			Phases:        simulator.One,
+			CurrentType:   simulator.Dc,
+			Evses:         []simulator.Evse{},
+		},
+	}
+	ml := []model.OcppModel{}
+
+	sim, _ := before(t, al, ml)
+
+	sim.Al = al
+	sim.Oml = ml
+
+	s := simulators.Simulators{
+		Sim:  sim,
+		Lang: translation.Translation{L: translation.EnGb},
+	}
+
+	s.Simulators(r)
+
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest(string(mDelete), ep+"/asd", http.NoBody)
+
+	r.ServeHTTP(w, req)
+
+	a := errors.ErroMsg{}
+	json.Unmarshal(w.Body.Bytes(), &a)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+
+	assert.Equal(t, s.Lang.Get(text.UUIDParsingError), a.Message)
+
+	w = httptest.NewRecorder()
+
+	req, _ = http.NewRequest(string(mGet), ep, http.NoBody)
+
+	r.ServeHTTP(w, req)
+
+	ag := simulators.GetSimulatorsTemp{}
+
+	json.Unmarshal(w.Body.Bytes(), &ag)
+
+	assert.Equal(t, int64(1), ag.Total)
+
+	assert.Equal(t, al[0].SimID.String(), ag.Assets.([]interface{})[0].(map[string]interface{})["simId"])
+
+	assert.Equal(t, al[0].Name, ag.Assets.([]interface{})[0].(map[string]interface{})["name"])
 }
 
 func before(t *testing.T, al []*simulator.Asset, oml []model.OcppModel) (s simulator.Simulator, tmp string) {
