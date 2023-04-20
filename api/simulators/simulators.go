@@ -6,6 +6,7 @@ import (
 	"github.com/alexandrepasc/ev-chargers-simulator-2/api/errors"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/common"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/simulator"
+	"github.com/alexandrepasc/ev-chargers-simulator-2/simulator/handler"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/translation"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/translation/text"
 	"github.com/gin-gonic/gin"
@@ -15,6 +16,7 @@ import (
 type Simulators struct {
 	Sim  simulator.Simulator     // Simulator package
 	Lang translation.Translation // Translation language setting
+	H    handler.Handler
 }
 
 /*
@@ -23,11 +25,17 @@ Creates the simulators endpoint controller handlers
 r	-	api engine (*gin.Engine)
 */
 func (s *Simulators) Simulators(r *gin.Engine) {
+	s.H = handler.Handler{
+		L: s.Lang,
+	}
+
 	r.GET(simulatorsEp, s.getSimulators)
 	r.POST(simulatorsEp, s.postSimulators)
 	r.PUT(simulatorsIDEp, s.putSimulators)
 	r.DELETE(simulatorsIDEp, s.deleteSimulators)
 	r.GET(simModelsEp, s.getModels)
+	r.POST(simulatorsEp+"/run", s.postRun)
+	r.POST(simulatorsEp+"/stop", s.postStop)
 }
 
 /*
@@ -211,4 +219,30 @@ func (s *Simulators) getModels(c *gin.Context) {
 	}
 
 	c.IndentedJSON(http.StatusOK, resp)
+}
+
+/*
+Sets the post run endpoint controller
+
+c	-	request  context (*gin.context)
+*/
+func (s *Simulators) postRun(c *gin.Context) {
+	s.Sim.GetSimsConfs()
+
+	s.H.Al = s.Sim.Al
+
+	s.H.Quit = s.H.Start()
+
+	c.IndentedJSON(http.StatusNoContent, http.NoBody)
+}
+
+/*
+Sets the post stop endpoint controller
+
+c	-	request  context (*gin.context)
+*/
+func (s *Simulators) postStop(c *gin.Context) {
+	s.H.Stop()
+
+	c.IndentedJSON(http.StatusNoContent, http.NoBody)
 }

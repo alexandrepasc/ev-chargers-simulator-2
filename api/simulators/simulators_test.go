@@ -942,6 +942,8 @@ func TestDeleteSimulatorsInvalidId(t *testing.T) {
 	assert.Equal(t, al[0].Name, ag.Assets.([]interface{})[0].(map[string]interface{})["name"])
 }
 
+// TODO: Add tests to the run and stop endpoints
+
 func before(t *testing.T, al []*simulator.Asset, oml []model.OcppModel) (s simulator.Simulator, tmp string) {
 	t.Helper()
 
