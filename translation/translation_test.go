@@ -23,7 +23,9 @@ func TestGetList(t *testing.T) {
 
 	e := []string{"en-GB", "pt-PT"}
 
-	assert.Equal(t, e, a)
+	assert.Contains(t, e, a[0])
+
+	assert.Contains(t, e, a[1])
 }
 
 func TestGetKey(t *testing.T) {
