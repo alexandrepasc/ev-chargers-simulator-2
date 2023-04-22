@@ -4,6 +4,7 @@ package model_test
 import (
 	"encoding/json"
 	"io/fs"
+	"net/http"
 	"os"
 	"strconv"
 	"testing"
@@ -11,6 +12,7 @@ import (
 	"github.com/alexandrepasc/ev-chargers-simulator-2/common"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/simulator/model"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/translation"
+	"github.com/alexandrepasc/ev-chargers-simulator-2/translation/text"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
@@ -58,6 +60,161 @@ func TestGetModelInvalidData(t *testing.T) {
 	ml := m.GetModels()
 
 	assert.Equal(t, 0, len(ml))
+}
+
+func TestCreateModelReturn(t *testing.T) {
+	tmp := t.TempDir()
+
+	createFolders(tmp)
+
+	m := before(tmp)
+
+	e := model.Struct{
+		Name: "model",
+		Type: model.Ocpp,
+		Ocpp: model.OcppModel{
+			SerialNumb: "123-asd-zxc",
+		},
+	}
+
+	ab, as, ac, a := m.CreateModel(&e)
+
+	assert.True(t, ab)
+
+	assert.Empty(t, as)
+
+	assert.Equal(t, http.StatusCreated, ac)
+
+	assert.NotEmpty(t, a.ID)
+
+	assert.Equal(t, e.Name, a.Name)
+
+	assert.Equal(t, e.Type, a.Type)
+
+	assert.Equal(t, e.Ocpp.SerialNumb, a.Ocpp.SerialNumb)
+}
+
+func TestCreateModelFile(t *testing.T) {
+	tmp := t.TempDir()
+
+	createFolders(tmp)
+
+	m := before(tmp)
+
+	e := model.Struct{
+		Name: "model",
+		Type: model.Ocpp,
+		Ocpp: model.OcppModel{
+			SerialNumb: "123-asd-zxc",
+		},
+	}
+
+	m.CreateModel(&e)
+
+	nf := tmp + defFolder + "/model.json"
+
+	assert.FileExists(t, nf)
+
+	a := readFile(nf)
+
+	assert.NotEmpty(t, a.ID)
+
+	assert.Equal(t, e.Name, a.Name)
+
+	assert.Equal(t, e.Type, a.Type)
+
+	assert.Equal(t, e.Ocpp.SerialNumb, a.Ocpp.SerialNumb)
+}
+
+func TestCreateEmptyModel(t *testing.T) {
+	tmp := t.TempDir()
+
+	createFolders(tmp)
+
+	m := before(tmp)
+
+	e := model.Struct{}
+
+	ab, as, ac, _ := m.CreateModel(&e)
+
+	nf := tmp + defFolder + "/model.json"
+
+	assert.NoFileExists(t, nf)
+
+	assert.False(t, ab)
+
+	assert.NotEmpty(t, as)
+
+	assert.Equal(t, http.StatusBadRequest, ac)
+}
+
+func TestCreateModelRequiredFields(t *testing.T) {
+	tmp := t.TempDir()
+
+	createFolders(tmp)
+
+	m := before(tmp)
+
+	// name
+	e := model.Struct{
+		Type: model.Ocpp,
+		Ocpp: model.OcppModel{
+			SerialNumb: "123-asd-zxc",
+		},
+	}
+
+	ab, as, ac, _ := m.CreateModel(&e)
+
+	assert.False(t, ab)
+
+	assert.NotEmpty(t, as)
+
+	assert.Equal(t, http.StatusBadRequest, ac)
+
+	// type
+	e = model.Struct{
+		Name: "model",
+		Ocpp: model.OcppModel{
+			SerialNumb: "123-asd-zxc",
+		},
+	}
+
+	ab, as, ac, _ = m.CreateModel(&e)
+
+	assert.False(t, ab)
+
+	assert.NotEmpty(t, as)
+
+	assert.Equal(t, http.StatusBadRequest, ac)
+}
+
+func TestCanNotCreateModelSameName(t *testing.T) {
+	tmp := t.TempDir()
+
+	createFolders(tmp)
+
+	m := before(tmp)
+
+	generateModelDefConfFiles(1, tmp)
+
+	e := model.Struct{
+		Name: "mod0",
+		Type: model.Ocpp,
+		Ocpp: model.OcppModel{
+			SerialNumb: "123-asd-zxc",
+		},
+	}
+
+	ab, as, ac, a := m.CreateModel(&e)
+
+	assert.False(t, ab)
+
+	// TODO: need to create translation to this error
+	assert.Equal(t, m.L.Get(text.CreateModelConfFileNameExists), as)
+
+	assert.Equal(t, http.StatusConflict, ac)
+
+	assert.Empty(t, a)
 }
 
 func before(tmp string) model.Model {
@@ -116,4 +273,12 @@ func createFolders(tmp string) {
 	os.Mkdir(tmp+defSCFolder, fs.FileMode(common.FolderPermissions))
 
 	os.Mkdir(tmp+defFolder, fs.FileMode(common.FolderPermissions))
+}
+
+func readFile(p string) (m model.Struct) {
+	b, _ := os.ReadFile(p)
+
+	json.Unmarshal(b, &m)
+
+	return m
 }
