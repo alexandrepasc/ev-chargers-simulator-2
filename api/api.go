@@ -10,6 +10,7 @@ import (
 	"github.com/alexandrepasc/ev-chargers-simulator-2/common"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/settings/general"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/simulator"
+	"github.com/alexandrepasc/ev-chargers-simulator-2/simulator/model"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/translation"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/translation/text"
 	"github.com/gin-gonic/gin"
@@ -22,6 +23,7 @@ type API struct {
 	Lang    translation.Translation // Translation language setting
 	General general.Model           // General configurations model
 	Sim     simulator.Simulator     // Simulator package
+	Mod     model.Model             // Model package
 }
 
 /*
@@ -37,6 +39,7 @@ func (a *API) New() (r *gin.Engine) {
 
 	s := simulators.Simulators{
 		Sim:  a.Sim,  // Simulator package
+		Mod:  a.Mod,  // Model package
 		Lang: a.Lang, // Translation language setting
 	}
 	s.Simulators(r)

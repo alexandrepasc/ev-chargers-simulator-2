@@ -6,6 +6,7 @@ import (
 	"github.com/alexandrepasc/ev-chargers-simulator-2/flags"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/settings"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/simulator"
+	"github.com/alexandrepasc/ev-chargers-simulator-2/simulator/model"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/translation"
 )
 
@@ -25,10 +26,16 @@ func main() {
 		L:   t,
 	}
 
+	m := model.Model{
+		Scp: c.SimulatorsConfigFolder,
+		L:   t,
+	}
+
 	var a = api.API{
 		Lang:    t,
 		General: g,
 		Sim:     s,
+		Mod:     m,
 	}
 
 	var srv = a.New()
