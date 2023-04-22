@@ -5,10 +5,8 @@ import (
 	"io/fs"
 	"net/http"
 	"os"
-	"strings"
 
 	"github.com/alexandrepasc/ev-chargers-simulator-2/common"
-	"github.com/alexandrepasc/ev-chargers-simulator-2/simulator/model"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/translation"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/translation/text"
 	"github.com/go-playground/validator/v10"
@@ -19,35 +17,12 @@ type Simulator struct {
 	Scp string                  // simulator configuration path
 	L   translation.Translation // Translation language setting
 	Al  []*Asset
-	Oml []model.OcppModel
-}
-
-// TODO: this should be splited into get sim configurations and get model configurations
-/*
-Get the simulators configuration files and the model type files, read them and convert to structures.
-
-Returns the lists of structures related to the two types of files.
-*/
-func (s *Simulator) GetSimsConfs() (al []*Asset, oml []model.OcppModel) {
-	var f = s.getSimConfigFIles()
-
-	al = s.readSimConfigFiles(f)
-
-	f = s.getModelsCofigFiles()
-
-	oml = s.readModelsConfigFiles(f)
-
-	s.Al = al
-
-	s.Oml = oml
-
-	return al, oml
 }
 
 /*
 Get the simulator configuration files, reads them and convert them into an Asset model array.
 
-Returns the array of the Asset with the data from the files ([]Asset).
+Returns the array of the Asset with the data from the files ([]*Asset).
 */
 func (s *Simulator) GetSimulators() (al []*Asset) {
 	var f = s.getSimConfigFIles()
@@ -215,6 +190,7 @@ func (s *Simulator) getSimConfigFIles() []fs.DirEntry {
 	return f
 }
 
+// TODO: add struct validator after unmarshal
 /*
 Read the configuration files, unmarshal each to the Asset struct, and return and asset array ([]Asset).
 
@@ -259,110 +235,6 @@ func unmarshalAssetJSON(b []byte) (a Asset, e bool) {
 	}
 
 	return a, true
-}
-
-/*
-Get the list of files that are stored in the simulator model folder.
-
-Returns an array of the file system entries stored in the folder ([]fs.DirEntry)
-*/
-func (s *Simulator) getModelsCofigFiles() []fs.DirEntry {
-	common.Log("getModelsCofigFiles").Info(s.L.Get(text.GetModelsConfsFiles))
-
-	f, err := os.ReadDir(s.Scp + common.DefMCFolder)
-
-	if err != nil {
-		common.Log("getModelsCofigFiles").Fatal(err)
-	}
-
-	return f
-}
-
-// TODO: complete the logic after implementing the modbus logic
-/*
-Read the models files, unmarshal each to the OcppModel struct, and return and asset array ([]OcppModel).
-
-f	-	File system entries list ([]fs.DirEntry)
-*/
-func (s *Simulator) readModelsConfigFiles(f []fs.DirEntry) (oms []model.OcppModel) {
-	common.Log("readModelsConfigFiles").Info(s.L.Get(text.ReadModelsConfsFiles))
-
-	var p = s.Scp + common.DefMCFolder
-
-	for _, entry := range f {
-		if !entry.IsDir() {
-			if strings.Contains(entry.Name(), "_") {
-				ok, mt := checkModel(entry.Name())
-
-				if ok {
-					bv, err := os.ReadFile(p + "/" + entry.Name())
-
-					if err != nil {
-						common.Log("readModelsConfigFiles").Error(err)
-					}
-
-					switch mt {
-					case string(model.Ocpp):
-						m, e := unmarshalOcppJSON(bv)
-
-						if e {
-							oms = append(oms, m)
-						}
-
-					case string(model.Modbus):
-					}
-				}
-			}
-		}
-	}
-
-	return oms
-}
-
-/*
-Convert configs json file (in bytes) to the OcppModel and returns it.
-
-Besides the OcppModel structure it returns a boolean false in case a reading fails.
-
-b	-	Json file converted into bytes ([]byte)
-*/
-func unmarshalOcppJSON(b []byte) (a model.OcppModel, e bool) {
-	err := json.Unmarshal(b, &a)
-
-	if err != nil {
-		common.Log("unmarshalOcppJSON").Error(err)
-
-		return a, false
-	}
-
-	return a, true
-}
-
-/*
-Check if the file name match any of the model types supported.
-
-At the moment it supports Ocpp and Modbus.
-
-It returns a boolean var with true if it matches and the model type as string.
-
-In case it doesn't match returns false and an empty string.
-
-n	-	The file name to check (string)
-*/
-func checkModel(n string) (ok bool, mt string) {
-	var aux = strings.Split(n, "_")[1]
-
-	var s = strings.Split(aux, ".")[0]
-
-	if strings.EqualFold(s, string(model.Ocpp)) {
-		return true, string(model.Ocpp)
-	}
-
-	if strings.EqualFold(s, string(model.Modbus)) {
-		return true, string(model.Modbus)
-	}
-
-	return false, ""
 }
 
 /*

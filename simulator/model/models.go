@@ -2,11 +2,12 @@ package model
 
 import "github.com/google/uuid"
 
-type Model struct {
-	ID     uuid.UUID   `json:"simId" validate:"required"` // Model identifier
-	Name   string      `json:"name" validate:"required"`  // Model name
-	Ocpp   OcppModel   `json:"ocpp"`                      // Ocpp structure
-	Modbus ModbusModel `json:"modbus"`                    // Modbus structure
+type Struct struct {
+	ID     uuid.UUID   `json:"id" validate:"required"`   // Model identifier
+	Name   string      `json:"name" validate:"required"` // Model name
+	Type   Type        `json:"type" validate:"required"` // Type of asset that this config can be used (ocpp, modbus)
+	Ocpp   OcppModel   `json:"ocpp"`                     // Ocpp structure
+	Modbus ModbusModel `json:"modbus"`                   // Modbus structure
 }
 
 type OcppModel struct {

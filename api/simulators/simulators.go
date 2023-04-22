@@ -7,6 +7,7 @@ import (
 	"github.com/alexandrepasc/ev-chargers-simulator-2/common"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/simulator"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/simulator/handler"
+	"github.com/alexandrepasc/ev-chargers-simulator-2/simulator/model"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/translation"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/translation/text"
 	"github.com/gin-gonic/gin"
@@ -15,6 +16,7 @@ import (
 
 type Simulators struct {
 	Sim  simulator.Simulator     // Simulator package
+	Mod  model.Model             // Model package
 	Lang translation.Translation // Translation language setting
 	H    handler.Handler
 }
@@ -44,7 +46,7 @@ Sets the get simulators endpoint controller
 c	-	request  context (*gin.context)
 */
 func (s *Simulators) getSimulators(c *gin.Context) {
-	s.Sim.GetSimsConfs()
+	s.Sim.GetSimulators()
 
 	resp := GetSimulatorsTemp{
 		Total:  int64(len(s.Sim.Al)),
@@ -211,11 +213,11 @@ Sets the get models endpoint controller
 c	-	request  context (*gin.context)
 */
 func (s *Simulators) getModels(c *gin.Context) {
-	s.Sim.GetSimsConfs()
+	s.Mod.GetModels()
 
 	resp := GetModelsTemp{
-		Total:  int64(len(s.Sim.Oml)),
-		Models: s.Sim.Oml,
+		Total:  int64(len(s.Mod.Ml)),
+		Models: s.Mod.Ml,
 	}
 
 	c.IndentedJSON(http.StatusOK, resp)
@@ -227,7 +229,7 @@ Sets the post run endpoint controller
 c	-	request  context (*gin.context)
 */
 func (s *Simulators) postRun(c *gin.Context) {
-	s.Sim.GetSimsConfs()
+	s.Sim.GetSimulators()
 
 	s.H.Al = s.Sim.Al
 
