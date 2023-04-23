@@ -24,6 +24,9 @@ const (
 	CreateModelConfFile           Key = "CreateModelConfFile"           // Create a new model configuration file
 	CreateModelConfFileError      Key = "CreateModelConfFileError"      // Unable to create the model configuration file
 	CreateModelConfFileNameExists Key = "CreateModelConfFileNameExists" // The name of the new model already exists
+	UpdateModelConfFileNotFound   Key = "UpdateModelConfFileNotFound"   // Not found the configuration file
+	UpdateModelConfFile           Key = "UpdateModelConfFile"           // Update model configuration file
+	UpdateModelConfFileError      Key = "UpdateModelConfFileError"      // Update model configuration file error
 	CreateSimConfFile             Key = "CreateSimConfFile"             // Create a new simulator configuration file
 	CreateSimConfFileError        Key = "CreateSimConfFileError"        // Unable to create the simulator configuration file
 	CreateSimConfFileNameExists   Key = "CreateSimConfFileNameExist"    // The name of the new asset already exists

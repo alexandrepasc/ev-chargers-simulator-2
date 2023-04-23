@@ -167,7 +167,7 @@ func TestCreateModelRequiredFields(t *testing.T) {
 
 	assert.False(t, ab)
 
-	assert.NotEmpty(t, as)
+	assert.Equal(t, m.L.Get(text.RequestBodyDoesntMatch), as)
 
 	assert.Equal(t, http.StatusBadRequest, ac)
 
@@ -183,7 +183,7 @@ func TestCreateModelRequiredFields(t *testing.T) {
 
 	assert.False(t, ab)
 
-	assert.NotEmpty(t, as)
+	assert.Equal(t, m.L.Get(text.RequestBodyDoesntMatch), as)
 
 	assert.Equal(t, http.StatusBadRequest, ac)
 }
@@ -215,6 +215,168 @@ func TestCanNotCreateModelSameName(t *testing.T) {
 	assert.Equal(t, http.StatusConflict, ac)
 
 	assert.Empty(t, a)
+}
+
+func TestUpdateModel(t *testing.T) {
+	tmp := t.TempDir()
+
+	createFolders(tmp)
+
+	m := before(tmp)
+
+	generateModelDefConfFiles(1, tmp)
+
+	id, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0")
+
+	e := model.Struct{
+		Name: "model0",
+		Type: model.Modbus,
+		Ocpp: model.OcppModel{
+			SerialNumb: "123",
+		},
+	}
+
+	ab, as, ai, a := m.UpdateModel(id, &e)
+
+	assert.True(t, ab)
+
+	assert.Empty(t, as)
+
+	assert.Equal(t, http.StatusOK, ai)
+
+	assert.Equal(t, e.ID, a.ID)
+
+	assert.Equal(t, e.Name, a.Name)
+
+	assert.Equal(t, e.Type, e.Type)
+
+	assert.Equal(t, e.Ocpp.SerialNumb, a.Ocpp.SerialNumb)
+}
+
+func TestUpdateModelFile(t *testing.T) {
+	tmp := t.TempDir()
+
+	createFolders(tmp)
+
+	m := before(tmp)
+
+	generateModelDefConfFiles(1, tmp)
+
+	id, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0")
+
+	e := model.Struct{
+		Name: "model0",
+		Type: model.Modbus,
+		Ocpp: model.OcppModel{
+			SerialNumb: "123",
+		},
+	}
+
+	m.UpdateModel(id, &e)
+
+	nf := tmp + defFolder + "/mod0.json"
+
+	assert.FileExists(t, nf)
+
+	a := readFile(nf)
+
+	assert.Equal(t, id, a.ID)
+
+	assert.Equal(t, e.Name, a.Name)
+
+	assert.Equal(t, e.Type, a.Type)
+
+	assert.Equal(t, e.Ocpp.SerialNumb, a.Ocpp.SerialNumb)
+}
+
+func TestUpdateModelWrongId(t *testing.T) {
+	tmp := t.TempDir()
+
+	createFolders(tmp)
+
+	m := before(tmp)
+
+	generateModelDefConfFiles(1, tmp)
+
+	id, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaab")
+
+	e := model.Struct{
+		Name: "model0",
+		Type: model.Modbus,
+		Ocpp: model.OcppModel{
+			SerialNumb: "123",
+		},
+	}
+
+	ab, as, ai, a := m.UpdateModel(id, &e)
+
+	assert.False(t, ab)
+
+	assert.Equal(t, m.L.Get(text.UpdateModelConfFileNotFound), as)
+
+	assert.Equal(t, http.StatusNotFound, ai)
+
+	assert.Empty(t, a)
+}
+
+func TestUpdateModelEmpty(t *testing.T) {
+	tmp := t.TempDir()
+
+	createFolders(tmp)
+
+	m := before(tmp)
+
+	generateModelDefConfFiles(1, tmp)
+
+	id, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0")
+
+	e := model.Struct{}
+
+	ab, as, ai, a := m.UpdateModel(id, &e)
+
+	assert.False(t, ab)
+
+	assert.Equal(t, m.L.Get(text.RequestBodyDoesntMatch), as)
+
+	assert.Equal(t, http.StatusBadRequest, ai)
+
+	assert.Empty(t, a)
+}
+
+func TestUpdateModelChangeName(t *testing.T) {
+	tmp := t.TempDir()
+
+	createFolders(tmp)
+
+	m := before(tmp)
+
+	generateModelDefConfFiles(1, tmp)
+
+	id, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0")
+
+	e := model.Struct{
+		Name: "nop",
+		Type: model.Modbus,
+		Ocpp: model.OcppModel{
+			SerialNumb: "123",
+		},
+	}
+
+	ep := e
+
+	ab, as, ai, a := m.UpdateModel(id, &ep)
+
+	assert.True(t, ab)
+
+	assert.Empty(t, as)
+
+	assert.Equal(t, http.StatusOK, ai)
+
+	assert.NotEqual(t, e.Name, a.Name)
+
+	assert.Equal(t, e.Type, a.Type)
+
+	assert.Equal(t, e.Ocpp.SerialNumb, a.Ocpp.SerialNumb)
 }
 
 func before(tmp string) model.Model {

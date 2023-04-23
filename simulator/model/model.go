@@ -55,7 +55,7 @@ func (m *Model) CreateModel(s *Struct) (ok bool, msg string, code int, ns *Struc
 	if vErr != nil {
 		common.Log("CreateModel").Error(vErr)
 
-		return false, vErr.Error(), http.StatusBadRequest, ns
+		return false, m.L.Get(text.RequestBodyDoesntMatch), http.StatusBadRequest, ns
 	}
 
 	var sl = m.GetModels()
@@ -79,10 +79,63 @@ func (m *Model) CreateModel(s *Struct) (ok bool, msg string, code int, ns *Struc
 	}
 
 	if !writeFile(f, s) {
-		return false, m.L.Get(text.CreateModelConfFileError), http.StatusBadRequest, ns
+		return false, m.L.Get(text.CreateModelConfFileError), http.StatusInternalServerError, ns
 	}
 
 	return true, "", http.StatusCreated, s
+}
+
+/*
+Receive the uuid of the model that will be updated with the changes. This will replace the
+configurations entirely, it will not modify only one value.
+
+Returns true (bool), an empty string (string), the http code (int), and the new configuration
+(*Struct) in case of success.
+
+Will return false, the error message, the http code, and an empty Struct.
+
+id	-	Simulator identifier (uuid.UUID)
+
+s	-	Asset structure with the new configuration (*Struct)
+*/
+func (m *Model) UpdateModel(id uuid.UUID, s *Struct) (ok bool, msg string, code int, ns *Struct) {
+	var ml = m.GetModels()
+
+	for _, i := range ml {
+		if i.ID != id {
+			continue
+		}
+
+		ns = s
+
+		ns.ID = i.ID
+
+		ns.Name = i.Name
+
+		ve := validator.New().Struct(ns)
+
+		if ve != nil {
+			common.Log("UpdateModel").Error(ve)
+
+			return false, m.L.Get(text.RequestBodyDoesntMatch), http.StatusBadRequest, &Struct{}
+		}
+
+		common.Log("UpdateModel").Info(m.L.Get(text.UpdateModelConfFile))
+
+		_, b := marshalModelToJSON(ns)
+
+		err := os.WriteFile(m.Scp+common.DefMCFolder+"/"+ns.Name+".json", b, fs.FileMode(common.FilePermissions))
+
+		if err != nil {
+			common.Log("UpdateModel").Error(err)
+
+			return false, m.L.Get(text.UpdateModelConfFileError), http.StatusInternalServerError, &Struct{}
+		}
+
+		return true, "", http.StatusOK, ns
+	}
+
+	return false, m.L.Get(text.UpdateModelConfFileNotFound), http.StatusNotFound, &Struct{}
 }
 
 /*
