@@ -392,7 +392,7 @@ func before(tmp string) model.Model {
 	return m
 }
 
-func generateModelDefConfFiles(n int64, tmp string) {
+func generateModelDefConfFiles(n int64, tmp string) { //nolint:unparam // because testing
 	for i := int64(0); i < n; i++ {
 		id, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa" + strconv.FormatInt(i, 10))
 
