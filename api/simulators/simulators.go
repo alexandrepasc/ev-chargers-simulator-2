@@ -36,6 +36,7 @@ func (s *Simulators) Simulators(r *gin.Engine) {
 	r.PUT(simulatorsIDEp, s.putSimulators)
 	r.DELETE(simulatorsIDEp, s.deleteSimulators)
 	r.GET(simModelsEp, s.getModels)
+	r.POST(simModelsEp, s.postModels)
 	r.POST(simulatorsEp+"/run", s.postRun)
 	r.POST(simulatorsEp+"/stop", s.postStop)
 }
@@ -221,6 +222,49 @@ func (s *Simulators) getModels(c *gin.Context) {
 	}
 
 	c.IndentedJSON(http.StatusOK, resp)
+}
+
+/*
+Sets the post models endpoint controller, it will generate a new model configuration file.
+
+c	-	request  context (*gin.context)
+*/
+func (s *Simulators) postModels(c *gin.Context) {
+	var b = model.Struct{}
+
+	err := c.BindJSON(&b)
+
+	if err != nil {
+		common.Log("postModels").Error(err)
+
+		var r = errors.ErroMsg{
+			Message: s.Lang.Get(text.RequestBodyDoesntMatch),
+		}
+
+		ok := errors.StructValidate(r, c, s.Lang)
+
+		if ok {
+			c.IndentedJSON(http.StatusBadRequest, r)
+		}
+
+		return
+	}
+
+	ok, msg, cod, r := s.Mod.CreateModel(&b)
+
+	if ok {
+		c.IndentedJSON(cod, r)
+	} else {
+		common.Log("postModels").Error(msg)
+
+		var r = errors.ErroMsg{
+			Message: msg,
+		}
+		v := errors.StructValidate(r, c, s.Lang)
+		if v {
+			c.IndentedJSON(cod, r)
+		}
+	}
 }
 
 /*

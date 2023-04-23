@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"strconv"
 	"testing"
 
 	"github.com/alexandrepasc/ev-chargers-simulator-2/api/errors"
@@ -923,6 +922,168 @@ func TestGetSimModelsNoModels(t *testing.T) {
 	assert.Nil(t, a.Models)
 }
 
+func TestPostModels(t *testing.T) {
+	r := gin.Default()
+
+	_, mod, tmp := before(t, []*simulator.Asset{}, []*model.Struct{})
+
+	s := simulators.Simulators{
+		Mod:  mod,
+		Lang: mod.L,
+	}
+
+	e := model.Struct{
+		Name: "name",
+		Type: model.Modbus,
+		Ocpp: model.OcppModel{
+			SerialNumb: "serial",
+		},
+	}
+
+	j, _ := json.Marshal(e)
+	b := bytes.NewReader(j)
+
+	s.Simulators(r)
+
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest(string(mPost), modelsEp, b)
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusCreated, w.Code)
+
+	a := model.Struct{}
+	json.Unmarshal(w.Body.Bytes(), &a)
+
+	_, err := uuid.Parse(a.ID.String())
+	assert.Nil(t, err)
+
+	assert.Equal(t, e.Name, a.Name)
+
+	assert.Equal(t, e.Type, a.Type)
+
+	assert.Equal(t, e.Ocpp.SerialNumb, a.Ocpp.SerialNumb)
+
+	assert.FileExists(t, tmp+"/simConf/models/"+e.Name+".json")
+}
+
+func TestPostModelsRequiredFields(t *testing.T) {
+	r := gin.Default()
+
+	_, mod, _ := before(t, []*simulator.Asset{}, []*model.Struct{})
+
+	s := simulators.Simulators{
+		Mod:  mod,
+		Lang: mod.L,
+	}
+
+	bn, bt := postModelsRequiredFields()
+
+	s.Simulators(r)
+
+	w := httptest.NewRecorder()
+
+	// name
+	j, _ := json.Marshal(bn)
+	b := bytes.NewReader(j)
+
+	req, _ := http.NewRequest(string(mPost), modelsEp, b)
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+
+	// type
+	j, _ = json.Marshal(bt)
+	b = bytes.NewReader(j)
+
+	req, _ = http.NewRequest(string(mPost), modelsEp, b)
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestPostModelsBadRequestBody(t *testing.T) {
+	r := gin.Default()
+
+	_, mod, _ := before(t, []*simulator.Asset{}, []*model.Struct{})
+
+	s := simulators.Simulators{
+		Mod:  mod,
+		Lang: mod.L,
+	}
+
+	j, _ := json.Marshal("{nothing: atall}")
+	b := bytes.NewReader(j)
+
+	s.Simulators(r)
+
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest(string(mPost), modelsEp, b)
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+
+	a := errors.ErroMsg{}
+	json.Unmarshal(w.Body.Bytes(), &a)
+
+	assert.Equal(t, translation.Translation{L: translation.EnGb}.Get(text.RequestBodyDoesntMatch), a.Message)
+}
+
+func TestNotAblePostModelsSameName(t *testing.T) {
+	r := gin.Default()
+
+	id, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1")
+	ml := []*model.Struct{
+		{
+			ID:   id,
+			Name: "name",
+			Type: model.Modbus,
+			Ocpp: model.OcppModel{
+				SerialNumb: "serial",
+			},
+		},
+	}
+
+	sim, mod, _ := before(t, []*simulator.Asset{}, ml)
+
+	s := simulators.Simulators{
+		Sim:  sim,
+		Mod:  mod,
+		Lang: translation.Translation{L: translation.EnGb},
+	}
+
+	e := model.Struct{
+		Name: "name",
+		Type: model.Modbus,
+		Ocpp: model.OcppModel{
+			SerialNumb: "serial",
+		},
+	}
+
+	j, _ := json.Marshal(e)
+	b := bytes.NewReader(j)
+
+	s.Simulators(r)
+
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest(string(mPost), modelsEp, b)
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusConflict, w.Code)
+
+	a := errors.ErroMsg{}
+	json.Unmarshal(w.Body.Bytes(), &a)
+
+	assert.Equal(t, translation.Translation{L: translation.EnGb}.Get(text.CreateModelConfFileNameExists), a.Message)
+}
+
 // TODO: Add tests to the run and stop endpoints
 
 func before(t *testing.T, al []*simulator.Asset, ml []*model.Struct) (s simulator.Simulator, m model.Model, tmp string) {
@@ -966,7 +1127,7 @@ func generateConfFiles(tmp string, al []*simulator.Asset, ml []*model.Struct) {
 	}
 
 	for i := 0; i < len(ml); i++ {
-		p := tmp + "/simConf" + common.DefMCFolder + "/model" + strconv.Itoa(i) + "_ocpp.json"
+		p := tmp + "/simConf" + common.DefMCFolder + "/" + ml[i].Name + ".json"
 
 		f, _ := os.Create(p)
 		f.Close()
@@ -1049,4 +1210,24 @@ func postSimulatorsRequiredFields() (bn, bt, bp, bst, bph, bc, be simulator.Asse
 	}
 
 	return bn, bt, bp, bst, bph, bc, be
+}
+
+func postModelsRequiredFields() (bn, bt model.Struct) {
+	// name
+	bn = model.Struct{
+		Type: model.Modbus,
+		Ocpp: model.OcppModel{
+			SerialNumb: "serial",
+		},
+	}
+
+	// type
+	bt = model.Struct{
+		Name: "name",
+		Ocpp: model.OcppModel{
+			SerialNumb: "serial",
+		},
+	}
+
+	return bn, bt
 }
