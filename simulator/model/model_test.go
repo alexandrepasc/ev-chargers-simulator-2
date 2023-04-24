@@ -198,7 +198,7 @@ func TestCanNotCreateModelSameName(t *testing.T) {
 	generateModelDefConfFiles(1, tmp)
 
 	e := model.Struct{
-		Name: "mod0",
+		Name: "model0",
 		Type: model.Ocpp,
 		Ocpp: model.OcppModel{
 			SerialNumb: "123-asd-zxc",
@@ -274,7 +274,7 @@ func TestUpdateModelFile(t *testing.T) {
 
 	m.UpdateModel(id, &e)
 
-	nf := tmp + defFolder + "/mod0.json"
+	nf := tmp + defFolder + "/model0.json"
 
 	assert.FileExists(t, nf)
 
@@ -379,6 +379,60 @@ func TestUpdateModelChangeName(t *testing.T) {
 	assert.Equal(t, e.Ocpp.SerialNumb, a.Ocpp.SerialNumb)
 }
 
+func TestDeleteModel(t *testing.T) {
+	tmp := t.TempDir()
+
+	createFolders(tmp)
+
+	m := before(tmp)
+
+	generateModelDefConfFiles(2, tmp)
+
+	id, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0")
+
+	p0 := tmp + defFolder + "/model0.json"
+	p1 := tmp + defFolder + "/model1.json"
+
+	ab, as, ai := m.DeleteModel(id)
+
+	assert.True(t, ab)
+
+	assert.Empty(t, as)
+
+	assert.Equal(t, http.StatusNoContent, ai)
+
+	assert.NoFileExists(t, p0)
+
+	assert.FileExists(t, p1)
+}
+
+func TestDeleteModelWrongId(t *testing.T) {
+	tmp := t.TempDir()
+
+	createFolders(tmp)
+
+	m := before(tmp)
+
+	generateModelDefConfFiles(2, tmp)
+
+	id, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaab")
+
+	p0 := tmp + defFolder + "/model0.json"
+	p1 := tmp + defFolder + "/model1.json"
+
+	ab, as, ai := m.DeleteModel(id)
+
+	assert.False(t, ab)
+
+	assert.Equal(t, m.L.Get(text.DeleteModelConfFileNotFound), as)
+
+	assert.Equal(t, http.StatusNotFound, ai)
+
+	assert.FileExists(t, p0)
+
+	assert.FileExists(t, p1)
+}
+
 func before(tmp string) model.Model {
 	t := translation.Translation{
 		L: translation.Translation{}.GetKey("en-GB"),
@@ -392,13 +446,13 @@ func before(tmp string) model.Model {
 	return m
 }
 
-func generateModelDefConfFiles(n int64, tmp string) { //nolint:unparam // because testing
+func generateModelDefConfFiles(n int64, tmp string) {
 	for i := int64(0); i < n; i++ {
 		id, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa" + strconv.FormatInt(i, 10))
 
 		m := model.Struct{
 			ID:   id,
-			Name: "mod" + strconv.FormatInt(i, 10),
+			Name: "model" + strconv.FormatInt(i, 10),
 			Type: model.Ocpp,
 		}
 

@@ -139,6 +139,40 @@ func (m *Model) UpdateModel(id uuid.UUID, s *Struct) (ok bool, msg string, code 
 }
 
 /*
+Receive the uuid of the model that will be deleted. This will remove the configuration file
+that matches the id.
+
+Returns true (bool), an empty string (string) and the http code (int) in case of success.
+
+Will return false, the error message, and the http code.
+
+id	-	Simulator identifier (uuid.UUID)
+*/
+func (m *Model) DeleteModel(id uuid.UUID) (ok bool, msg string, code int) {
+	var sl = m.GetModels()
+
+	for _, i := range sl {
+		if i.ID != id {
+			continue
+		}
+
+		err := os.Remove(m.Scp + common.DefMCFolder + "/" + i.Name + ".json")
+
+		if err != nil {
+			common.Log("DeleteModel").Error(err)
+
+			return false, m.L.Get(text.DeleteModelConfFileError), http.StatusInternalServerError
+		}
+
+		common.Log("DeleteModel").Info(m.L.Get(text.DeleteModelConfFile))
+
+		return true, "", http.StatusNoContent
+	}
+
+	return false, m.L.Get(text.DeleteModelConfFileNotFound), http.StatusNotFound
+}
+
+/*
 Get the list of files that are stored in the simulator model folder.
 
 Returns an array of the file system entries stored in the folder ([]fs.DirEntry)

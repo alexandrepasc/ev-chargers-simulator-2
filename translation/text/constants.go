@@ -27,6 +27,9 @@ const (
 	UpdateModelConfFileNotFound   Key = "UpdateModelConfFileNotFound"   // Not found the configuration file
 	UpdateModelConfFile           Key = "UpdateModelConfFile"           // Update model configuration file
 	UpdateModelConfFileError      Key = "UpdateModelConfFileError"      // Update model configuration file error
+	DeleteModelConfFileNotFound   Key = "DeleteModelConfFileNotFound"   // Configuration ID not found
+	DeleteModelConfFileError      Key = "DeleteModelConfFileError"      // Not able to delete the configuration file
+	DeleteModelConfFile           Key = "DeleteModelConfFile"           // Delete model configuration file
 	CreateSimConfFile             Key = "CreateSimConfFile"             // Create a new simulator configuration file
 	CreateSimConfFileError        Key = "CreateSimConfFileError"        // Unable to create the simulator configuration file
 	CreateSimConfFileNameExists   Key = "CreateSimConfFileNameExist"    // The name of the new asset already exists
