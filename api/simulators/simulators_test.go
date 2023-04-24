@@ -1084,6 +1084,252 @@ func TestNotAblePostModelsSameName(t *testing.T) {
 	assert.Equal(t, translation.Translation{L: translation.EnGb}.Get(text.CreateModelConfFileNameExists), a.Message)
 }
 
+func TestPutModels(t *testing.T) {
+	r := gin.Default()
+
+	id, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0")
+	ol := []*model.Struct{
+		{
+			ID:   id,
+			Name: "name",
+			Type: model.Modbus,
+			Ocpp: model.OcppModel{
+				SerialNumb: "poi",
+			},
+		},
+	}
+
+	_, mod, _ := before(t, []*simulator.Asset{}, ol)
+
+	s := simulators.Simulators{
+		Mod:  mod,
+		Lang: mod.L,
+	}
+
+	e := model.Struct{
+		Type: model.Ocpp,
+		Ocpp: model.OcppModel{
+			SerialNumb: "asd",
+		},
+	}
+
+	j, _ := json.Marshal(e)
+	b := bytes.NewReader(j)
+
+	s.Simulators(r)
+
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest(string(mPut), modelsEp+"/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0", b)
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	a := model.Struct{}
+	json.Unmarshal(w.Body.Bytes(), &a)
+
+	assert.Equal(t, e.Type, a.Type)
+
+	assert.Equal(t, e.Ocpp.SerialNumb, a.Ocpp.SerialNumb)
+}
+
+func TestPutModelsWrongId(t *testing.T) {
+	r := gin.Default()
+
+	id, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0")
+	ol := []*model.Struct{
+		{
+			ID:   id,
+			Name: "name",
+			Type: model.Modbus,
+			Ocpp: model.OcppModel{
+				SerialNumb: "poi",
+			},
+		},
+	}
+
+	_, mod, _ := before(t, []*simulator.Asset{}, ol)
+
+	s := simulators.Simulators{
+		Mod:  mod,
+		Lang: mod.L,
+	}
+
+	e := model.Struct{
+		Type: model.Ocpp,
+		Ocpp: model.OcppModel{
+			SerialNumb: "asd",
+		},
+	}
+
+	j, _ := json.Marshal(e)
+	b := bytes.NewReader(j)
+
+	s.Simulators(r)
+
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest(string(mPut), modelsEp+"/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", b)
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNotFound, w.Code)
+
+	a := errors.ErroMsg{}
+	json.Unmarshal(w.Body.Bytes(), &a)
+
+	assert.Equal(t, s.Lang.Get(text.UpdateModelConfFileNotFound), a.Message)
+}
+
+func TestPutModelsInvalidId(t *testing.T) {
+	r := gin.Default()
+
+	id, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0")
+	ol := []*model.Struct{
+		{
+			ID:   id,
+			Name: "name",
+			Type: model.Modbus,
+			Ocpp: model.OcppModel{
+				SerialNumb: "poi",
+			},
+		},
+	}
+
+	_, mod, _ := before(t, []*simulator.Asset{}, ol)
+
+	s := simulators.Simulators{
+		Mod:  mod,
+		Lang: mod.L,
+	}
+
+	e := model.Struct{
+		Type: model.Ocpp,
+		Ocpp: model.OcppModel{
+			SerialNumb: "asd",
+		},
+	}
+
+	j, _ := json.Marshal(e)
+	b := bytes.NewReader(j)
+
+	s.Simulators(r)
+
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest(string(mPut), modelsEp+"/asd", b)
+
+	r.ServeHTTP(w, req)
+
+	a := errors.ErroMsg{}
+	json.Unmarshal(w.Body.Bytes(), &a)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+
+	assert.Equal(t, s.Lang.Get(text.UUIDParsingError), a.Message)
+}
+
+func TestPutModelsChangeName(t *testing.T) {
+	r := gin.Default()
+
+	id, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0")
+	ol := []*model.Struct{
+		{
+			ID:   id,
+			Name: "name",
+			Type: model.Modbus,
+			Ocpp: model.OcppModel{
+				SerialNumb: "poi",
+			},
+		},
+	}
+
+	_, mod, _ := before(t, []*simulator.Asset{}, ol)
+
+	s := simulators.Simulators{
+		Mod:  mod,
+		Lang: mod.L,
+	}
+
+	e := model.Struct{
+		Name: "change",
+		Type: model.Ocpp,
+		Ocpp: model.OcppModel{
+			SerialNumb: "asd",
+		},
+	}
+
+	j, _ := json.Marshal(e)
+	b := bytes.NewReader(j)
+
+	s.Simulators(r)
+
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest(string(mPut), modelsEp+"/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0", b)
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	a := model.Struct{}
+	json.Unmarshal(w.Body.Bytes(), &a)
+
+	assert.NotEqual(t, e.Name, a.Name)
+
+	assert.Equal(t, e.Type, a.Type)
+
+	assert.Equal(t, e.Ocpp.SerialNumb, a.Ocpp.SerialNumb)
+}
+
+func TestPutModelsInvalidBody(t *testing.T) {
+	r := gin.Default()
+
+	id, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0")
+	ol := []*model.Struct{
+		{
+			ID:   id,
+			Name: "name",
+			Type: model.Modbus,
+			Ocpp: model.OcppModel{
+				SerialNumb: "poi",
+			},
+		},
+	}
+
+	_, mod, _ := before(t, []*simulator.Asset{}, ol)
+
+	s := simulators.Simulators{
+		Mod:  mod,
+		Lang: mod.L,
+	}
+
+	e := model.Struct{
+		Ocpp: model.OcppModel{
+			SerialNumb: "asd",
+		},
+	}
+
+	j, _ := json.Marshal(e)
+	b := bytes.NewReader(j)
+
+	s.Simulators(r)
+
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest(string(mPut), modelsEp+"/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0", b)
+
+	r.ServeHTTP(w, req)
+
+	a := errors.ErroMsg{}
+	json.Unmarshal(w.Body.Bytes(), &a)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+
+	assert.Equal(t, s.Lang.Get(text.RequestBodyDoesntMatch), a.Message)
+}
+
 // TODO: Add tests to the run and stop endpoints
 
 func before(t *testing.T, al []*simulator.Asset, ml []*model.Struct) (s simulator.Simulator, m model.Model, tmp string) {

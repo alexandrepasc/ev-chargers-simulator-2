@@ -1,3 +1,4 @@
+//nolint:dupl // because it needs to be reviewed
 package simulators
 
 import (
@@ -35,8 +36,11 @@ func (s *Simulators) Simulators(r *gin.Engine) {
 	r.POST(simulatorsEp, s.postSimulators)
 	r.PUT(simulatorsIDEp, s.putSimulators)
 	r.DELETE(simulatorsIDEp, s.deleteSimulators)
+
 	r.GET(simModelsEp, s.getModels)
 	r.POST(simModelsEp, s.postModels)
+	r.PUT(simModelsIDEp, s.putModels)
+
 	r.POST(simulatorsEp+"/run", s.postRun)
 	r.POST(simulatorsEp+"/stop", s.postStop)
 }
@@ -261,6 +265,70 @@ func (s *Simulators) postModels(c *gin.Context) {
 			Message: msg,
 		}
 		v := errors.StructValidate(r, c, s.Lang)
+		if v {
+			c.IndentedJSON(cod, r)
+		}
+	}
+}
+
+/*
+Sets the put models endpoint controller, it will replace the current configurations with what
+was sent by the user.
+
+c	-	request  context (*gin.context)
+*/
+func (s *Simulators) putModels(c *gin.Context) {
+	var id, errP = uuid.Parse(c.Param("id"))
+
+	if errP != nil {
+		common.Log("putModels").Error(errP)
+
+		var r = errors.ErroMsg{
+			Message: s.Lang.Get(text.UUIDParsingError),
+		}
+
+		v := errors.StructValidate(r, c, s.Lang)
+
+		if v {
+			c.IndentedJSON(http.StatusBadRequest, r)
+		}
+
+		return
+	}
+
+	var req = model.Struct{}
+
+	err := c.BindJSON(&req)
+
+	if err != nil {
+		common.Log("putModels").Error(err)
+
+		var r = errors.ErroMsg{
+			Message: s.Lang.Get(text.RequestBodyDoesntMatch),
+		}
+
+		v := errors.StructValidate(r, c, s.Lang)
+
+		if v {
+			c.IndentedJSON(http.StatusBadRequest, r)
+		}
+
+		return
+	}
+
+	ok, msg, cod, r := s.Mod.UpdateModel(id, &req)
+
+	if ok {
+		c.IndentedJSON(http.StatusOK, r)
+	} else {
+		common.Log("putModels").Error(msg)
+
+		var r = errors.ErroMsg{
+			Message: msg,
+		}
+
+		v := errors.StructValidate(r, c, s.Lang)
+
 		if v {
 			c.IndentedJSON(cod, r)
 		}
