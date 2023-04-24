@@ -1330,6 +1330,140 @@ func TestPutModelsInvalidBody(t *testing.T) {
 	assert.Equal(t, s.Lang.Get(text.RequestBodyDoesntMatch), a.Message)
 }
 
+func TestDeleteModels(t *testing.T) {
+	r := gin.Default()
+
+	id, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0")
+	id2, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1")
+	ol := []*model.Struct{
+		{
+			ID:   id,
+			Name: "name",
+			Type: model.Modbus,
+			Ocpp: model.OcppModel{
+				SerialNumb: "poi",
+			},
+		},
+		{
+			ID:   id2,
+			Name: "name2",
+			Type: model.Modbus,
+			Ocpp: model.OcppModel{
+				SerialNumb: "poi2",
+			},
+		},
+	}
+
+	_, mod, _ := before(t, []*simulator.Asset{}, ol)
+
+	s := simulators.Simulators{
+		Mod:  mod,
+		Lang: mod.L,
+	}
+
+	s.Simulators(r)
+
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest(string(mDelete), modelsEp+"/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0", http.NoBody)
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNoContent, w.Code)
+
+	assert.Empty(t, w.Body.String())
+
+	req, _ = http.NewRequest(string(mGet), modelsEp, http.NoBody)
+
+	r.ServeHTTP(w, req)
+
+	a := simulators.GetModelsTemp{}
+
+	json.Unmarshal(w.Body.Bytes(), &a)
+
+	assert.Equal(t, int64(1), a.Total)
+
+	assert.Equal(t, ol[1].ID.String(), a.Models.([]interface{})[0].(map[string]interface{})["id"])
+
+	assert.Equal(t, ol[1].Name, a.Models.([]interface{})[0].(map[string]interface{})["name"])
+}
+
+func TestDeleteModelsWrongId(t *testing.T) {
+	r := gin.Default()
+
+	id, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0")
+	ol := []*model.Struct{
+		{
+			ID:   id,
+			Name: "name",
+			Type: model.Modbus,
+			Ocpp: model.OcppModel{
+				SerialNumb: "poi",
+			},
+		},
+	}
+
+	_, mod, _ := before(t, []*simulator.Asset{}, ol)
+
+	s := simulators.Simulators{
+		Mod:  mod,
+		Lang: mod.L,
+	}
+
+	s.Simulators(r)
+
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest(string(mDelete), modelsEp+"/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaab", http.NoBody)
+
+	r.ServeHTTP(w, req)
+
+	a := errors.ErroMsg{}
+	json.Unmarshal(w.Body.Bytes(), &a)
+
+	assert.Equal(t, http.StatusNotFound, w.Code)
+
+	assert.Equal(t, s.Lang.Get(text.DeleteModelConfFileNotFound), a.Message)
+}
+
+func TestDeleteModelsInvalidId(t *testing.T) {
+	r := gin.Default()
+
+	id, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0")
+	ol := []*model.Struct{
+		{
+			ID:   id,
+			Name: "name",
+			Type: model.Modbus,
+			Ocpp: model.OcppModel{
+				SerialNumb: "poi",
+			},
+		},
+	}
+
+	_, mod, _ := before(t, []*simulator.Asset{}, ol)
+
+	s := simulators.Simulators{
+		Mod:  mod,
+		Lang: mod.L,
+	}
+
+	s.Simulators(r)
+
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest(string(mDelete), modelsEp+"/aaa", http.NoBody)
+
+	r.ServeHTTP(w, req)
+
+	a := errors.ErroMsg{}
+	json.Unmarshal(w.Body.Bytes(), &a)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+
+	assert.Equal(t, s.Lang.Get(text.UUIDParsingError), a.Message)
+}
+
 // TODO: Add tests to the run and stop endpoints
 
 func before(t *testing.T, al []*simulator.Asset, ml []*model.Struct) (s simulator.Simulator, m model.Model, tmp string) {

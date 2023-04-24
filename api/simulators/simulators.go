@@ -40,6 +40,7 @@ func (s *Simulators) Simulators(r *gin.Engine) {
 	r.GET(simModelsEp, s.getModels)
 	r.POST(simModelsEp, s.postModels)
 	r.PUT(simModelsIDEp, s.putModels)
+	r.DELETE(simModelsIDEp, s.deleteModels)
 
 	r.POST(simulatorsEp+"/run", s.postRun)
 	r.POST(simulatorsEp+"/stop", s.postStop)
@@ -322,6 +323,50 @@ func (s *Simulators) putModels(c *gin.Context) {
 		c.IndentedJSON(http.StatusOK, r)
 	} else {
 		common.Log("putModels").Error(msg)
+
+		var r = errors.ErroMsg{
+			Message: msg,
+		}
+
+		v := errors.StructValidate(r, c, s.Lang)
+
+		if v {
+			c.IndentedJSON(cod, r)
+		}
+	}
+}
+
+/*
+Sets the delete models endpoint controller, it will enable the user to delete one model
+configuration file.
+
+c	-	request  context (*gin.context)
+*/
+func (s *Simulators) deleteModels(c *gin.Context) {
+	var id, errP = uuid.Parse(c.Param("id"))
+
+	if errP != nil {
+		common.Log("deleteModels").Error(errP)
+
+		var r = errors.ErroMsg{
+			Message: s.Lang.Get(text.UUIDParsingError),
+		}
+
+		v := errors.StructValidate(r, c, s.Lang)
+
+		if v {
+			c.IndentedJSON(http.StatusBadRequest, r)
+		}
+
+		return
+	}
+
+	ok, msg, cod := s.Mod.DeleteModel(id)
+
+	if ok {
+		c.IndentedJSON(cod, http.NoBody)
+	} else {
+		common.Log("deleteModels").Error(msg)
 
 		var r = errors.ErroMsg{
 			Message: msg,
