@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"strconv"
 	"testing"
 
 	"github.com/alexandrepasc/ev-chargers-simulator-2/api/errors"
@@ -57,9 +56,9 @@ func TestGetSimulators(t *testing.T) {
 			Evses:       []simulator.Evse{},
 		},
 	}
-	ml := []model.OcppModel{}
+	ml := []*model.Struct{}
 
-	sim, _ := before(t, al, ml)
+	sim, _, _ := before(t, al, ml)
 
 	s := simulators.Simulators{
 		Sim: sim,
@@ -94,9 +93,9 @@ func TestGetSimulatorsNoAssets(t *testing.T) {
 	r := gin.Default()
 
 	al := []*simulator.Asset{}
-	ml := []model.OcppModel{}
+	ml := []*model.Struct{}
 
-	sim, _ := before(t, al, ml)
+	sim, _, _ := before(t, al, ml)
 
 	s := simulators.Simulators{
 		Sim: sim,
@@ -121,105 +120,15 @@ func TestGetSimulatorsNoAssets(t *testing.T) {
 	assert.Nil(t, a.Assets)
 }
 
-func TestGetSimModels(t *testing.T) {
-	r := gin.Default()
-
-	al := []*simulator.Asset{}
-	ml := []model.OcppModel{
-		{
-			SerialNumb: "123qwe",
-			Model:      "name",
-			Vendor:     "vendor",
-			FwVersion:  "0.0.0.0",
-		},
-		{
-			SerialNumb: "456asd",
-			Model:      "nop",
-			Vendor:     "nop",
-			FwVersion:  "9.9.9.9",
-		},
-	}
-
-	sim, _ := before(t, al, ml)
-
-	sim.Al = al
-	sim.Oml = ml
-
-	s := simulators.Simulators{
-		Sim: sim,
-	}
-
-	s.Simulators(r)
-
-	w := httptest.NewRecorder()
-
-	req, _ := http.NewRequest(string(mGet), modelsEp, http.NoBody)
-
-	r.ServeHTTP(w, req)
-
-	assert.Equal(t, http.StatusOK, w.Code)
-
-	a := simulators.GetModelsTemp{}
-
-	json.Unmarshal(w.Body.Bytes(), &a)
-
-	assert.Equal(t, int64(2), a.Total)
-
-	for i := 0; i < len(ml); i++ {
-		assert.Equal(t, ml[i].SerialNumb, a.Models.([]interface{})[i].(map[string]interface{})["serialNumb"])
-
-		assert.Equal(t, ml[i].Model, a.Models.([]interface{})[i].(map[string]interface{})["model"])
-
-		assert.Equal(t, ml[i].Vendor, a.Models.([]interface{})[i].(map[string]interface{})["vendor"])
-
-		assert.Equal(t, ml[i].FwVersion, a.Models.([]interface{})[i].(map[string]interface{})["fwVersion"])
-	}
-}
-
-func TestGetSimModelsNoModels(t *testing.T) {
-	r := gin.Default()
-
-	al := []*simulator.Asset{}
-	ml := []model.OcppModel{}
-
-	sim, _ := before(t, al, ml)
-
-	sim.Al = al
-	sim.Oml = ml
-
-	s := simulators.Simulators{
-		Sim: sim,
-	}
-
-	s.Simulators(r)
-
-	w := httptest.NewRecorder()
-
-	req, _ := http.NewRequest(string(mGet), modelsEp, http.NoBody)
-
-	r.ServeHTTP(w, req)
-
-	assert.Equal(t, http.StatusOK, w.Code)
-
-	a := simulators.GetModelsTemp{}
-
-	json.Unmarshal(w.Body.Bytes(), &a)
-
-	assert.Equal(t, int64(0), a.Total)
-
-	assert.Nil(t, a.Models)
-}
-
 func TestPostSimulators(t *testing.T) {
 	r := gin.Default()
 
 	al := []*simulator.Asset{}
-	ml := []model.OcppModel{}
+	ml := []*model.Struct{}
 
-	sim, tmp := before(t, al, ml)
+	sim, _, tmp := before(t, al, ml)
 
 	sim.Al = al
-	sim.Oml = ml
 
 	s := simulators.Simulators{
 		Sim: sim,
@@ -282,12 +191,11 @@ func TestPostSimulatorsRequiredFields(t *testing.T) {
 	r := gin.Default()
 
 	al := []*simulator.Asset{}
-	ml := []model.OcppModel{}
+	ml := []*model.Struct{}
 
-	sim, _ := before(t, al, ml)
+	sim, _, _ := before(t, al, ml)
 
 	sim.Al = al
-	sim.Oml = ml
 
 	s := simulators.Simulators{
 		Sim: sim,
@@ -374,12 +282,11 @@ func TestPostSimulatorsBadRequestBody(t *testing.T) {
 	r := gin.Default()
 
 	al := []*simulator.Asset{}
-	ml := []model.OcppModel{}
+	ml := []*model.Struct{}
 
-	sim, _ := before(t, al, ml)
+	sim, _, _ := before(t, al, ml)
 
 	sim.Al = al
-	sim.Oml = ml
 
 	s := simulators.Simulators{
 		Sim:  sim,
@@ -413,12 +320,11 @@ func TestNotAblePostSimulatorsSameName(t *testing.T) {
 			Name: "test1",
 		},
 	}
-	ml := []model.OcppModel{}
+	ml := []*model.Struct{}
 
-	sim, _ := before(t, al, ml)
+	sim, _, _ := before(t, al, ml)
 
 	sim.Al = al
-	sim.Oml = ml
 
 	s := simulators.Simulators{
 		Sim:  sim,
@@ -478,12 +384,11 @@ func TestPutSimulators(t *testing.T) {
 			Evses:         []simulator.Evse{},
 		},
 	}
-	ml := []model.OcppModel{}
+	ml := []*model.Struct{}
 
-	sim, _ := before(t, al, ml)
+	sim, _, _ := before(t, al, ml)
 
 	sim.Al = al
-	sim.Oml = ml
 
 	s := simulators.Simulators{
 		Sim:  sim,
@@ -545,12 +450,11 @@ func TestPutSimulatorsWrongID(t *testing.T) {
 			Evses:         []simulator.Evse{},
 		},
 	}
-	ml := []model.OcppModel{}
+	ml := []*model.Struct{}
 
-	sim, _ := before(t, al, ml)
+	sim, _, _ := before(t, al, ml)
 
 	sim.Al = al
-	sim.Oml = ml
 
 	s := simulators.Simulators{
 		Sim:  sim,
@@ -600,12 +504,11 @@ func TestPutSimulatorsInvalidID(t *testing.T) {
 			Evses:         []simulator.Evse{},
 		},
 	}
-	ml := []model.OcppModel{}
+	ml := []*model.Struct{}
 
-	sim, _ := before(t, al, ml)
+	sim, _, _ := before(t, al, ml)
 
 	sim.Al = al
-	sim.Oml = ml
 
 	s := simulators.Simulators{
 		Sim:  sim,
@@ -655,12 +558,11 @@ func TestPutSimulatorsChangeNameID(t *testing.T) {
 			Evses:         []simulator.Evse{},
 		},
 	}
-	ml := []model.OcppModel{}
+	ml := []*model.Struct{}
 
-	sim, _ := before(t, al, ml)
+	sim, _, _ := before(t, al, ml)
 
 	sim.Al = al
-	sim.Oml = ml
 
 	s := simulators.Simulators{
 		Sim:  sim,
@@ -725,12 +627,11 @@ func TestPutSimulatorsBadRequestBody(t *testing.T) {
 			Evses:         []simulator.Evse{},
 		},
 	}
-	ml := []model.OcppModel{}
+	ml := []*model.Struct{}
 
-	sim, _ := before(t, al, ml)
+	sim, _, _ := before(t, al, ml)
 
 	sim.Al = al
-	sim.Oml = ml
 
 	s := simulators.Simulators{
 		Sim:  sim,
@@ -785,12 +686,11 @@ func TestDeleteSimulators(t *testing.T) {
 			Evses:         []simulator.Evse{},
 		},
 	}
-	ml := []model.OcppModel{}
+	ml := []*model.Struct{}
 
-	sim, _ := before(t, al, ml)
+	sim, _, _ := before(t, al, ml)
 
 	sim.Al = al
-	sim.Oml = ml
 
 	s := simulators.Simulators{
 		Sim:  sim,
@@ -839,12 +739,11 @@ func TestDeleteSimulatorsWrongId(t *testing.T) {
 			Evses:         []simulator.Evse{},
 		},
 	}
-	ml := []model.OcppModel{}
+	ml := []*model.Struct{}
 
-	sim, _ := before(t, al, ml)
+	sim, _, _ := before(t, al, ml)
 
 	sim.Al = al
-	sim.Oml = ml
 
 	s := simulators.Simulators{
 		Sim:  sim,
@@ -898,12 +797,11 @@ func TestDeleteSimulatorsInvalidId(t *testing.T) {
 			Evses:         []simulator.Evse{},
 		},
 	}
-	ml := []model.OcppModel{}
+	ml := []*model.Struct{}
 
-	sim, _ := before(t, al, ml)
+	sim, _, _ := before(t, al, ml)
 
 	sim.Al = al
-	sim.Oml = ml
 
 	s := simulators.Simulators{
 		Sim:  sim,
@@ -942,9 +840,633 @@ func TestDeleteSimulatorsInvalidId(t *testing.T) {
 	assert.Equal(t, al[0].Name, ag.Assets.([]interface{})[0].(map[string]interface{})["name"])
 }
 
+func TestGetSimModels(t *testing.T) {
+	r := gin.Default()
+
+	id1, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1")
+	id2, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa2")
+
+	al := []*simulator.Asset{}
+	ml := []*model.Struct{
+		{
+			ID:   id1,
+			Name: "mod1",
+			Type: model.Modbus,
+		},
+		{
+			ID:   id2,
+			Name: "mod2",
+			Type: model.Ocpp,
+		},
+	}
+
+	_, mod, _ := before(t, al, ml)
+
+	s := simulators.Simulators{
+		Mod: mod,
+	}
+
+	s.Simulators(r)
+
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest(string(mGet), modelsEp, http.NoBody)
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	a := simulators.GetModelsTemp{}
+
+	json.Unmarshal(w.Body.Bytes(), &a)
+
+	assert.Equal(t, int64(2), a.Total)
+
+	for i := 0; i < len(ml); i++ {
+		assert.Equal(t, ml[i].ID.String(), a.Models.([]interface{})[i].(map[string]interface{})["id"])
+
+		assert.Equal(t, ml[i].Name, a.Models.([]interface{})[i].(map[string]interface{})["name"])
+
+		assert.Equal(t, string(ml[i].Type), a.Models.([]interface{})[i].(map[string]interface{})["type"])
+	}
+}
+
+func TestGetSimModelsNoModels(t *testing.T) {
+	r := gin.Default()
+
+	al := []*simulator.Asset{}
+	ml := []*model.Struct{}
+
+	_, mod, _ := before(t, al, ml)
+
+	s := simulators.Simulators{
+		Mod: mod,
+	}
+
+	s.Simulators(r)
+
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest(string(mGet), modelsEp, http.NoBody)
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	a := simulators.GetModelsTemp{}
+
+	json.Unmarshal(w.Body.Bytes(), &a)
+
+	assert.Equal(t, int64(0), a.Total)
+
+	assert.Nil(t, a.Models)
+}
+
+func TestPostModels(t *testing.T) {
+	r := gin.Default()
+
+	_, mod, tmp := before(t, []*simulator.Asset{}, []*model.Struct{})
+
+	s := simulators.Simulators{
+		Mod:  mod,
+		Lang: mod.L,
+	}
+
+	e := model.Struct{
+		Name: "name",
+		Type: model.Modbus,
+		Ocpp: model.OcppModel{
+			SerialNumb: "serial",
+		},
+	}
+
+	j, _ := json.Marshal(e)
+	b := bytes.NewReader(j)
+
+	s.Simulators(r)
+
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest(string(mPost), modelsEp, b)
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusCreated, w.Code)
+
+	a := model.Struct{}
+	json.Unmarshal(w.Body.Bytes(), &a)
+
+	_, err := uuid.Parse(a.ID.String())
+	assert.Nil(t, err)
+
+	assert.Equal(t, e.Name, a.Name)
+
+	assert.Equal(t, e.Type, a.Type)
+
+	assert.Equal(t, e.Ocpp.SerialNumb, a.Ocpp.SerialNumb)
+
+	assert.FileExists(t, tmp+"/simConf/models/"+e.Name+".json")
+}
+
+func TestPostModelsRequiredFields(t *testing.T) {
+	r := gin.Default()
+
+	_, mod, _ := before(t, []*simulator.Asset{}, []*model.Struct{})
+
+	s := simulators.Simulators{
+		Mod:  mod,
+		Lang: mod.L,
+	}
+
+	bn, bt := postModelsRequiredFields()
+
+	s.Simulators(r)
+
+	w := httptest.NewRecorder()
+
+	// name
+	j, _ := json.Marshal(bn)
+	b := bytes.NewReader(j)
+
+	req, _ := http.NewRequest(string(mPost), modelsEp, b)
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+
+	// type
+	j, _ = json.Marshal(bt)
+	b = bytes.NewReader(j)
+
+	req, _ = http.NewRequest(string(mPost), modelsEp, b)
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestPostModelsBadRequestBody(t *testing.T) {
+	r := gin.Default()
+
+	_, mod, _ := before(t, []*simulator.Asset{}, []*model.Struct{})
+
+	s := simulators.Simulators{
+		Mod:  mod,
+		Lang: mod.L,
+	}
+
+	j, _ := json.Marshal("{nothing: atall}")
+	b := bytes.NewReader(j)
+
+	s.Simulators(r)
+
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest(string(mPost), modelsEp, b)
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+
+	a := errors.ErroMsg{}
+	json.Unmarshal(w.Body.Bytes(), &a)
+
+	assert.Equal(t, translation.Translation{L: translation.EnGb}.Get(text.RequestBodyDoesntMatch), a.Message)
+}
+
+func TestNotAblePostModelsSameName(t *testing.T) {
+	r := gin.Default()
+
+	id, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1")
+	ml := []*model.Struct{
+		{
+			ID:   id,
+			Name: "name",
+			Type: model.Modbus,
+			Ocpp: model.OcppModel{
+				SerialNumb: "serial",
+			},
+		},
+	}
+
+	sim, mod, _ := before(t, []*simulator.Asset{}, ml)
+
+	s := simulators.Simulators{
+		Sim:  sim,
+		Mod:  mod,
+		Lang: translation.Translation{L: translation.EnGb},
+	}
+
+	e := model.Struct{
+		Name: "name",
+		Type: model.Modbus,
+		Ocpp: model.OcppModel{
+			SerialNumb: "serial",
+		},
+	}
+
+	j, _ := json.Marshal(e)
+	b := bytes.NewReader(j)
+
+	s.Simulators(r)
+
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest(string(mPost), modelsEp, b)
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusConflict, w.Code)
+
+	a := errors.ErroMsg{}
+	json.Unmarshal(w.Body.Bytes(), &a)
+
+	assert.Equal(t, translation.Translation{L: translation.EnGb}.Get(text.CreateModelConfFileNameExists), a.Message)
+}
+
+func TestPutModels(t *testing.T) {
+	r := gin.Default()
+
+	id, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0")
+	ol := []*model.Struct{
+		{
+			ID:   id,
+			Name: "name",
+			Type: model.Modbus,
+			Ocpp: model.OcppModel{
+				SerialNumb: "poi",
+			},
+		},
+	}
+
+	_, mod, _ := before(t, []*simulator.Asset{}, ol)
+
+	s := simulators.Simulators{
+		Mod:  mod,
+		Lang: mod.L,
+	}
+
+	e := model.Struct{
+		Type: model.Ocpp,
+		Ocpp: model.OcppModel{
+			SerialNumb: "asd",
+		},
+	}
+
+	j, _ := json.Marshal(e)
+	b := bytes.NewReader(j)
+
+	s.Simulators(r)
+
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest(string(mPut), modelsEp+"/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0", b)
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	a := model.Struct{}
+	json.Unmarshal(w.Body.Bytes(), &a)
+
+	assert.Equal(t, e.Type, a.Type)
+
+	assert.Equal(t, e.Ocpp.SerialNumb, a.Ocpp.SerialNumb)
+}
+
+func TestPutModelsWrongId(t *testing.T) {
+	r := gin.Default()
+
+	id, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0")
+	ol := []*model.Struct{
+		{
+			ID:   id,
+			Name: "name",
+			Type: model.Modbus,
+			Ocpp: model.OcppModel{
+				SerialNumb: "poi",
+			},
+		},
+	}
+
+	_, mod, _ := before(t, []*simulator.Asset{}, ol)
+
+	s := simulators.Simulators{
+		Mod:  mod,
+		Lang: mod.L,
+	}
+
+	e := model.Struct{
+		Type: model.Ocpp,
+		Ocpp: model.OcppModel{
+			SerialNumb: "asd",
+		},
+	}
+
+	j, _ := json.Marshal(e)
+	b := bytes.NewReader(j)
+
+	s.Simulators(r)
+
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest(string(mPut), modelsEp+"/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", b)
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNotFound, w.Code)
+
+	a := errors.ErroMsg{}
+	json.Unmarshal(w.Body.Bytes(), &a)
+
+	assert.Equal(t, s.Lang.Get(text.UpdateModelConfFileNotFound), a.Message)
+}
+
+func TestPutModelsInvalidId(t *testing.T) {
+	r := gin.Default()
+
+	id, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0")
+	ol := []*model.Struct{
+		{
+			ID:   id,
+			Name: "name",
+			Type: model.Modbus,
+			Ocpp: model.OcppModel{
+				SerialNumb: "poi",
+			},
+		},
+	}
+
+	_, mod, _ := before(t, []*simulator.Asset{}, ol)
+
+	s := simulators.Simulators{
+		Mod:  mod,
+		Lang: mod.L,
+	}
+
+	e := model.Struct{
+		Type: model.Ocpp,
+		Ocpp: model.OcppModel{
+			SerialNumb: "asd",
+		},
+	}
+
+	j, _ := json.Marshal(e)
+	b := bytes.NewReader(j)
+
+	s.Simulators(r)
+
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest(string(mPut), modelsEp+"/asd", b)
+
+	r.ServeHTTP(w, req)
+
+	a := errors.ErroMsg{}
+	json.Unmarshal(w.Body.Bytes(), &a)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+
+	assert.Equal(t, s.Lang.Get(text.UUIDParsingError), a.Message)
+}
+
+func TestPutModelsChangeName(t *testing.T) {
+	r := gin.Default()
+
+	id, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0")
+	ol := []*model.Struct{
+		{
+			ID:   id,
+			Name: "name",
+			Type: model.Modbus,
+			Ocpp: model.OcppModel{
+				SerialNumb: "poi",
+			},
+		},
+	}
+
+	_, mod, _ := before(t, []*simulator.Asset{}, ol)
+
+	s := simulators.Simulators{
+		Mod:  mod,
+		Lang: mod.L,
+	}
+
+	e := model.Struct{
+		Name: "change",
+		Type: model.Ocpp,
+		Ocpp: model.OcppModel{
+			SerialNumb: "asd",
+		},
+	}
+
+	j, _ := json.Marshal(e)
+	b := bytes.NewReader(j)
+
+	s.Simulators(r)
+
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest(string(mPut), modelsEp+"/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0", b)
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	a := model.Struct{}
+	json.Unmarshal(w.Body.Bytes(), &a)
+
+	assert.NotEqual(t, e.Name, a.Name)
+
+	assert.Equal(t, e.Type, a.Type)
+
+	assert.Equal(t, e.Ocpp.SerialNumb, a.Ocpp.SerialNumb)
+}
+
+func TestPutModelsInvalidBody(t *testing.T) {
+	r := gin.Default()
+
+	id, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0")
+	ol := []*model.Struct{
+		{
+			ID:   id,
+			Name: "name",
+			Type: model.Modbus,
+			Ocpp: model.OcppModel{
+				SerialNumb: "poi",
+			},
+		},
+	}
+
+	_, mod, _ := before(t, []*simulator.Asset{}, ol)
+
+	s := simulators.Simulators{
+		Mod:  mod,
+		Lang: mod.L,
+	}
+
+	e := model.Struct{
+		Ocpp: model.OcppModel{
+			SerialNumb: "asd",
+		},
+	}
+
+	j, _ := json.Marshal(e)
+	b := bytes.NewReader(j)
+
+	s.Simulators(r)
+
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest(string(mPut), modelsEp+"/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0", b)
+
+	r.ServeHTTP(w, req)
+
+	a := errors.ErroMsg{}
+	json.Unmarshal(w.Body.Bytes(), &a)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+
+	assert.Equal(t, s.Lang.Get(text.RequestBodyDoesntMatch), a.Message)
+}
+
+func TestDeleteModels(t *testing.T) {
+	r := gin.Default()
+
+	id, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0")
+	id2, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1")
+	ol := []*model.Struct{
+		{
+			ID:   id,
+			Name: "name",
+			Type: model.Modbus,
+			Ocpp: model.OcppModel{
+				SerialNumb: "poi",
+			},
+		},
+		{
+			ID:   id2,
+			Name: "name2",
+			Type: model.Modbus,
+			Ocpp: model.OcppModel{
+				SerialNumb: "poi2",
+			},
+		},
+	}
+
+	_, mod, _ := before(t, []*simulator.Asset{}, ol)
+
+	s := simulators.Simulators{
+		Mod:  mod,
+		Lang: mod.L,
+	}
+
+	s.Simulators(r)
+
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest(string(mDelete), modelsEp+"/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0", http.NoBody)
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNoContent, w.Code)
+
+	assert.Empty(t, w.Body.String())
+
+	req, _ = http.NewRequest(string(mGet), modelsEp, http.NoBody)
+
+	r.ServeHTTP(w, req)
+
+	a := simulators.GetModelsTemp{}
+
+	json.Unmarshal(w.Body.Bytes(), &a)
+
+	assert.Equal(t, int64(1), a.Total)
+
+	assert.Equal(t, ol[1].ID.String(), a.Models.([]interface{})[0].(map[string]interface{})["id"])
+
+	assert.Equal(t, ol[1].Name, a.Models.([]interface{})[0].(map[string]interface{})["name"])
+}
+
+func TestDeleteModelsWrongId(t *testing.T) {
+	r := gin.Default()
+
+	id, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0")
+	ol := []*model.Struct{
+		{
+			ID:   id,
+			Name: "name",
+			Type: model.Modbus,
+			Ocpp: model.OcppModel{
+				SerialNumb: "poi",
+			},
+		},
+	}
+
+	_, mod, _ := before(t, []*simulator.Asset{}, ol)
+
+	s := simulators.Simulators{
+		Mod:  mod,
+		Lang: mod.L,
+	}
+
+	s.Simulators(r)
+
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest(string(mDelete), modelsEp+"/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaab", http.NoBody)
+
+	r.ServeHTTP(w, req)
+
+	a := errors.ErroMsg{}
+	json.Unmarshal(w.Body.Bytes(), &a)
+
+	assert.Equal(t, http.StatusNotFound, w.Code)
+
+	assert.Equal(t, s.Lang.Get(text.DeleteModelConfFileNotFound), a.Message)
+}
+
+func TestDeleteModelsInvalidId(t *testing.T) {
+	r := gin.Default()
+
+	id, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0")
+	ol := []*model.Struct{
+		{
+			ID:   id,
+			Name: "name",
+			Type: model.Modbus,
+			Ocpp: model.OcppModel{
+				SerialNumb: "poi",
+			},
+		},
+	}
+
+	_, mod, _ := before(t, []*simulator.Asset{}, ol)
+
+	s := simulators.Simulators{
+		Mod:  mod,
+		Lang: mod.L,
+	}
+
+	s.Simulators(r)
+
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest(string(mDelete), modelsEp+"/aaa", http.NoBody)
+
+	r.ServeHTTP(w, req)
+
+	a := errors.ErroMsg{}
+	json.Unmarshal(w.Body.Bytes(), &a)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+
+	assert.Equal(t, s.Lang.Get(text.UUIDParsingError), a.Message)
+}
+
 // TODO: Add tests to the run and stop endpoints
 
-func before(t *testing.T, al []*simulator.Asset, oml []model.OcppModel) (s simulator.Simulator, tmp string) {
+func before(t *testing.T, al []*simulator.Asset, ml []*model.Struct) (s simulator.Simulator, m model.Model, tmp string) {
 	t.Helper()
 
 	tmp = t.TempDir()
@@ -953,7 +1475,7 @@ func before(t *testing.T, al []*simulator.Asset, oml []model.OcppModel) (s simul
 
 	os.Mkdir(tmp+"/simConf"+common.DefMCFolder, fs.FileMode(common.FolderPermissions))
 
-	generateConfFiles(tmp, al, oml)
+	generateConfFiles(tmp, al, ml)
 
 	l := translation.Translation{
 		L: translation.Translation{}.GetKey("en-GB"),
@@ -964,10 +1486,15 @@ func before(t *testing.T, al []*simulator.Asset, oml []model.OcppModel) (s simul
 		L:   l,
 	}
 
-	return s, tmp
+	m = model.Model{
+		Scp: tmp + "/simConf",
+		L:   l,
+	}
+
+	return s, m, tmp
 }
 
-func generateConfFiles(tmp string, al []*simulator.Asset, oml []model.OcppModel) {
+func generateConfFiles(tmp string, al []*simulator.Asset, ml []*model.Struct) {
 	for i := 0; i < len(al); i++ {
 		p := tmp + "/simConf" + "/" + al[i].Name + ".json"
 
@@ -979,13 +1506,13 @@ func generateConfFiles(tmp string, al []*simulator.Asset, oml []model.OcppModel)
 		os.WriteFile(p, b, fs.FileMode(common.FilePermissions))
 	}
 
-	for i := 0; i < len(oml); i++ {
-		p := tmp + "/simConf" + common.DefMCFolder + "/model" + strconv.Itoa(i) + "_ocpp.json"
+	for i := 0; i < len(ml); i++ {
+		p := tmp + "/simConf" + common.DefMCFolder + "/" + ml[i].Name + ".json"
 
 		f, _ := os.Create(p)
 		f.Close()
 
-		b, _ := json.MarshalIndent(oml[i], "", " ")
+		b, _ := json.MarshalIndent(ml[i], "", " ")
 
 		os.WriteFile(p, b, fs.FileMode(common.FilePermissions))
 	}
@@ -1063,4 +1590,24 @@ func postSimulatorsRequiredFields() (bn, bt, bp, bst, bph, bc, be simulator.Asse
 	}
 
 	return bn, bt, bp, bst, bph, bc, be
+}
+
+func postModelsRequiredFields() (bn, bt model.Struct) {
+	// name
+	bn = model.Struct{
+		Type: model.Modbus,
+		Ocpp: model.OcppModel{
+			SerialNumb: "serial",
+		},
+	}
+
+	// type
+	bt = model.Struct{
+		Name: "name",
+		Ocpp: model.OcppModel{
+			SerialNumb: "serial",
+		},
+	}
+
+	return bn, bt
 }
