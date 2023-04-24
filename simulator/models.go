@@ -7,7 +7,7 @@ type Asset struct {
 	Name          string      `json:"name" validate:"required"`                                 // Simulator name
 	Type          AssetType   `json:"type" validate:"required,oneof=evc pm"`                    // Type of the asset that the configuration will be used to (evc, pm)
 	Protocol      Protocol    `json:"protocol" validate:"required,oneof=ocpp201 ocpp16 modbus"` // Protocol used by the asset
-	Model         string      `json:"model"`                                                    // The name of the configuration file set in the model's folder
+	Model         uuid.UUID   `json:"model"`                                                    // Id of the configuration file set in the model's folder
 	Port          string      `json:"port,omitempty"`                                           // Communication ip port
 	CPId          string      `json:"cPId,omitempty"`                                           // Charge point id to identify the unit (used in the ocpp protocol)
 	StartCharging bool        `json:"startCharging" validate:"boolean"`                         // Set the asset to start charging behaviour by itself

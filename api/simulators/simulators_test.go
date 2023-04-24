@@ -36,12 +36,15 @@ const (
 func TestGetSimulators(t *testing.T) {
 	r := gin.Default()
 
+	mID0, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0")
+	mID1, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1")
+
 	al := []*simulator.Asset{
 		{
 			Name:        "a_name",
 			Type:        simulator.Evc,
 			Protocol:    simulator.Ocpp201,
-			Model:       "a",
+			Model:       mID0,
 			Phases:      simulator.One,
 			CurrentType: simulator.Ac,
 			Evses:       []simulator.Evse{},
@@ -50,7 +53,7 @@ func TestGetSimulators(t *testing.T) {
 			Name:        "b_name",
 			Type:        simulator.Evc,
 			Protocol:    simulator.Ocpp16,
-			Model:       "b",
+			Model:       mID1,
 			Phases:      simulator.One,
 			CurrentType: simulator.Ac,
 			Evses:       []simulator.Evse{},
@@ -85,7 +88,7 @@ func TestGetSimulators(t *testing.T) {
 
 		assert.Equal(t, string(al[i].Protocol), a.Assets.([]interface{})[i].(map[string]interface{})["protocol"])
 
-		assert.Equal(t, al[i].Model, a.Assets.([]interface{})[i].(map[string]interface{})["model"])
+		assert.Equal(t, al[i].Model.String(), a.Assets.([]interface{})[i].(map[string]interface{})["model"])
 	}
 }
 
