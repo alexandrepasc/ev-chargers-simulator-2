@@ -52,11 +52,13 @@ func TestCreateSimulator(t *testing.T) {
 
 	s := before(tmp)
 
+	mID, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0")
+
 	sim := simulator.Asset{
 		Name:          "sim1",
 		Type:          simulator.Evc,
 		Protocol:      simulator.Ocpp201,
-		Model:         "model",
+		Model:         mID,
 		StartCharging: true,
 		Phases:        simulator.One,
 		CurrentType:   simulator.Ac,
@@ -120,11 +122,13 @@ func TestCreateSimulatorRequiredFields(t *testing.T) {
 
 	s := before(tmp)
 
+	mID, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0")
+
 	// name
 	sim := simulator.Asset{
 		Type:        simulator.Evc,
 		Protocol:    simulator.Modbus,
-		Model:       "asd",
+		Model:       mID,
 		Phases:      simulator.One,
 		CurrentType: simulator.Ac,
 		Evses:       []simulator.Evse{},
@@ -142,7 +146,7 @@ func TestCreateSimulatorRequiredFields(t *testing.T) {
 	sim = simulator.Asset{
 		Name:        "name",
 		Protocol:    simulator.Modbus,
-		Model:       "asd",
+		Model:       mID,
 		Phases:      simulator.One,
 		CurrentType: simulator.Ac,
 		Evses:       []simulator.Evse{},
@@ -160,7 +164,7 @@ func TestCreateSimulatorRequiredFields(t *testing.T) {
 	sim = simulator.Asset{
 		Name:        "name",
 		Type:        simulator.Evc,
-		Model:       "asd",
+		Model:       mID,
 		Phases:      simulator.One,
 		CurrentType: simulator.Ac,
 		Evses:       []simulator.Evse{},
@@ -179,7 +183,7 @@ func TestCreateSimulatorRequiredFields(t *testing.T) {
 		Name:        "name",
 		Type:        simulator.Evc,
 		Protocol:    simulator.Modbus,
-		Model:       "asd",
+		Model:       mID,
 		CurrentType: simulator.Ac,
 		Evses:       []simulator.Evse{},
 	}
@@ -197,7 +201,7 @@ func TestCreateSimulatorRequiredFields(t *testing.T) {
 		Name:     "name",
 		Type:     simulator.Evc,
 		Protocol: simulator.Modbus,
-		Model:    "asd",
+		Model:    mID,
 		Phases:   simulator.One,
 		Evses:    []simulator.Evse{},
 	}
@@ -215,7 +219,7 @@ func TestCreateSimulatorRequiredFields(t *testing.T) {
 		Name:        "name",
 		Type:        simulator.Evc,
 		Protocol:    simulator.Modbus,
-		Model:       "asd",
+		Model:       mID,
 		Phases:      simulator.One,
 		CurrentType: simulator.Ac,
 	}
@@ -238,11 +242,13 @@ func TestCanNotCreateSimulatorSameName(t *testing.T) {
 
 	generateAssetConfFiles(1, tmp)
 
+	mID, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0")
+
 	sim := simulator.Asset{
 		Name:          "sim0",
 		Type:          simulator.Pm,
 		Protocol:      simulator.Ocpp16,
-		Model:         "model",
+		Model:         mID,
 		StartCharging: true,
 		Phases:        simulator.Three,
 		CurrentType:   simulator.Dc,
