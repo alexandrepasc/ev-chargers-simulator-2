@@ -1,5 +1,7 @@
 package common
 
+import "github.com/google/uuid"
+
 const (
 	Version           string = "0.7.3"             // Application version
 	DefSimIP          string = "84.5.7.64"         // Default simulator ip address from the machine that is running the application
@@ -18,3 +20,8 @@ var (
 	DefGSPath = GetThePath(defGSFolder) // Default general settings path
 	DefSCPath = GetThePath(defSCFolder) // Default simulators configurations path
 )
+
+type Channel struct {
+	Name string    // Name of the asset
+	UUID uuid.UUID // Identifier of the asset
+}
