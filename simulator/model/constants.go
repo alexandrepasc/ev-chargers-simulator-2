@@ -4,3 +4,19 @@ const (
 	Ocpp   Type = "ocpp"
 	Modbus Type = "modbus"
 )
+
+var DefOcppMod = Struct{
+	Name: "default",
+	Type: Ocpp,
+	Ocpp: OcppModel{
+		SerialNumb:      "default-serial",
+		Model:           "defModel",
+		Vendor:          "defVendor",
+		FwVersion:       "0.0.0.0",
+		MeterSerialNumb: "0.0.0.1",
+		Modem: OcppModem{
+			Iccid: "99999999999",
+			Imsi:  "88888888888",
+		},
+	},
+}

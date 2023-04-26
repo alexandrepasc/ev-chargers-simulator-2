@@ -6,6 +6,7 @@ import (
 	"github.com/alexandrepasc/ev-chargers-simulator-2/flags"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/settings"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/simulator"
+	"github.com/alexandrepasc/ev-chargers-simulator-2/simulator/handler"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/simulator/model"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/translation"
 )
@@ -31,11 +32,19 @@ func main() {
 		L:   t,
 	}
 
+	h := handler.Handler{
+		L:    t,
+		Addr: g.CSAddr,
+		Port: g.CSPort,
+		Tout: g.ConnTimeout,
+	}
+
 	var a = api.API{
 		Lang:    t,
 		General: g,
 		Sim:     s,
 		Mod:     m,
+		Hand:    h,
 	}
 
 	var srv = a.New()

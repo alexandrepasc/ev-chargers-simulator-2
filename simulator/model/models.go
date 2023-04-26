@@ -11,11 +11,12 @@ type Struct struct {
 }
 
 type OcppModel struct {
-	SerialNumb string    `json:"serialNumb"` // Equipment serial number
-	Model      string    `json:"model"`      // Equipment model name
-	Vendor     string    `json:"vendor"`     // Equipment vendor
-	FwVersion  string    `json:"fwVersion"`  // Firmware version
-	Modem      OcppModem `json:"modem"`      // Modem information
+	SerialNumb      string    `json:"serialNumb"`      // Equipment serial number
+	Model           string    `json:"model"`           // Equipment model name
+	Vendor          string    `json:"vendor"`          // Equipment vendor
+	FwVersion       string    `json:"fwVersion"`       // Firmware version
+	Modem           OcppModem `json:"modem"`           // Modem information
+	MeterSerialNumb string    `json:"meterSerialNumb"` // Power meter serial number
 }
 
 type OcppModem struct {

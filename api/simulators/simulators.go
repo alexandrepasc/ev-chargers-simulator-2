@@ -28,10 +28,6 @@ Creates the simulators endpoint controller handlers
 r	-	api engine (*gin.Engine)
 */
 func (s *Simulators) Simulators(r *gin.Engine) {
-	s.H = handler.Handler{
-		L: s.Lang,
-	}
-
 	r.GET(simulatorsEp, s.getSimulators)
 	r.POST(simulatorsEp, s.postSimulators)
 	r.PUT(simulatorsIDEp, s.putSimulators)
