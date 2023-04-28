@@ -1,10 +1,10 @@
 package ocpp16
 
 import (
-	"fmt"
 	"sync"
 	"time"
 
+	"github.com/alexandrepasc/ev-chargers-simulator-2/assets"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/common"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/simulator"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/simulator/model"
@@ -15,30 +15,39 @@ import (
 
 type Ocpp16 struct {
 	lock    sync.RWMutex            // Lock goroutine
+	logger  logging                 // Logging
 	L       translation.Translation // translation
 	Timeout int64                   // Connection timeout
 	CSAddr  string                  // Central system ip address
 	CSPort  string                  // Central system port
 	Asset   *simulator.Asset        // Asset data for the simulator
 	Mod     *model.Struct           // Model data for the asset
+	s       ocpp16.ChargePoint
 }
 
 /**/
 func (o *Ocpp16) Start(c chan common.Channel, q chan bool) { //nolint:revive // because dev
 	o.lock.Lock()
 
+	o.logger = logging{
+		toFile: false,
+		file:   common.DefGSPath,
+	}
+
 	var h = &Handler{}
 
-	var s = setupServer(o.Asset.CPId, o.Timeout, h)
+	o.s = setupServer(o.Asset.CPId, o.Timeout, h)
 
-	sErr := s.Start("ws://" + o.CSAddr + ":" + o.CSPort)
+	sErr := o.s.Start("ws://" + o.CSAddr + ":" + o.CSPort)
 
 	if sErr != nil {
-		fmt.Println(sErr)
+		o.logger.log(map[string]string{"protocol": "ocpp1.6", "function": "Start"}, sErr.Error(), assets.Error)
 		return
 	}
 
-	sendBootNotification()
+	o.logger.log(map[string]string{"protocol": "ocpp1.6", "function": "Start", "simulator": o.Asset.Name}, "Ocpp 1.6 server started", assets.Info)
+
+	o.sendBootNotification()
 }
 
 /**/
