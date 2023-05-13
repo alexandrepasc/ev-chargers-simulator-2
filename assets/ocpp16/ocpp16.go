@@ -10,6 +10,7 @@ import (
 	"github.com/alexandrepasc/ev-chargers-simulator-2/simulator/model"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/translation"
 	ocpp16 "github.com/lorenzodonini/ocpp-go/ocpp1.6"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	"github.com/lorenzodonini/ocpp-go/ws"
 )
 
@@ -22,7 +23,8 @@ type Ocpp16 struct {
 	CSPort  string                  // Central system port
 	Asset   *simulator.Asset        // Asset data for the simulator
 	Mod     *model.Struct           // Model data for the asset
-	s       ocpp16.ChargePoint
+	s       ocpp16.ChargePoint      // Ocpp charge point server
+	Conf    map[string]core.ConfigurationKey
 }
 
 /**/
@@ -34,9 +36,7 @@ func (o *Ocpp16) Start(c chan common.Channel, q chan bool) { //nolint:revive // 
 		file:   common.DefGSPath,
 	}
 
-	var h = &Handler{}
-
-	o.s = setupServer(o.Asset.CPId, o.Timeout, h)
+	o.s = setupServer(o.Asset.CPId, o.Timeout, o)
 
 	sErr := o.s.Start("ws://" + o.CSAddr + ":" + o.CSPort)
 
@@ -47,11 +47,13 @@ func (o *Ocpp16) Start(c chan common.Channel, q chan bool) { //nolint:revive // 
 
 	o.logger.log(map[string]string{"protocol": "ocpp1.6", "function": "Start", "simulator": o.Asset.Name}, "Ocpp 1.6 server started", assets.Info)
 
+	o.setConfigurations()
+
 	o.sendBootNotification()
 }
 
 /**/
-func setupServer(id string, t int64, h *Handler) (s ocpp16.ChargePoint) {
+func setupServer(id string, t int64, h *Ocpp16) (s ocpp16.ChargePoint) {
 	s = ocpp16.NewChargePoint(id, nil, getWsClient(t))
 
 	s.SetCoreHandler(h)
