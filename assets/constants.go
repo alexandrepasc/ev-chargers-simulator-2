@@ -7,3 +7,8 @@ const (
 	Panic Severity = "panic"
 	Fatal Severity = "fatal"
 )
+
+var (
+	Current = "Current"
+	Power   = "Power"
+)
