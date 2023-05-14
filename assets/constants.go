@@ -9,6 +9,8 @@ const (
 )
 
 var (
-	Current = "Current"
-	Power   = "Power"
+	Current                    = "Current"
+	Power                      = "Power"
+	EnergyActiveExportRegister = "Energy.Active.Export.Register"
+	EnergyActiveImportRegister = "Energy.Active.Import.Register"
 )

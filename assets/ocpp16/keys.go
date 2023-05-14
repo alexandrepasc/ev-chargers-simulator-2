@@ -15,4 +15,13 @@ var config = map[string]core.ConfigurationKey{
 		Key:      "ConnectionTimeOut",
 		Readonly: false,
 	},
+	"MeterValuesSampledData": {
+		Key:      "MeterValuesSampledData",
+		Readonly: false,
+		Value:    &assets.EnergyActiveImportRegister,
+	},
+	"MeterValueSampleInterval": {
+		Key:      "MeterValueSampleInterval",
+		Readonly: false,
+	},
 }

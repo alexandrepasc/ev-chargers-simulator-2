@@ -47,7 +47,7 @@ func (o *Ocpp16) Start(c chan common.Channel, q chan bool) { //nolint:revive // 
 
 	o.logger.log(map[string]string{"protocol": "ocpp1.6", "function": "Start", "simulator": o.Asset.Name}, "Ocpp 1.6 server started", assets.Info)
 
-	o.setConfigurations()
+	o.setStartUpConfigurations()
 
 	o.sendBootNotification()
 }

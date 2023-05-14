@@ -12,8 +12,54 @@ func (o *Ocpp16) OnChangeAvailability(_ *core.ChangeAvailabilityRequest) (res *c
 	return res, nil
 }
 
+/*
+Get the central system  get configuration request and sends the response to the central system the
+response with the requested keys (*core.GetConfigurationConfirmation, error).
+
+req	-	Get configuration request (*core.GetConfigurationRequest)
+*/
+func (o *Ocpp16) OnGetConfiguration(req *core.GetConfigurationRequest) (res *core.GetConfigurationConfirmation, err error) {
+	var lm = map[string]string{
+		"protocol":  string(o.Asset.Protocol),
+		"function":  "OnGetConfiguration",
+		"feature":   req.GetFeatureName(),
+		"simulator": o.Asset.Name,
+		"type":      "request",
+	}
+
+	o.logger.log(lm, req, assets.Info)
+
+	k, u := o.getConfigurationKeys(req.Key)
+
+	res = &core.GetConfigurationConfirmation{ConfigurationKey: k}
+
+	res.UnknownKey = u
+
+	lm["type"] = "response"
+
+	o.logger.log(lm, res, assets.Info)
+
+	return res, nil
+}
+
 /**/
-func (o *Ocpp16) OnChangeConfiguration(_ *core.ChangeConfigurationRequest) (res *core.ChangeConfigurationConfirmation, err error) {
+func (o *Ocpp16) OnChangeConfiguration(req *core.ChangeConfigurationRequest) (res *core.ChangeConfigurationConfirmation, err error) {
+	var lm = map[string]string{
+		"protocol":  string(o.Asset.Protocol),
+		"function":  "OnChangeConfiguration",
+		"feature":   req.GetFeatureName(),
+		"simulator": o.Asset.Name,
+		"type":      "request",
+	}
+
+	o.logger.log(lm, req, assets.Info)
+
+	res = &core.ChangeConfigurationConfirmation{Status: o.setConfiguration(req)}
+
+	lm["type"] = "response"
+
+	o.logger.log(lm, res, assets.Info)
+
 	return res, nil
 }
 
@@ -24,19 +70,6 @@ func (o *Ocpp16) OnClearCache(_ *core.ClearCacheRequest) (res *core.ClearCacheCo
 
 /**/
 func (o *Ocpp16) OnDataTransfer(_ *core.DataTransferRequest) (res *core.DataTransferConfirmation, err error) {
-	return res, nil
-}
-
-/**/
-func (o *Ocpp16) OnGetConfiguration(req *core.GetConfigurationRequest) (res *core.GetConfigurationConfirmation, err error) {
-	o.logger.log(map[string]string{"protocol": string(o.Asset.Protocol), "function": req.GetFeatureName(), "simulator": o.Asset.Name}, req, assets.Info)
-
-	k := o.getConfigurationKeys(req.Key)
-
-	res = &core.GetConfigurationConfirmation{ConfigurationKey: k}
-
-	o.logger.log(map[string]string{"protocol": string(o.Asset.Protocol), "function": req.GetFeatureName(), "simulator": o.Asset.Name}, res, assets.Info)
-
 	return res, nil
 }
 
