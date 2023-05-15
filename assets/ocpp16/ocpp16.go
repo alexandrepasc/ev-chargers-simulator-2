@@ -11,24 +11,26 @@ import (
 	"github.com/alexandrepasc/ev-chargers-simulator-2/translation"
 	ocpp16 "github.com/lorenzodonini/ocpp-go/ocpp1.6"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/localauth"
 	"github.com/lorenzodonini/ocpp-go/ws"
 )
 
 type Ocpp16 struct {
-	lock    sync.RWMutex            // Lock goroutine
-	logger  logging                 // Logging
-	L       translation.Translation // translation
-	Timeout int64                   // Connection timeout
-	CSAddr  string                  // Central system ip address
-	CSPort  string                  // Central system port
-	Asset   *simulator.Asset        // Asset data for the simulator
-	Mod     *model.Struct           // Model data for the asset
-	s       ocpp16.ChargePoint      // Ocpp charge point server
-	Conf    map[string]core.ConfigurationKey
+	lock    sync.RWMutex                     // Lock goroutine
+	logger  logging                          // Logging
+	L       translation.Translation          // translation
+	Timeout int64                            // Connection timeout
+	CSAddr  string                           // Central system ip address
+	CSPort  string                           // Central system port
+	Asset   *simulator.Asset                 // Asset data for the simulator
+	Mod     *model.Struct                    // Model data for the asset
+	s       ocpp16.ChargePoint               // Ocpp charge point server
+	Conf    map[string]core.ConfigurationKey // Configuration key map
+	Auth    []localauth.AuthorizationData    // Authorization list
 }
 
 /**/
-func (o *Ocpp16) Start(c chan common.Channel, q chan bool) { //nolint:revive // because dev
+func (o *Ocpp16) Start(c chan common.Channel, q chan bool) {
 	o.lock.Lock()
 
 	o.logger = logging{
@@ -50,6 +52,14 @@ func (o *Ocpp16) Start(c chan common.Channel, q chan bool) { //nolint:revive // 
 	o.setStartUpConfigurations()
 
 	o.sendBootNotification()
+
+	var b = <-q
+
+	if b {
+		o.s.Stop()
+		close(c)
+		close(q)
+	}
 }
 
 /**/
@@ -57,6 +67,7 @@ func setupServer(id string, t int64, h *Ocpp16) (s ocpp16.ChargePoint) {
 	s = ocpp16.NewChargePoint(id, nil, getWsClient(t))
 
 	s.SetCoreHandler(h)
+	s.SetLocalAuthListHandler(h)
 
 	return s
 }
