@@ -12,6 +12,7 @@ var DefOcppMod = Struct{
 		SerialNumb:      "default-serial",
 		Model:           "defModel",
 		Vendor:          "defVendor",
+		VendorID:        "asd-asd-asd-asd",
 		FwVersion:       "0.0.0.0",
 		MeterSerialNumb: "0.0.0.1",
 		Modem: OcppModem{
