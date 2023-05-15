@@ -6,6 +6,9 @@ const (
 	Warn  Severity = "warn"
 	Panic Severity = "panic"
 	Fatal Severity = "fatal"
+
+	Request  string = "request"
+	Response string = "response"
 )
 
 var (
