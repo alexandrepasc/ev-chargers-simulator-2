@@ -96,7 +96,27 @@ func (o *Ocpp16) OnClearCache(req *core.ClearCacheRequest) (res *core.ClearCache
 /*
 Receives validate the vendor id and logs the request and the response.
 */
-func (o *Ocpp16) OnDataTransfer(_ *core.DataTransferRequest) (res *core.DataTransferConfirmation, err error) {
+func (o *Ocpp16) OnDataTransfer(req *core.DataTransferRequest) (res *core.DataTransferConfirmation, err error) {
+	var lm = map[string]string{
+		"protocol":  string(o.Asset.Protocol),
+		"function":  "OnDataTransfer",
+		"feature":   req.GetFeatureName(),
+		"simulator": o.Asset.Name,
+		"type":      assets.Request,
+	}
+
+	o.logger.log(lm, req, assets.Info)
+
+	res = &core.DataTransferConfirmation{Status: core.DataTransferStatusAccepted}
+
+	if req.VendorId != o.Mod.Ocpp.VendorID {
+		res = &core.DataTransferConfirmation{Status: core.DataTransferStatusUnknownVendorId}
+	}
+
+	lm["type"] = assets.Response
+
+	o.logger.log(lm, res, assets.Info)
+
 	return res, nil
 }
 

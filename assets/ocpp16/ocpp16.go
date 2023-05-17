@@ -38,6 +38,8 @@ func (o *Ocpp16) Start(c chan common.Channel, q chan bool) {
 		file:   common.DefGSPath,
 	}
 
+	o.setStartUpConfigurations()
+
 	o.s = setupServer(o.Asset.CPId, o.Timeout, o)
 
 	sErr := o.s.Start("ws://" + o.CSAddr + ":" + o.CSPort)
@@ -49,16 +51,18 @@ func (o *Ocpp16) Start(c chan common.Channel, q chan bool) {
 
 	o.logger.log(map[string]string{"protocol": "ocpp1.6", "function": "Start", "simulator": o.Asset.Name}, "Ocpp 1.6 server started", assets.Info)
 
-	o.setStartUpConfigurations()
-
-	o.sendBootNotification()
+	go o.sendBootNotification()
 
 	var b = <-q
-
 	if b {
+		o.logger.log(map[string]string{"protocol": "ocpp1.6", "function": "Start", "simulator": o.Asset.Name}, "Ocpp 1.6 server stop", assets.Info)
+
 		o.s.Stop()
+
 		close(c)
 		close(q)
+
+		return
 	}
 }
 
