@@ -51,6 +51,12 @@ func (h *Handler) Start() []chan bool {
 				Mod:     m,
 			}
 
+			for x := range s.Asset.Evses {
+				for y := range s.Asset.Evses[x].Connectors {
+					s.Asset.Evses[x].Connectors[y].Enabled = false
+				}
+			}
+
 			go s.Start(h.Channel, h.Quit[i])
 		case simulator.Ocpp201:
 

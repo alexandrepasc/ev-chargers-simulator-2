@@ -1,6 +1,7 @@
 package ocpp16
 
 import (
+	"strconv"
 	"sync"
 	"time"
 
@@ -12,21 +13,24 @@ import (
 	ocpp16 "github.com/lorenzodonini/ocpp-go/ocpp1.6"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/localauth"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 	"github.com/lorenzodonini/ocpp-go/ws"
 )
 
 type Ocpp16 struct {
-	lock    sync.RWMutex                     // Lock goroutine
-	logger  logging                          // Logging
-	L       translation.Translation          // translation
-	Timeout int64                            // Connection timeout
-	CSAddr  string                           // Central system ip address
-	CSPort  string                           // Central system port
-	Asset   *simulator.Asset                 // Asset data for the simulator
-	Mod     *model.Struct                    // Model data for the asset
-	s       ocpp16.ChargePoint               // Ocpp charge point server
-	Conf    map[string]core.ConfigurationKey // Configuration key map
-	Auth    []localauth.AuthorizationData    // Authorization list
+	lock          sync.RWMutex                     // Lock goroutine
+	logger        logging                          // Logging
+	L             translation.Translation          // translation
+	Timeout       int64                            // Connection timeout
+	CSAddr        string                           // Central system ip address
+	CSPort        string                           // Central system port
+	Asset         *simulator.Asset                 // Asset data for the simulator
+	Mod           *model.Struct                    // Model data for the asset
+	s             ocpp16.ChargePoint               // Ocpp charge point server
+	Conf          map[string]core.ConfigurationKey // Configuration key map
+	Auth          []localauth.AuthorizationData    // Authorization list
+	chargeProfile *types.ChargingProfile
+	t             int64
 }
 
 /**/
@@ -53,16 +57,31 @@ func (o *Ocpp16) Start(c chan common.Channel, q chan bool) {
 
 	go o.sendBootNotification()
 
-	var b = <-q
-	if b {
-		o.logger.log(map[string]string{"protocol": "ocpp1.6", "function": "Start", "simulator": o.Asset.Name}, "Ocpp 1.6 server stop", assets.Info)
+	for {
+		select {
+		case <-q:
+			o.logger.log(map[string]string{"protocol": "ocpp1.6", "function": "Start", "simulator": o.Asset.Name}, "Ocpp 1.6 server stop", assets.Info)
 
-		o.s.Stop()
+			o.s.Stop()
 
-		close(c)
-		close(q)
+			close(c)
+			close(q)
 
-		return
+			return
+		default:
+			break
+		}
+
+		o.updateData()
+
+		mvi, _ := strconv.ParseInt(*o.Conf["MeterValueSampleInterval"].Value, 10, 64)
+		if o.t%mvi == 0 {
+			o.meterValues()
+		}
+
+		o.handleTick()
+
+		time.Sleep(1 * time.Second)
 	}
 }
 

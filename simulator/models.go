@@ -22,9 +22,10 @@ type Evse struct {
 }
 
 type Connector struct {
-	ID      int64  `json:"id"`        // Connector identifier number
-	Enabled bool   `json:"omitempty"` // Since only one connector can be charging this is just to control that state
-	Data    []Data `json:"data"`      // The loop of data
+	ID      int64        `json:"id"`           // Connector identifier number
+	Enabled bool         `json:"omitempty"`    // Since only one connector can be charging this is just to control that state
+	Data    []Data       `json:"data"`         // The loop of data
+	DP      DataPosition `json:"dp,omitempty"` // Data position used to control the data
 }
 
 // TODO: evaluate if the charging state should be a number or the name of the state
@@ -37,4 +38,9 @@ type Data struct {
 	VoltageP1     int64 `json:"voltageP1"`     // Voltage of phase 1 in V (in case the asset is single phase only need the voltageP1)
 	VoltageP2     int64 `json:"voltageP2"`     // Voltage of phase 2 in V (in case the asset is single phase only need the voltageP1)
 	VoltageP3     int64 `json:"voltageP3"`     // Voltage of phase 3 in V (in case the asset is single phase only need the voltageP1)
+}
+
+type DataPosition struct {
+	Position int64
+	Ticker   int64
 }

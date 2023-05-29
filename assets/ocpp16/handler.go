@@ -120,8 +120,26 @@ func (o *Ocpp16) OnDataTransfer(req *core.DataTransferRequest) (res *core.DataTr
 	return res, nil
 }
 
-/**/
-func (o *Ocpp16) OnRemoteStartTransaction(_ *core.RemoteStartTransactionRequest) (res *core.RemoteStartTransactionConfirmation, err error) {
+/*
+Handles the start transaction request from the CS process the information and star a charging session.
+*/
+func (o *Ocpp16) OnRemoteStartTransaction(req *core.RemoteStartTransactionRequest) (res *core.RemoteStartTransactionConfirmation, err error) {
+	var lm = map[string]string{
+		"protocol":  string(o.Asset.Protocol),
+		"function":  "OnRemoteStartTransaction",
+		"feature":   req.GetFeatureName(),
+		"simulator": o.Asset.Name,
+		"type":      assets.Request,
+	}
+
+	o.logger.log(lm, req, assets.Info)
+
+	res = o.processRemoteStartTransaction(req)
+
+	lm["type"] = assets.Response
+
+	o.logger.log(lm, res, assets.Info)
+
 	return res, nil
 }
 

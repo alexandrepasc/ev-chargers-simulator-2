@@ -1,10 +1,14 @@
 package ocpp16
 
 import (
+	"fmt"
+	"math"
 	"strconv"
+	"time"
 
 	"github.com/alexandrepasc/ev-chargers-simulator-2/assets"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 )
 
 /*
@@ -29,6 +33,8 @@ func (o *Ocpp16) setStartUpConfigurations() {
 
 	mvsi.Value = &mvi
 	o.Conf["MeterValueSampleInterval"] = mvsi
+
+	o.t = 0
 }
 
 /*
@@ -56,6 +62,91 @@ func (o *Ocpp16) sendBootNotification() {
 	}
 
 	o.logger.log(map[string]string{"protocol": "ocpp1.6", "function": "sendBootNotification", "model": o.Asset.Name}, resp, assets.Info)
+}
+
+/**/
+func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionRequest) *core.RemoteStartTransactionConfirmation {
+	if !o.Mod.Ocpp.AuthorizeRemote {
+		o.chargeProfile = r.ChargingProfile
+
+		// At the moment not know how to identify the evse from the request so will only consider 1
+		if r.ConnectorId != nil {
+			var ok = false
+
+			for i, c := range o.Asset.Evses[0].Connectors {
+				if c.ID == int64(*r.ConnectorId) {
+					if !c.Enabled {
+						o.Asset.Evses[0].Connectors[i].Enabled = true
+
+						var req = core.StartTransactionRequest{
+							ConnectorId: int(c.ID),
+							IdTag:       r.IdTag,
+							Timestamp:   types.NewDateTime(time.Now()),
+						}
+
+						go o.s.SendRequest(req) //nolint:errcheck // because at the moment can not handle the error since it is in a routine
+
+						return &core.RemoteStartTransactionConfirmation{Status: types.RemoteStartStopStatusAccepted}
+					}
+				}
+			}
+
+			if !ok {
+				return &core.RemoteStartTransactionConfirmation{Status: types.RemoteStartStopStatusRejected}
+			}
+		}
+
+		var ok = false
+
+		for i, c := range o.Asset.Evses[0].Connectors {
+			if !c.Enabled {
+				o.Asset.Evses[0].Connectors[i].Enabled = true
+
+				var req = core.StartTransactionRequest{
+					ConnectorId: int(c.ID),
+					IdTag:       r.IdTag,
+					Timestamp:   types.NewDateTime(time.Now()),
+				}
+
+				go o.s.SendRequest(req) //nolint:errcheck // because at the moment can not handle the error since it is in a routine
+
+				return &core.RemoteStartTransactionConfirmation{Status: types.RemoteStartStopStatusAccepted}
+			}
+		}
+
+		if !ok {
+			return &core.RemoteStartTransactionConfirmation{Status: types.RemoteStartStopStatusRejected}
+		}
+	}
+
+	return &core.RemoteStartTransactionConfirmation{Status: types.RemoteStartStopStatusRejected}
+}
+
+/**/
+func (o *Ocpp16) updateData() {
+	for x, e := range o.Asset.Evses {
+		for y, c := range e.Connectors {
+			if c.Enabled {
+				fmt.Println("updateData")
+
+				if c.DP.Ticker <= c.Data[c.DP.Position].Duration {
+					o.Asset.Evses[x].Connectors[y].DP.Ticker++
+				} else {
+					o.Asset.Evses[x].Connectors[y].DP.Ticker = 0
+
+					if c.DP.Position < int64(len(c.Data)-1) {
+						o.Asset.Evses[x].Connectors[y].DP.Position++
+					} else {
+						o.Asset.Evses[x].Connectors[y].DP.Position = 0
+					}
+				}
+			}
+		}
+	}
+}
+
+func (o *Ocpp16) meterValues() {
+	fmt.Println("meter values")
 }
 
 /*
@@ -116,4 +207,14 @@ func (o *Ocpp16) setConfiguration(c *core.ChangeConfigurationRequest) core.Confi
 	}
 
 	return core.ConfigurationStatusAccepted
+}
+
+func (o *Ocpp16) handleTick() {
+	const rInt64 = math.MaxInt64 - 7
+
+	if o.t > rInt64 {
+		o.t = 0
+	} else {
+		o.t++
+	}
 }
