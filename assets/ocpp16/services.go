@@ -64,60 +64,79 @@ func (o *Ocpp16) sendBootNotification() {
 	o.logger.log(map[string]string{"protocol": "ocpp1.6", "function": "sendBootNotification", "model": o.Asset.Name}, resp, assets.Info)
 }
 
-/**/
+/*
+Process the start transaction request and proceed with the correct logic in each case of the
+authorize config.
+
+Validates if the connector selected is not active, activate it. If no connector were selected
+validate if any of them can be activated, if so activate it.
+*/
 func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionRequest) *core.RemoteStartTransactionConfirmation {
 	if !o.Mod.Ocpp.AuthorizeRemote {
 		o.chargeProfile = r.ChargingProfile
 
 		// At the moment not know how to identify the evse from the request so will only consider 1
 		if r.ConnectorId != nil {
-			var ok = false
+			var ok = true
 
-			for i, c := range o.Asset.Evses[0].Connectors {
-				if c.ID == int64(*r.ConnectorId) {
-					if !c.Enabled {
-						o.Asset.Evses[0].Connectors[i].Enabled = true
-
-						var req = core.StartTransactionRequest{
-							ConnectorId: int(c.ID),
-							IdTag:       r.IdTag,
-							Timestamp:   types.NewDateTime(time.Now()),
-						}
-
-						go o.s.SendRequest(req) //nolint:errcheck // because at the moment can not handle the error since it is in a routine
-
-						return &core.RemoteStartTransactionConfirmation{Status: types.RemoteStartStopStatusAccepted}
-					}
+			for _, c := range o.Asset.Evses[0].Connectors {
+				if c.Enabled {
+					ok = false
 				}
 			}
 
-			if !ok {
+			if ok {
+				for i, c := range o.Asset.Evses[0].Connectors {
+					if c.ID == int64(*r.ConnectorId) {
+						if !c.Enabled {
+							o.Asset.Evses[0].Connectors[i].Enabled = true
+
+							var req = core.StartTransactionRequest{
+								ConnectorId: int(c.ID),
+								IdTag:       r.IdTag,
+								Timestamp:   types.NewDateTime(time.Now()),
+							}
+
+							go o.s.SendRequest(req) //nolint:errcheck // because at the moment can not handle the error since it is in a routine
+
+							return &core.RemoteStartTransactionConfirmation{Status: types.RemoteStartStopStatusAccepted}
+						}
+					}
+				}
+			} else {
 				return &core.RemoteStartTransactionConfirmation{Status: types.RemoteStartStopStatusRejected}
 			}
 		}
 
-		var ok = false
+		var ok = true
 
-		for i, c := range o.Asset.Evses[0].Connectors {
-			if !c.Enabled {
-				o.Asset.Evses[0].Connectors[i].Enabled = true
-
-				var req = core.StartTransactionRequest{
-					ConnectorId: int(c.ID),
-					IdTag:       r.IdTag,
-					Timestamp:   types.NewDateTime(time.Now()),
-				}
-
-				go o.s.SendRequest(req) //nolint:errcheck // because at the moment can not handle the error since it is in a routine
-
-				return &core.RemoteStartTransactionConfirmation{Status: types.RemoteStartStopStatusAccepted}
+		for _, c := range o.Asset.Evses[0].Connectors {
+			if c.Enabled {
+				ok = false
 			}
 		}
 
-		if !ok {
+		if ok {
+			for i, c := range o.Asset.Evses[0].Connectors {
+				if !c.Enabled {
+					o.Asset.Evses[0].Connectors[i].Enabled = true
+
+					var req = core.StartTransactionRequest{
+						ConnectorId: int(c.ID),
+						IdTag:       r.IdTag,
+						Timestamp:   types.NewDateTime(time.Now()),
+					}
+
+					go o.s.SendRequest(req) //nolint:errcheck // because at the moment can not handle the error since it is in a routine
+
+					return &core.RemoteStartTransactionConfirmation{Status: types.RemoteStartStopStatusAccepted}
+				}
+			}
+		} else {
 			return &core.RemoteStartTransactionConfirmation{Status: types.RemoteStartStopStatusRejected}
 		}
 	}
+	// TODO: need the logic when it needs to authenticate
 
 	return &core.RemoteStartTransactionConfirmation{Status: types.RemoteStartStopStatusRejected}
 }
