@@ -22,22 +22,21 @@ type Evse struct {
 }
 
 type Connector struct {
-	ID      int64        `json:"id"`           // Connector identifier number
-	Enabled bool         `json:"omitempty"`    // Since only one connector can be charging this is just to control that state
-	Data    []Data       `json:"data"`         // The loop of data
-	DP      DataPosition `json:"dp,omitempty"` // Data position used to control the data
+	ID      int64        `json:"id"`               // Connector identifier number
+	Enabled bool         `json:"omitempty"`        // Since only one connector can be charging this is just to control that state
+	Data    []Data       `json:"data"`             // The loop of data
+	DP      DataPosition `json:"dp,omitempty"`     // Data position used to control the data
+	TPower  float64      `json:"tPower,omitempty"` // Store the total power for the connector, this will be used by the application only
 }
 
 // TODO: evaluate if the charging state should be a number or the name of the state
 type Data struct {
-	Duration      int64 `json:"duration"`      // The duration in seconds that the current data will be in place
-	ChargingState int64 `json:"chargingState"` // The state of charging for the current data
-	ErrorCode     int64 `json:"errorCode"`     // Error code
-	PowerFactor   int64 `json:"powerFactor"`   // The power factor
-	Power         int64 `json:"power"`         // Power in W
-	VoltageP1     int64 `json:"voltageP1"`     // Voltage of phase 1 in V (in case the asset is single phase only need the voltageP1)
-	VoltageP2     int64 `json:"voltageP2"`     // Voltage of phase 2 in V (in case the asset is single phase only need the voltageP1)
-	VoltageP3     int64 `json:"voltageP3"`     // Voltage of phase 3 in V (in case the asset is single phase only need the voltageP1)
+	Duration      int64   `json:"duration"`      // The duration in seconds that the current data will be in place
+	ChargingState int64   `json:"chargingState"` // The state of charging for the current data
+	ErrorCode     int64   `json:"errorCode"`     // Error code
+	PowerFactor   int64   `json:"powerFactor"`   // The power factor
+	Power         int64   `json:"power"`         // Power in W
+	Voltage       []int64 `json:"voltage"`       // Array of voltages each entry for each phase in V
 }
 
 type DataPosition struct {
