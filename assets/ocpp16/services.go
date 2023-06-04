@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"math"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/alexandrepasc/ev-chargers-simulator-2/assets"
+	"github.com/lorenzodonini/ocpp-go/ocpp"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 )
@@ -35,6 +37,16 @@ func (o *Ocpp16) setStartUpConfigurations() {
 	o.Conf["MeterValueSampleInterval"] = mvsi
 
 	o.t = 0
+
+	for x, e := range o.Asset.Evses {
+		for y := range e.Connectors {
+			o.Asset.Evses[x].Connectors[y].DP.Position = 0
+			o.Asset.Evses[x].Connectors[y].DP.Ticker = 0
+			o.Asset.Evses[x].Connectors[y].TPower = 0
+		}
+	}
+
+	o.st = time.Now()
 }
 
 /*
@@ -72,6 +84,15 @@ Validates if the connector selected is not active, activate it. If no connector 
 validate if any of them can be activated, if so activate it.
 */
 func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionRequest) *core.RemoteStartTransactionConfirmation {
+	var lm = map[string]string{
+		"protocol":  string(o.Asset.Protocol),
+		"function":  "processRemoteStartTransaction",
+		"feature":   "StartTransaction",
+		"simulator": o.Asset.Name,
+		"sender":    assets.CP,
+		"type":      assets.Request,
+	}
+
 	if !o.Mod.Ocpp.AuthorizeRemote {
 		o.chargeProfile = r.ChargingProfile
 
@@ -87,21 +108,48 @@ func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionReq
 
 			if ok {
 				for i, c := range o.Asset.Evses[0].Connectors {
-					if c.ID == int64(*r.ConnectorId) {
-						if !c.Enabled {
-							o.Asset.Evses[0].Connectors[i].Enabled = true
-
-							var req = core.StartTransactionRequest{
-								ConnectorId: int(c.ID),
-								IdTag:       r.IdTag,
-								Timestamp:   types.NewDateTime(time.Now()),
-							}
-
-							go o.s.SendRequest(req) //nolint:errcheck // because at the moment can not handle the error since it is in a routine
-
-							return &core.RemoteStartTransactionConfirmation{Status: types.RemoteStartStopStatusAccepted}
-						}
+					if c.ID != int64(*r.ConnectorId) {
+						continue
 					}
+
+					o.Asset.Evses[0].Connectors[i].Enabled = true
+
+					o.Asset.Evses[0].Connectors[i].DP.Position = 2
+					o.Asset.Evses[0].Connectors[i].DP.Ticker = 0
+
+					fmt.Println(o.Asset.Evses[0].Connectors[i].DP)
+
+					var req = core.StartTransactionRequest{
+						ConnectorId: int(c.ID),
+						IdTag:       r.IdTag,
+						Timestamp:   types.NewDateTime(time.Now()),
+					}
+
+					lm["feature"] = req.GetFeatureName()
+
+					o.logger.log(lm, req, assets.Error)
+
+					cb := func(res ocpp.Response, err error) {
+						var lm2 = map[string]string{
+							"protocol":  string(o.Asset.Protocol),
+							"function":  "processRemoteStartTransaction",
+							"feature":   res.GetFeatureName(),
+							"simulator": o.Asset.Name,
+							"sender":    assets.CS,
+							"type":      assets.Response,
+						}
+
+						o.logger.log(lm2, res, assets.Info)
+					}
+					err := o.s.SendRequestAsync(req, cb)
+
+					lm["type"] = assets.Response
+
+					if err != nil {
+						o.logger.log(lm, err, assets.Error)
+					}
+
+					return &core.RemoteStartTransactionConfirmation{Status: types.RemoteStartStopStatusAccepted}
 				}
 			} else {
 				return &core.RemoteStartTransactionConfirmation{Status: types.RemoteStartStopStatusRejected}
@@ -118,19 +166,19 @@ func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionReq
 
 		if ok {
 			for i, c := range o.Asset.Evses[0].Connectors {
-				if !c.Enabled {
-					o.Asset.Evses[0].Connectors[i].Enabled = true
+				o.Asset.Evses[0].Connectors[i].Enabled = true
 
-					var req = core.StartTransactionRequest{
-						ConnectorId: int(c.ID),
-						IdTag:       r.IdTag,
-						Timestamp:   types.NewDateTime(time.Now()),
-					}
+				o.Asset.Evses[0].Connectors[i].DP.Position = 2
 
-					go o.s.SendRequest(req) //nolint:errcheck // because at the moment can not handle the error since it is in a routine
-
-					return &core.RemoteStartTransactionConfirmation{Status: types.RemoteStartStopStatusAccepted}
+				var req = core.StartTransactionRequest{
+					ConnectorId: int(c.ID),
+					IdTag:       r.IdTag,
+					Timestamp:   types.NewDateTime(time.Now()),
 				}
+
+				go o.s.SendRequest(req) //nolint:errcheck // because at the moment can not handle the error since it is in a routine
+
+				return &core.RemoteStartTransactionConfirmation{Status: types.RemoteStartStopStatusAccepted}
 			}
 		} else {
 			return &core.RemoteStartTransactionConfirmation{Status: types.RemoteStartStopStatusRejected}
@@ -142,9 +190,14 @@ func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionReq
 }
 
 /**/
+// TODO: the total power calculation need to be reviewed, at the moment with 100 w in a couple of secs the result is 0
 func (o *Ocpp16) updateData() {
+	const med float64 = 2
+
 	for x, e := range o.Asset.Evses {
 		for y, c := range e.Connectors {
+			o.Asset.Evses[x].Connectors[y].TPower = assets.CalculateTotalPower(c.TPower, c.Data[c.DP.Position].Power, o.st)
+
 			if c.Enabled {
 				fmt.Println("updateData")
 
@@ -159,13 +212,98 @@ func (o *Ocpp16) updateData() {
 						o.Asset.Evses[x].Connectors[y].DP.Position = 0
 					}
 				}
+			} else {
+				o.Asset.Evses[x].Connectors[y].DP.Position = 0
+				o.Asset.Evses[x].Connectors[y].DP.Ticker = 0
 			}
 		}
 	}
 }
 
-func (o *Ocpp16) meterValues() {
+func (o *Ocpp16) meterValuesSampledData() {
 	fmt.Println("meter values")
+
+	for _, c := range o.Asset.Evses[0].Connectors {
+		var mvl []types.MeterValue
+
+		var spl []types.SampledValue
+
+		var confL = strings.Split(*o.Conf["MeterValuesSampledData"].Value, ",")
+
+		for i := 0; i < int(o.Asset.Phases); i++ {
+			for _, conf := range confL {
+				var sp types.SampledValue
+
+				switch conf {
+				case assets.EnergyActiveImportRegister:
+					sp = types.SampledValue{
+						Value:     strconv.FormatFloat(c.TPower, 'f', 4, 64),
+						Unit:      types.UnitOfMeasureWh,
+						Format:    types.ValueFormatRaw,
+						Measurand: types.Measurand(assets.EnergyActiveImportRegister),
+						Phase:     types.Phase(assets.Phases[i]),
+					}
+
+				case assets.Voltage:
+					sp = types.SampledValue{
+						Value:     strconv.FormatInt(c.Data[c.DP.Position].Voltage[i], 10),
+						Unit:      types.UnitOfMeasureV,
+						Format:    types.ValueFormatRaw,
+						Measurand: types.Measurand(assets.Voltage),
+						Phase:     types.Phase(assets.Phases[i]),
+					}
+
+				case assets.CurrentImport:
+					sp = types.SampledValue{
+						Value: strconv.FormatFloat(assets.CalculateCurrent(
+							c.Data[c.DP.Position].Power,
+							c.Data[c.DP.Position].PowerFactor,
+							c.Data[c.DP.Position].Voltage[i],
+							int64(o.Asset.Phases),
+						), 'f', 4, 64),
+						Unit:      types.UnitOfMeasureA,
+						Format:    types.ValueFormatRaw,
+						Measurand: types.Measurand(assets.CurrentImport),
+						Phase:     types.Phase(assets.Phases[i]),
+					}
+				}
+
+				spl = append(spl, sp)
+			}
+		}
+
+		mvl = []types.MeterValue{
+			{
+				Timestamp:    types.NewDateTime(time.Now()),
+				SampledValue: spl,
+			},
+		}
+
+		var req = core.MeterValuesRequest{
+			ConnectorId: int(c.ID),
+			MeterValue:  mvl,
+		}
+
+		var lm = map[string]string{
+			"protocol":  string(o.Asset.Protocol),
+			"function":  "meterValuesSampledData",
+			"feature":   req.GetFeatureName(),
+			"simulator": o.Asset.Name,
+			"type":      assets.Request,
+		}
+
+		o.logger.log(lm, req, assets.Info)
+
+		resp, err := o.s.SendRequest(req)
+
+		lm["type"] = assets.Response
+
+		if err != nil {
+			o.logger.log(lm, err, assets.Error)
+		}
+
+		o.logger.log(lm, resp, assets.Info)
+	}
 }
 
 /*

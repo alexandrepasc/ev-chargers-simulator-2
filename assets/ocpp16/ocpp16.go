@@ -31,6 +31,7 @@ type Ocpp16 struct {
 	Auth          []localauth.AuthorizationData    // Authorization list
 	chargeProfile *types.ChargingProfile
 	t             int64
+	st            time.Time
 }
 
 /**/
@@ -76,7 +77,7 @@ func (o *Ocpp16) Start(c chan common.Channel, q chan bool) {
 
 		mvi, _ := strconv.ParseInt(*o.Conf["MeterValueSampleInterval"].Value, 10, 64)
 		if o.t%mvi == 0 {
-			o.meterValues()
+			go o.meterValuesSampledData()
 		}
 
 		o.handleTick()
