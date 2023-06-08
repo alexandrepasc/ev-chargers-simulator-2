@@ -44,12 +44,21 @@ cp	-	Current connector power (float64)
 
 st	-	Simulator start time (time.Time)
 */
-func CalculateTotalPower(pp float64, cp int64, st time.Time) (tp float64) {
+func CalculateTotalPower(pp float64, cp int64) (tp float64) {
 	const med float64 = 2
 
-	var p = (pp + float64(cp)) / med
+	if cp == 0 {
+		return pp
+	}
 
-	tp = p * time.Since(st).Hours()
+	tp = (pp + float64(cp)) / med
 
 	return tp
+}
+
+/**/
+func CalculateEnergy(tp float64, st time.Time) (e float64) {
+	e = tp * time.Since(st).Hours()
+
+	return e
 }

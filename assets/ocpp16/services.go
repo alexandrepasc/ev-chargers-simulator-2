@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/alexandrepasc/ev-chargers-simulator-2/assets"
+	"github.com/alexandrepasc/ev-chargers-simulator-2/simulator"
 	"github.com/lorenzodonini/ocpp-go/ocpp"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
@@ -43,6 +44,7 @@ func (o *Ocpp16) setStartUpConfigurations() {
 			o.Asset.Evses[x].Connectors[y].DP.Position = 0
 			o.Asset.Evses[x].Connectors[y].DP.Ticker = 0
 			o.Asset.Evses[x].Connectors[y].TPower = 0
+			o.Asset.Evses[x].Connectors[y].Energy = 0
 		}
 	}
 
@@ -192,30 +194,35 @@ func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionReq
 /**/
 // TODO: the total power calculation need to be reviewed, at the moment with 100 w in a couple of secs the result is 0
 func (o *Ocpp16) updateData() {
-	const med float64 = 2
-
 	for x, e := range o.Asset.Evses {
 		for y, c := range e.Connectors {
-			o.Asset.Evses[x].Connectors[y].TPower = assets.CalculateTotalPower(c.TPower, c.Data[c.DP.Position].Power, o.st)
+			if o.Asset.StartCharging {
+				if canEnable(e.Connectors) {
+					o.Asset.Evses[x].Connectors[y].Enabled = true
+				}
 
-			if c.Enabled {
-				fmt.Println("updateData")
-
-				if c.DP.Ticker <= c.Data[c.DP.Position].Duration {
-					o.Asset.Evses[x].Connectors[y].DP.Ticker++
-				} else {
-					o.Asset.Evses[x].Connectors[y].DP.Ticker = 0
-
-					if c.DP.Position < int64(len(c.Data)-1) {
-						o.Asset.Evses[x].Connectors[y].DP.Position++
+				if c.Enabled {
+					if c.DP.Ticker < c.Data[c.DP.Position].Duration {
+						o.Asset.Evses[x].Connectors[y].DP.Ticker++
 					} else {
-						o.Asset.Evses[x].Connectors[y].DP.Position = 0
+						o.Asset.Evses[x].Connectors[y].DP.Ticker = 0
+
+						if c.DP.Position < int64(len(c.Data)-1) {
+							o.Asset.Evses[x].Connectors[y].DP.Position++
+						} else {
+							o.Asset.Evses[x].Connectors[y].DP.Position = 0
+						}
 					}
+				} else {
+					o.Asset.Evses[x].Connectors[y].DP.Position = 0
+					o.Asset.Evses[x].Connectors[y].DP.Ticker = 0
 				}
 			} else {
-				o.Asset.Evses[x].Connectors[y].DP.Position = 0
-				o.Asset.Evses[x].Connectors[y].DP.Ticker = 0
+				o.notAutoChargePoint(c, x, y)
 			}
+
+			o.Asset.Evses[x].Connectors[y].TPower = assets.CalculateTotalPower(c.TPower, c.Data[c.DP.Position].Power)
+			o.Asset.Evses[x].Connectors[y].Energy = assets.CalculateEnergy(o.Asset.Evses[x].Connectors[y].TPower, o.st)
 		}
 	}
 }
@@ -237,7 +244,7 @@ func (o *Ocpp16) meterValuesSampledData() {
 				switch conf {
 				case assets.EnergyActiveImportRegister:
 					sp = types.SampledValue{
-						Value:     strconv.FormatFloat(c.TPower, 'f', 4, 64),
+						Value:     strconv.FormatFloat(c.Energy, 'f', 4, 64),
 						Unit:      types.UnitOfMeasureWh,
 						Format:    types.ValueFormatRaw,
 						Measurand: types.Measurand(assets.EnergyActiveImportRegister),
@@ -373,5 +380,46 @@ func (o *Ocpp16) handleTick() {
 		o.t = 0
 	} else {
 		o.t++
+	}
+}
+
+/**/
+func canEnable(cl []simulator.Connector) bool {
+	for _, c := range cl {
+		if c.Enabled {
+			return false
+		}
+	}
+
+	return true
+}
+
+/**/
+func (o *Ocpp16) notAutoChargePoint(c simulator.Connector, x, y int) {
+	if c.Enabled {
+		if c.DP.Ticker < c.Data[c.DP.Position].Duration {
+			o.Asset.Evses[x].Connectors[y].DP.Ticker++
+		} else {
+			o.Asset.Evses[x].Connectors[y].DP.Ticker = 0
+
+			if c.DP.Position < int64(len(c.Data)-1) {
+				o.Asset.Evses[x].Connectors[y].DP.Position++
+
+				for {
+					if c.Data[c.DP.Position].ChargingState == int64(assets.Charging) {
+						break
+					}
+
+					if c.DP.Position < int64(len(c.Data)-1) {
+						o.Asset.Evses[x].Connectors[y].DP.Position++
+					} else {
+						o.Asset.Evses[x].Connectors[y].DP.Position = 0
+					}
+				}
+			}
+		}
+	} else {
+		o.Asset.Evses[x].Connectors[y].DP.Position = 0
+		o.Asset.Evses[x].Connectors[y].DP.Ticker = 0
 	}
 }
