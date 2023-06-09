@@ -21,6 +21,9 @@ const (
 	Reserved      ConnectorStatus = 7
 	Unavailable   ConnectorStatus = 8
 	Faulted       ConnectorStatus = 9
+
+	Soft ResetType = "Soft"
+	Hard ResetType = "Hard"
 )
 
 var (
