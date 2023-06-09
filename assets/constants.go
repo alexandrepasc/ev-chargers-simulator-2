@@ -30,6 +30,7 @@ var (
 	EnergyActiveImportRegister = "Energy.Active.Import.Register"
 	Voltage                    = "Voltage"
 	CurrentImport              = "Current.Import"
+	PowerActiveImport          = "Power.Active.Import"
 	Phases                     = []string{"L1", "L2", "L3"}
 	Status                     = []string{
 		"",

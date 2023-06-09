@@ -37,6 +37,13 @@ func (o *Ocpp16) setStartUpConfigurations() {
 	mvsi.Value = &mvi
 	o.Conf["MeterValueSampleInterval"] = mvsi
 
+	var mvsdc = assets.EnergyActiveImportRegister + "," + assets.PowerActiveImport
+
+	var mvsd = o.Conf["MeterValuesSampledData"]
+
+	mvsd.Value = &mvsdc
+	o.Conf["MeterValuesSampledData"] = mvsd
+
 	o.t = 0
 
 	for x, e := range o.Asset.Evses {
@@ -152,7 +159,7 @@ func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionReq
 						o.logger.log(lm, err, assets.Error)
 					}
 
-					o.statusNotification(c)
+					o.statusNotification(o.Asset.Evses[0].Connectors[i])
 
 					return &core.RemoteStartTransactionConfirmation{Status: types.RemoteStartStopStatusAccepted}
 				}
@@ -192,6 +199,11 @@ func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionReq
 	// TODO: need the logic when it needs to authenticate
 
 	return &core.RemoteStartTransactionConfirmation{Status: types.RemoteStartStopStatusRejected}
+}
+
+/**/
+func (o *Ocpp16) processRemoteStopTransaction(_ *core.RemoteStopTransactionRequest) *core.RemoteStopTransactionConfirmation {
+	return nil
 }
 
 /**/
@@ -280,6 +292,14 @@ func (o *Ocpp16) meterValuesSampledData() {
 						Unit:      types.UnitOfMeasureA,
 						Format:    types.ValueFormatRaw,
 						Measurand: types.Measurand(assets.CurrentImport),
+						Phase:     types.Phase(assets.Phases[i]),
+					}
+				case assets.PowerActiveImport:
+					sp = types.SampledValue{
+						Value:     strconv.FormatFloat(c.TPower, 'f', 4, 64),
+						Unit:      types.UnitOfMeasureW,
+						Format:    types.ValueFormatRaw,
+						Measurand: types.Measurand(assets.PowerActiveImport),
 						Phase:     types.Phase(assets.Phases[i]),
 					}
 				}
