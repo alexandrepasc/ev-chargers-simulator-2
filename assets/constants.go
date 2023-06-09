@@ -31,4 +31,34 @@ var (
 	Voltage                    = "Voltage"
 	CurrentImport              = "Current.Import"
 	Phases                     = []string{"L1", "L2", "L3"}
+	Status                     = []string{
+		"",
+		"Available",
+		"Preparing",
+		"Charging",
+		"SuspendedEV",
+		"SuspendedEVSE",
+		"Finishing",
+		"Reserved",
+		"Unavailable",
+		"Faulted",
+	}
+	ErrorCode = []string{
+		"NoError",
+		"ConnectorLockFailure",
+		"EVCommunicationError",
+		"GroundFailure",
+		"HighTemperature",
+		"InternalError",
+		"LocalListConflict",
+		"OtherError",
+		"OverCurrentFailure",
+		"OverVoltage",
+		"PowerMeterFailure",
+		"PowerSwitchFailure",
+		"ReaderFailure",
+		"ResetFailure",
+		"UnderVoltage",
+		"WeakSignal",
+	}
 )
