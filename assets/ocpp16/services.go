@@ -52,6 +52,7 @@ func (o *Ocpp16) setStartUpConfigurations() {
 			o.Asset.Evses[x].Connectors[y].DP.Ticker = 0
 			o.Asset.Evses[x].Connectors[y].TPower = 0
 			o.Asset.Evses[x].Connectors[y].Energy = 0
+			o.Asset.Evses[x].Connectors[y].Enabled = false
 		}
 	}
 
@@ -202,8 +203,26 @@ func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionReq
 }
 
 /**/
-func (o *Ocpp16) processRemoteStopTransaction(_ *core.RemoteStopTransactionRequest) *core.RemoteStopTransactionConfirmation {
-	return nil
+func (o *Ocpp16) processRemoteStopTransaction(r *core.RemoteStopTransactionRequest) *core.RemoteStopTransactionConfirmation {
+	if r.TransactionId == o.chargeProfile.TransactionId {
+		// at the moment this is only supporting 1 evse per simulator, so this will only look for one position
+		for i, c := range o.Asset.Evses[0].Connectors {
+			if !c.Enabled {
+				continue
+			}
+
+			o.Asset.Evses[0].Connectors[i].DP.Position = int64(len(c.Data) - 1)
+			o.Asset.Evses[0].Connectors[i].DP.Ticker = 0
+
+			go o.statusNotification(o.Asset.Evses[0].Connectors[i])
+
+			go o.stopTransaction(c)
+
+			return &core.RemoteStopTransactionConfirmation{Status: types.RemoteStartStopStatusAccepted}
+		}
+	}
+
+	return &core.RemoteStopTransactionConfirmation{Status: types.RemoteStartStopStatusRejected}
 }
 
 /**/
@@ -243,7 +262,12 @@ func (o *Ocpp16) updateData() {
 			}
 
 			o.Asset.Evses[x].Connectors[y].TPower = assets.CalculateTotalPower(c.TPower, c.Data[c.DP.Position].Power)
-			o.Asset.Evses[x].Connectors[y].Energy = assets.CalculateEnergy(o.Asset.Evses[x].Connectors[y].TPower, o.st)
+			o.Asset.Evses[x].Connectors[y].Energy = assets.CalculateEnergy(
+				o.Asset.Evses[x].Connectors[y].TPower,
+				o.Asset.Evses[x].Connectors[y].Energy,
+				c.Data[c.DP.Position].Power,
+				o.st,
+			)
 		}
 	}
 }
@@ -296,7 +320,7 @@ func (o *Ocpp16) meterValuesSampledData() {
 					}
 				case assets.PowerActiveImport:
 					sp = types.SampledValue{
-						Value:     strconv.FormatFloat(c.TPower, 'f', 4, 64),
+						Value:     strconv.FormatFloat(float64(c.Data[c.DP.Position].Power), 'f', 4, 64),
 						Unit:      types.UnitOfMeasureW,
 						Format:    types.ValueFormatRaw,
 						Measurand: types.Measurand(assets.PowerActiveImport),
@@ -366,6 +390,49 @@ func (o *Ocpp16) statusNotification(c simulator.Connector) {
 		var lm2 = map[string]string{
 			"protocol":  string(o.Asset.Protocol),
 			"function":  "statusNotification",
+			"feature":   res.GetFeatureName(),
+			"simulator": o.Asset.Name,
+			"sender":    assets.CS,
+			"type":      assets.Response,
+		}
+
+		o.logger.log(lm2, res, assets.Info)
+	}
+
+	err := o.s.SendRequestAsync(req, cb)
+
+	lm["type"] = assets.Response
+
+	if err != nil {
+		o.logger.log(lm, err, assets.Error)
+	}
+}
+
+func (o *Ocpp16) stopTransaction(c simulator.Connector) {
+	var lm = map[string]string{
+		"protocol":  string(o.Asset.Protocol),
+		"function":  "stopTransaction",
+		"feature":   "StatusNotification",
+		"simulator": o.Asset.Name,
+		"sender":    assets.CP,
+		"type":      assets.Request,
+	}
+
+	var req = core.StopTransactionRequest{
+		IdTag:         "asdasdasd",
+		MeterStop:     int(c.Energy),
+		Timestamp:     types.NewDateTime(time.Now()),
+		TransactionId: o.chargeProfile.TransactionId,
+	}
+
+	lm["feature"] = req.GetFeatureName()
+
+	o.logger.log(lm, req, assets.Info)
+
+	cb := func(res ocpp.Response, err error) {
+		var lm2 = map[string]string{
+			"protocol":  string(o.Asset.Protocol),
+			"function":  "stopTransaction",
 			"feature":   res.GetFeatureName(),
 			"simulator": o.Asset.Name,
 			"sender":    assets.CS,
@@ -473,19 +540,30 @@ func (o *Ocpp16) notAutoChargePoint(c simulator.Connector, x, y int) {
 		} else {
 			o.Asset.Evses[x].Connectors[y].DP.Ticker = 0
 
+			if assets.Status[c.Data[c.DP.Position].ChargingState] == "Finishing" {
+				o.Asset.Evses[x].Connectors[y].DP.Position = 0
+				o.Asset.Evses[x].Connectors[y].Enabled = false
+
+				go o.statusNotification(o.Asset.Evses[x].Connectors[y])
+
+				return
+			}
+
 			if c.DP.Position < int64(len(c.Data)-1) {
 				o.Asset.Evses[x].Connectors[y].DP.Position++
+			} else {
+				o.Asset.Evses[x].Connectors[y].DP.Position = 0
+			}
 
-				for {
-					if c.Data[c.DP.Position].ChargingState == int64(assets.Charging) {
-						break
-					}
+			for {
+				if c.Data[c.DP.Position].ChargingState == int64(assets.Charging) {
+					break
+				}
 
-					if c.DP.Position < int64(len(c.Data)-1) {
-						o.Asset.Evses[x].Connectors[y].DP.Position++
-					} else {
-						o.Asset.Evses[x].Connectors[y].DP.Position = 0
-					}
+				if c.DP.Position < int64(len(c.Data)-1) {
+					o.Asset.Evses[x].Connectors[y].DP.Position++
+				} else {
+					o.Asset.Evses[x].Connectors[y].DP.Position = 0
 				}
 			}
 		}

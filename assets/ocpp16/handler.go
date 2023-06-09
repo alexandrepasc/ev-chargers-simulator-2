@@ -143,8 +143,26 @@ func (o *Ocpp16) OnRemoteStartTransaction(req *core.RemoteStartTransactionReques
 	return res, nil
 }
 
-/**/
-func (o *Ocpp16) OnRemoteStopTransaction(_ *core.RemoteStopTransactionRequest) (res *core.RemoteStopTransactionConfirmation, err error) {
+/*
+Handles the CS stop transaction request and process it
+*/
+func (o *Ocpp16) OnRemoteStopTransaction(req *core.RemoteStopTransactionRequest) (res *core.RemoteStopTransactionConfirmation, err error) {
+	var lm = map[string]string{
+		"protocol":  string(o.Asset.Protocol),
+		"function":  "OnRemoteStopTransaction",
+		"feature":   req.GetFeatureName(),
+		"simulator": o.Asset.Name,
+		"type":      assets.Request,
+	}
+
+	o.logger.log(lm, req, assets.Info)
+
+	res = o.processRemoteStopTransaction(req)
+
+	lm["type"] = assets.Response
+
+	o.logger.log(lm, res, assets.Info)
+
 	return res, nil
 }
 
