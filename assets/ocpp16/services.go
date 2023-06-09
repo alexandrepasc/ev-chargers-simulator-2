@@ -124,6 +124,7 @@ func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionReq
 					var req = core.StartTransactionRequest{
 						ConnectorId: int(c.ID),
 						IdTag:       r.IdTag,
+						MeterStart:  int(c.Energy),
 						Timestamp:   types.NewDateTime(time.Now()),
 					}
 
@@ -150,6 +151,8 @@ func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionReq
 					if err != nil {
 						o.logger.log(lm, err, assets.Error)
 					}
+
+					o.statusNotification(c)
 
 					return &core.RemoteStartTransactionConfirmation{Status: types.RemoteStartStopStatusAccepted}
 				}
@@ -202,6 +205,8 @@ func (o *Ocpp16) updateData() {
 				}
 
 				if c.Enabled {
+					var cs = c.Data[c.DP.Position].ChargingState
+
 					if c.DP.Ticker < c.Data[c.DP.Position].Duration {
 						o.Asset.Evses[x].Connectors[y].DP.Ticker++
 					} else {
@@ -212,6 +217,10 @@ func (o *Ocpp16) updateData() {
 						} else {
 							o.Asset.Evses[x].Connectors[y].DP.Position = 0
 						}
+					}
+
+					if cs != c.Data[c.DP.Position].ChargingState {
+						o.statusNotification(c)
 					}
 				} else {
 					o.Asset.Evses[x].Connectors[y].DP.Position = 0
@@ -310,6 +319,48 @@ func (o *Ocpp16) meterValuesSampledData() {
 		}
 
 		o.logger.log(lm, resp, assets.Info)
+	}
+}
+
+func (o *Ocpp16) statusNotification(c simulator.Connector) {
+	var lm = map[string]string{
+		"protocol":  string(o.Asset.Protocol),
+		"function":  "statusNotification",
+		"feature":   "StatusNotification",
+		"simulator": o.Asset.Name,
+		"sender":    assets.CP,
+		"type":      assets.Request,
+	}
+
+	var req = core.StatusNotificationRequest{
+		ConnectorId: int(c.ID),
+		ErrorCode:   core.ChargePointErrorCode(assets.ErrorCode[c.Data[c.DP.Position].ErrorCode]),
+		Status:      core.ChargePointStatus(assets.Status[c.Data[c.DP.Position].ChargingState]),
+	}
+
+	lm["feature"] = req.GetFeatureName()
+
+	o.logger.log(lm, req, assets.Info)
+
+	cb := func(res ocpp.Response, err error) {
+		var lm2 = map[string]string{
+			"protocol":  string(o.Asset.Protocol),
+			"function":  "statusNotification",
+			"feature":   res.GetFeatureName(),
+			"simulator": o.Asset.Name,
+			"sender":    assets.CS,
+			"type":      assets.Response,
+		}
+
+		o.logger.log(lm2, res, assets.Info)
+	}
+
+	err := o.s.SendRequestAsync(req, cb)
+
+	lm["type"] = assets.Response
+
+	if err != nil {
+		o.logger.log(lm, err, assets.Error)
 	}
 }
 
