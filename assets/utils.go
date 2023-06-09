@@ -57,7 +57,11 @@ func CalculateTotalPower(pp float64, cp int64) (tp float64) {
 }
 
 /**/
-func CalculateEnergy(tp float64, st time.Time) (e float64) {
+func CalculateEnergy(tp, ce float64, cp int64, st time.Time) (e float64) {
+	if cp == 0 {
+		return ce
+	}
+
 	e = tp * time.Since(st).Hours()
 
 	return e
