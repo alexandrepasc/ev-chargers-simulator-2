@@ -25,6 +25,7 @@ func (o *Ocpp16) OnGetConfiguration(req *core.GetConfigurationRequest) (res *cor
 		"function":  "OnGetConfiguration",
 		"feature":   req.GetFeatureName(),
 		"simulator": o.Asset.Name,
+		"sender":    assets.CS,
 		"type":      assets.Request,
 	}
 
@@ -36,6 +37,7 @@ func (o *Ocpp16) OnGetConfiguration(req *core.GetConfigurationRequest) (res *cor
 
 	res.UnknownKey = u
 
+	lm["sender"] = assets.CP
 	lm["type"] = assets.Response
 
 	o.logger.log(lm, res, assets.Info)
@@ -53,6 +55,7 @@ func (o *Ocpp16) OnChangeConfiguration(req *core.ChangeConfigurationRequest) (re
 		"function":  "OnChangeConfiguration",
 		"feature":   req.GetFeatureName(),
 		"simulator": o.Asset.Name,
+		"sender":    assets.CS,
 		"type":      assets.Request,
 	}
 
@@ -60,6 +63,7 @@ func (o *Ocpp16) OnChangeConfiguration(req *core.ChangeConfigurationRequest) (re
 
 	res = &core.ChangeConfigurationConfirmation{Status: o.setConfiguration(req)}
 
+	lm["sender"] = assets.CP
 	lm["type"] = assets.Response
 
 	o.logger.log(lm, res, assets.Info)
@@ -77,6 +81,7 @@ func (o *Ocpp16) OnClearCache(req *core.ClearCacheRequest) (res *core.ClearCache
 		"function":  "OnClearCache",
 		"feature":   req.GetFeatureName(),
 		"simulator": o.Asset.Name,
+		"sender":    assets.CS,
 		"type":      assets.Request,
 	}
 
@@ -86,6 +91,7 @@ func (o *Ocpp16) OnClearCache(req *core.ClearCacheRequest) (res *core.ClearCache
 
 	res = &core.ClearCacheConfirmation{Status: core.ClearCacheStatusAccepted}
 
+	lm["sender"] = assets.CP
 	lm["type"] = assets.Response
 
 	o.logger.log(lm, res, assets.Info)
@@ -102,6 +108,7 @@ func (o *Ocpp16) OnDataTransfer(req *core.DataTransferRequest) (res *core.DataTr
 		"function":  "OnDataTransfer",
 		"feature":   req.GetFeatureName(),
 		"simulator": o.Asset.Name,
+		"sender":    assets.CS,
 		"type":      assets.Request,
 	}
 
@@ -113,6 +120,7 @@ func (o *Ocpp16) OnDataTransfer(req *core.DataTransferRequest) (res *core.DataTr
 		res = &core.DataTransferConfirmation{Status: core.DataTransferStatusUnknownVendorId}
 	}
 
+	lm["sender"] = assets.CP
 	lm["type"] = assets.Response
 
 	o.logger.log(lm, res, assets.Info)
@@ -129,6 +137,7 @@ func (o *Ocpp16) OnRemoteStartTransaction(req *core.RemoteStartTransactionReques
 		"function":  "OnRemoteStartTransaction",
 		"feature":   req.GetFeatureName(),
 		"simulator": o.Asset.Name,
+		"sender":    assets.CS,
 		"type":      assets.Request,
 	}
 
@@ -136,6 +145,7 @@ func (o *Ocpp16) OnRemoteStartTransaction(req *core.RemoteStartTransactionReques
 
 	res = o.processRemoteStartTransaction(req)
 
+	lm["sender"] = assets.CP
 	lm["type"] = assets.Response
 
 	o.logger.log(lm, res, assets.Info)
@@ -152,6 +162,7 @@ func (o *Ocpp16) OnRemoteStopTransaction(req *core.RemoteStopTransactionRequest)
 		"function":  "OnRemoteStopTransaction",
 		"feature":   req.GetFeatureName(),
 		"simulator": o.Asset.Name,
+		"sender":    assets.CS,
 		"type":      assets.Request,
 	}
 
@@ -159,6 +170,7 @@ func (o *Ocpp16) OnRemoteStopTransaction(req *core.RemoteStopTransactionRequest)
 
 	res = o.processRemoteStopTransaction(req)
 
+	lm["sender"] = assets.CP
 	lm["type"] = assets.Response
 
 	o.logger.log(lm, res, assets.Info)
@@ -167,7 +179,25 @@ func (o *Ocpp16) OnRemoteStopTransaction(req *core.RemoteStopTransactionRequest)
 }
 
 /**/
-func (o *Ocpp16) OnReset(_ *core.ResetRequest) (res *core.ResetConfirmation, err error) {
+func (o *Ocpp16) OnReset(req *core.ResetRequest) (res *core.ResetConfirmation, err error) {
+	var lm = map[string]string{
+		"protocol":  string(o.Asset.Protocol),
+		"function":  "OnReset",
+		"feature":   req.GetFeatureName(),
+		"simulator": o.Asset.Name,
+		"sender":    assets.CS,
+		"type":      assets.Request,
+	}
+
+	o.logger.log(lm, req, assets.Info)
+
+	res = o.processReset(req)
+
+	lm["sender"] = assets.CP
+	lm["type"] = assets.Response
+
+	o.logger.log(lm, res, assets.Info)
+
 	return res, nil
 }
 

@@ -55,8 +55,6 @@ func (o *Ocpp16) setStartUpConfigurations() {
 			o.Asset.Evses[x].Connectors[y].Enabled = false
 		}
 	}
-
-	o.st = time.Now()
 }
 
 /*
@@ -84,6 +82,8 @@ func (o *Ocpp16) sendBootNotification() {
 	}
 
 	o.logger.log(map[string]string{"protocol": "ocpp1.6", "function": "sendBootNotification", "model": o.Asset.Name}, resp, assets.Info)
+
+	o.st = time.Now()
 }
 
 /*
@@ -223,6 +223,45 @@ func (o *Ocpp16) processRemoteStopTransaction(r *core.RemoteStopTransactionReque
 	}
 
 	return &core.RemoteStopTransactionConfirmation{Status: types.RemoteStartStopStatusRejected}
+}
+
+/**/
+func (o *Ocpp16) processReset(r *core.ResetRequest) *core.ResetConfirmation {
+	if r.Type == core.ResetType(assets.Soft) {
+		for x, e := range o.Asset.Evses {
+			for y, c := range e.Connectors {
+				if !c.Enabled {
+					continue
+				}
+
+				o.Asset.Evses[x].Connectors[y].Enabled = false
+				o.Asset.Evses[x].Connectors[y].DP.Position = 0
+				o.Asset.Evses[x].Connectors[y].DP.Ticker = 0
+
+				go o.stopTransaction(c)
+			}
+		}
+
+		return &core.ResetConfirmation{Status: core.ResetStatusAccepted}
+	}
+
+	for x, e := range o.Asset.Evses {
+		for y := range e.Connectors {
+			o.Asset.Evses[x].Connectors[y].Enabled = false
+			o.Asset.Evses[x].Connectors[y].DP.Position = 0
+			o.Asset.Evses[x].Connectors[y].DP.Ticker = 0
+			o.Asset.Evses[x].Connectors[y].TPower = 0
+			o.Asset.Evses[x].Connectors[y].Energy = 0
+		}
+	}
+
+	o.Auth = nil
+	o.chargeProfile = nil
+	o.t = 0
+
+	go o.sendBootNotification()
+
+	return &core.ResetConfirmation{Status: core.ResetStatusAccepted}
 }
 
 /**/
