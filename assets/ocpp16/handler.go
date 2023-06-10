@@ -201,8 +201,34 @@ func (o *Ocpp16) OnReset(req *core.ResetRequest) (res *core.ResetConfirmation, e
 	return res, nil
 }
 
-/**/
-func (o *Ocpp16) OnUnlockConnector(_ *core.UnlockConnectorRequest) (res *core.UnlockConnectorConfirmation, err error) {
+/*
+Handles the unlock connector request from the CS, this is used by te support team in case the
+client can't remove the connector from the EV. This validates that the connector ID matches with
+any of the connectors and responds unlocked, in case it doesn't match returns unlock failed.
+*/
+func (o *Ocpp16) OnUnlockConnector(req *core.UnlockConnectorRequest) (res *core.UnlockConnectorConfirmation, err error) {
+	var lm = map[string]string{
+		"protocol":  string(o.Asset.Protocol),
+		"function":  "OnUnlockConnector",
+		"feature":   req.GetFeatureName(),
+		"simulator": o.Asset.Name,
+		"sender":    assets.CS,
+		"type":      assets.Request,
+	}
+
+	o.logger.log(lm, req, assets.Info)
+
+	res = &core.UnlockConnectorConfirmation{Status: core.UnlockStatusUnlockFailed}
+
+	// at the moment this is only supporting 1 evse for simulator so the evse is set to 0
+	for _, c := range o.Asset.Evses[0].Connectors {
+		if c.ID != int64(req.ConnectorId) {
+			continue
+		}
+
+		res = &core.UnlockConnectorConfirmation{Status: core.UnlockStatusUnlocked}
+	}
+
 	return res, nil
 }
 
