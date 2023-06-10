@@ -311,6 +311,7 @@ func (o *Ocpp16) updateData() {
 	}
 }
 
+/**/
 func (o *Ocpp16) meterValuesSampledData() {
 	fmt.Println("meter values")
 
@@ -388,13 +389,16 @@ func (o *Ocpp16) meterValuesSampledData() {
 			"function":  "meterValuesSampledData",
 			"feature":   req.GetFeatureName(),
 			"simulator": o.Asset.Name,
+			"sender":    assets.CP,
 			"type":      assets.Request,
 		}
 
 		o.logger.log(lm, req, assets.Info)
 
+		// TODO: change the send request to async
 		resp, err := o.s.SendRequest(req)
 
+		lm["sender"] = assets.CS
 		lm["type"] = assets.Response
 
 		if err != nil {
@@ -405,6 +409,7 @@ func (o *Ocpp16) meterValuesSampledData() {
 	}
 }
 
+/**/
 func (o *Ocpp16) statusNotification(c simulator.Connector) {
 	var lm = map[string]string{
 		"protocol":  string(o.Asset.Protocol),
@@ -447,6 +452,7 @@ func (o *Ocpp16) statusNotification(c simulator.Connector) {
 	}
 }
 
+/**/
 func (o *Ocpp16) stopTransaction(c simulator.Connector) {
 	var lm = map[string]string{
 		"protocol":  string(o.Asset.Protocol),
@@ -550,6 +556,7 @@ func (o *Ocpp16) setConfiguration(c *core.ChangeConfigurationRequest) core.Confi
 	return core.ConfigurationStatusAccepted
 }
 
+/**/
 func (o *Ocpp16) handleTick() {
 	const rInt64 = math.MaxInt64 - 7
 
