@@ -15,6 +15,18 @@ linters-settings:
   nolintlint:
     require-explanation: true
     require-specific: true
+  depguard:
+    rules:
+      main:
+        allow:
+          - $gostd
+          - github.com/gin-gonic/gin
+          - github.com/sirupsen/logrus
+          - github.com/go-playground/validator/v10
+          - github.com/google/uuid
+          - github.com/lorenzodonini/ocpp-go
+          - github.com/stretchr/testify/assert
+          - github.com/alexandrepasc/ev-chargers-simulator-2
 
 linters:
   disable-all: true
