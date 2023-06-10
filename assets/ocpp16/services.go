@@ -94,6 +94,7 @@ authorize config.
 Validates if the connector selected is not active, activate it. If no connector were selected
 validate if any of them can be activated, if so activate it.
 */
+// TODO: need to check the start transaction to go throw the preparing state instead of directly to charging
 func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionRequest) *core.RemoteStartTransactionConfirmation {
 	var lm = map[string]string{
 		"protocol":  string(o.Asset.Protocol),
@@ -105,6 +106,7 @@ func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionReq
 	}
 
 	if !o.Mod.Ocpp.AuthorizeRemote {
+		// TODO: the store of the charging profile should not be set at this point, since the validations if the session can be started are not done yet
 		o.chargeProfile = r.ChargingProfile
 
 		// At the moment not know how to identify the evse from the request so will only consider 1
@@ -123,10 +125,18 @@ func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionReq
 						continue
 					}
 
+					// check if the connector is available
+					if c.Availability != assets.Status[assets.Available] {
+						continue
+					}
+
 					o.Asset.Evses[0].Connectors[i].Enabled = true
 
 					o.Asset.Evses[0].Connectors[i].DP.Position = 2
 					o.Asset.Evses[0].Connectors[i].DP.Ticker = 0
+
+					o.Asset.Evses[0].Connectors[i].Availability =
+						assets.Status[o.Asset.Evses[0].Connectors[i].Data[o.Asset.Evses[0].Connectors[i].DP.Position].ChargingState]
 
 					fmt.Println(o.Asset.Evses[0].Connectors[i].DP)
 
@@ -170,16 +180,12 @@ func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionReq
 			}
 		}
 
-		var ok = true
-
-		for _, c := range o.Asset.Evses[0].Connectors {
-			if c.Enabled {
-				ok = false
-			}
-		}
-
-		if ok {
+		if canEnable(o.Asset.Evses[0].Connectors) {
 			for i, c := range o.Asset.Evses[0].Connectors {
+				if c.Availability != assets.Status[assets.Available] {
+					continue
+				}
+
 				o.Asset.Evses[0].Connectors[i].Enabled = true
 
 				o.Asset.Evses[0].Connectors[i].DP.Position = 2
@@ -571,7 +577,12 @@ func (o *Ocpp16) handleTick() {
 	}
 }
 
-/**/
+/*
+Checks all the connectors from an EVSE and returs false if any of the connectors are enabled.
+If no connector is enabled it returns true (bool).
+
+cl	-	EVSE connectors list ([]simulator.Connector)
+*/
 func canEnable(cl []simulator.Connector) bool {
 	for _, c := range cl {
 		if c.Enabled {
@@ -622,6 +633,7 @@ func (o *Ocpp16) notAutoChargePoint(c *simulator.Connector, x, y int) {
 	} else {
 		o.Asset.Evses[x].Connectors[y].DP.Position = 0
 		o.Asset.Evses[x].Connectors[y].DP.Ticker = 0
+		o.Asset.Evses[x].Connectors[y].Enabled = false
 		o.Asset.Evses[x].Connectors[y].Availability = assets.Status[c.Data[o.Asset.Evses[x].Connectors[y].DP.Position].ChargingState]
 	}
 }
