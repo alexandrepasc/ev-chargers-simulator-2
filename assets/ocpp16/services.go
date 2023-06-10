@@ -47,13 +47,13 @@ func (o *Ocpp16) setStartUpConfigurations() {
 	o.t = 0
 
 	for x, e := range o.Asset.Evses {
-		for y, c := range e.Connectors {
+		for y := range e.Connectors {
 			o.Asset.Evses[x].Connectors[y].DP.Position = 0
 			o.Asset.Evses[x].Connectors[y].DP.Ticker = 0
 			o.Asset.Evses[x].Connectors[y].TPower = 0
 			o.Asset.Evses[x].Connectors[y].Energy = 0
 			o.Asset.Evses[x].Connectors[y].Enabled = false
-			o.Asset.Evses[x].Connectors[y].Availability = assets.Status[c.Data[0].ChargingState]
+			o.Asset.Evses[x].Connectors[y].Availability = string(assets.Operative)
 		}
 	}
 }
@@ -126,7 +126,7 @@ func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionReq
 					}
 
 					// check if the connector is available
-					if c.Availability != assets.Status[assets.Available] {
+					if c.Availability != string(assets.Operative) {
 						continue
 					}
 
@@ -134,9 +134,6 @@ func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionReq
 
 					o.Asset.Evses[0].Connectors[i].DP.Position = 2
 					o.Asset.Evses[0].Connectors[i].DP.Ticker = 0
-
-					o.Asset.Evses[0].Connectors[i].Availability =
-						assets.Status[o.Asset.Evses[0].Connectors[i].Data[o.Asset.Evses[0].Connectors[i].DP.Position].ChargingState]
 
 					fmt.Println(o.Asset.Evses[0].Connectors[i].DP)
 
@@ -182,7 +179,7 @@ func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionReq
 
 		if canEnable(o.Asset.Evses[0].Connectors) {
 			for i, c := range o.Asset.Evses[0].Connectors {
-				if c.Availability != assets.Status[assets.Available] {
+				if c.Availability != string(assets.Operative) {
 					continue
 				}
 
@@ -272,6 +269,20 @@ func (o *Ocpp16) processReset(r *core.ResetRequest) *core.ResetConfirmation {
 }
 
 /**/
+func (o *Ocpp16) processChangeAvailability(r *core.ChangeAvailabilityRequest) {
+	// at the moment it is only supporting one evse per simulator so the evse will be set to 0 position
+	for i, c := range o.Asset.Evses[0].Connectors {
+		if r.ConnectorId != int(c.ID) {
+			continue
+		}
+
+		if c.Availability != assets.Status[assets.Charging] {
+			o.Asset.Evses[0].Connectors[i].Availability = string(r.Type)
+		}
+	}
+}
+
+/**/
 // TODO: the total power calculation need to be reviewed, at the moment with 100 w in a couple of secs the result is 0
 func (o *Ocpp16) updateData() {
 	for x, e := range o.Asset.Evses {
@@ -294,8 +305,6 @@ func (o *Ocpp16) updateData() {
 						} else {
 							o.Asset.Evses[x].Connectors[y].DP.Position = 0
 						}
-
-						o.Asset.Evses[x].Connectors[y].Availability = assets.Status[c.Data[o.Asset.Evses[x].Connectors[y].DP.Position].ChargingState]
 					}
 
 					if cs != c.Data[c.DP.Position].ChargingState {
@@ -304,7 +313,6 @@ func (o *Ocpp16) updateData() {
 				} else {
 					o.Asset.Evses[x].Connectors[y].DP.Position = 0
 					o.Asset.Evses[x].Connectors[y].DP.Ticker = 0
-					o.Asset.Evses[x].Connectors[y].Availability = assets.Status[c.Data[o.Asset.Evses[x].Connectors[y].DP.Position].ChargingState]
 				}
 			} else {
 				o.notAutoChargePoint(&o.Asset.Evses[x].Connectors[y], x, y)
@@ -604,7 +612,6 @@ func (o *Ocpp16) notAutoChargePoint(c *simulator.Connector, x, y int) {
 			if assets.Status[c.Data[c.DP.Position].ChargingState] == "Finishing" {
 				o.Asset.Evses[x].Connectors[y].DP.Position = 0
 				o.Asset.Evses[x].Connectors[y].Enabled = false
-				o.Asset.Evses[x].Connectors[y].Availability = assets.Status[c.Data[o.Asset.Evses[x].Connectors[y].DP.Position].ChargingState]
 
 				go o.statusNotification(&o.Asset.Evses[x].Connectors[y])
 
@@ -619,7 +626,6 @@ func (o *Ocpp16) notAutoChargePoint(c *simulator.Connector, x, y int) {
 
 			for {
 				if c.Data[c.DP.Position].ChargingState == int64(assets.Charging) {
-					o.Asset.Evses[x].Connectors[y].Availability = assets.Status[c.Data[o.Asset.Evses[x].Connectors[y].DP.Position].ChargingState]
 					break
 				}
 
@@ -634,6 +640,5 @@ func (o *Ocpp16) notAutoChargePoint(c *simulator.Connector, x, y int) {
 		o.Asset.Evses[x].Connectors[y].DP.Position = 0
 		o.Asset.Evses[x].Connectors[y].DP.Ticker = 0
 		o.Asset.Evses[x].Connectors[y].Enabled = false
-		o.Asset.Evses[x].Connectors[y].Availability = assets.Status[c.Data[o.Asset.Evses[x].Connectors[y].DP.Position].ChargingState]
 	}
 }

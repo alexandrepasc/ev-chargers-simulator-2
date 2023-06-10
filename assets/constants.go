@@ -24,6 +24,9 @@ const (
 
 	Soft ResetType = "Soft"
 	Hard ResetType = "Hard"
+
+	Inoperative Availability = "Inoperative"
+	Operative   Availability = "Operative"
 )
 
 var (
