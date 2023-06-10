@@ -22,12 +22,13 @@ type Evse struct {
 }
 
 type Connector struct {
-	ID      int64        `json:"id"`               // Connector identifier number
-	Enabled bool         `json:"omitempty"`        // Since only one connector can be charging this is just to control that state
-	Data    []Data       `json:"data"`             // The loop of data
-	DP      DataPosition `json:"dp,omitempty"`     // Data position used to control the data
-	TPower  float64      `json:"tPower,omitempty"` // Store the total power for the connector, this will be used by the application only
-	Energy  float64      `json:"energy,omitempty"` // store the energy of the connector, this will be used by the application only
+	ID           int64        `json:"id"`                     // Connector identifier number
+	Enabled      bool         `json:"omitempty"`              // Since only one connector can be charging this is just to control that state
+	Data         []Data       `json:"data"`                   // The loop of data
+	DP           DataPosition `json:"dp,omitempty"`           // Data position used to control the data
+	TPower       float64      `json:"tPower,omitempty"`       // Store the total power for the connector, this will be used by the application only
+	Energy       float64      `json:"energy,omitempty"`       // store the energy of the connector, this will be used by the application only
+	Availability string       `json:"availability,omitempty"` // Store the availability state of the connector, this will only be used by the application
 }
 
 // TODO: evaluate if the charging state should be a number or the name of the state
