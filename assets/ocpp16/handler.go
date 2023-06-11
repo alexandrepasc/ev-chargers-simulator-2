@@ -8,7 +8,11 @@ import (
 
 type Handler struct{}
 
-/**/
+/*
+Process the change availability request changing the connector status from operative to inoperative
+or the other way around. In case a session is occurring the connector it will change the state after
+the session finishes.
+*/
 func (o *Ocpp16) OnChangeAvailability(req *core.ChangeAvailabilityRequest) (res *core.ChangeAvailabilityConfirmation, err error) {
 	var lm = map[string]string{
 		"protocol":  string(o.Asset.Protocol),
@@ -147,7 +151,8 @@ func (o *Ocpp16) OnDataTransfer(req *core.DataTransferRequest) (res *core.DataTr
 }
 
 /*
-Handles the start transaction request from the CS process the information and star a charging session.
+Handles the start transaction request from the CS, process the information and start a charging
+session.
 */
 func (o *Ocpp16) OnRemoteStartTransaction(req *core.RemoteStartTransactionRequest) (res *core.RemoteStartTransactionConfirmation, err error) {
 	var lm = map[string]string{
@@ -172,7 +177,8 @@ func (o *Ocpp16) OnRemoteStartTransaction(req *core.RemoteStartTransactionReques
 }
 
 /*
-Handles the CS stop transaction request and process it
+Handles the CS stop transaction request and process it and stop the transaction in case one is
+occurring in the connector went in the request.
 */
 func (o *Ocpp16) OnRemoteStopTransaction(req *core.RemoteStopTransactionRequest) (res *core.RemoteStopTransactionConfirmation, err error) {
 	var lm = map[string]string{
@@ -196,7 +202,10 @@ func (o *Ocpp16) OnRemoteStopTransaction(req *core.RemoteStopTransactionRequest)
 	return res, nil
 }
 
-/**/
+/*
+Receives the reset request from the CS and make the required logic in each of the reset cases
+(hard, soft).
+*/
 func (o *Ocpp16) OnReset(req *core.ResetRequest) (res *core.ResetConfirmation, err error) {
 	var lm = map[string]string{
 		"protocol":  string(o.Asset.Protocol),
