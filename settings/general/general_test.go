@@ -1,4 +1,4 @@
-//nolint:gocritic,nolintlint,errcheck
+//nolint:gocritic,nolintlint,errcheck,goconst
 package general_test
 
 import (
@@ -28,6 +28,8 @@ func TestGeneral(t *testing.T) {
 		GCFolder:    "",
 		SCFolder:    "",
 		Language:    "",
+		APIAddr:     "",
+		APIPort:     "",
 	}
 
 	e := general.Model{
@@ -36,6 +38,8 @@ func TestGeneral(t *testing.T) {
 		CSAddr:      common.DefCSIP,
 		CSPort:      common.DefCSPort,
 		Lang:        common.DefLanguage,
+		APIAddr:     common.DefAPIAddr,
+		APIPort:     common.DefAPIPort,
 	}
 
 	a := general.General(common.DefGSPath, &fl)
@@ -73,6 +77,8 @@ func generalNoFileWithFlags(t *testing.T) {
 		GCFolder:    "",
 		SCFolder:    "",
 		Language:    "pt-PT",
+		APIAddr:     "123.123.123.123",
+		APIPort:     "999",
 	}
 
 	e := general.Model{
@@ -81,6 +87,8 @@ func generalNoFileWithFlags(t *testing.T) {
 		CSAddr:      "234.234.234.234",
 		CSPort:      "444",
 		Lang:        "pt-PT",
+		APIAddr:     "123.123.123.123",
+		APIPort:     "999",
 	}
 
 	a := general.General(common.DefGSPath, &fl)
@@ -106,6 +114,8 @@ func updateGeneralNoForce(t *testing.T) {
 		GCFolder:    "",
 		SCFolder:    "",
 		Language:    "",
+		APIAddr:     "",
+		APIPort:     "",
 	}
 
 	general.General(common.DefGSPath, &fl)
@@ -115,6 +125,8 @@ func updateGeneralNoForce(t *testing.T) {
 	fl.CSAddr = "234.234.234.234"
 	fl.CSPort = "444"
 	fl.Language = "pt-PT"
+	fl.APIAddr = "123.123.123.123"
+	fl.APIPort = "999"
 
 	e := general.Model{
 		HostIP:      "123.123.123.123",
@@ -122,6 +134,8 @@ func updateGeneralNoForce(t *testing.T) {
 		CSAddr:      "234.234.234.234",
 		CSPort:      "444",
 		Lang:        "pt-PT",
+		APIAddr:     "123.123.123.123",
+		APIPort:     "999",
 	}
 
 	a := general.General(common.DefGSPath, &fl)
@@ -147,6 +161,8 @@ func updateGeneralForce(t *testing.T) {
 		GCFolder:    "",
 		SCFolder:    "",
 		Language:    "",
+		APIAddr:     "",
+		APIPort:     "",
 	}
 
 	general.General(common.DefGSPath, &fl)
@@ -157,6 +173,8 @@ func updateGeneralForce(t *testing.T) {
 	fl.CSAddr = "234.234.234.234"
 	fl.CSPort = "444"
 	fl.Language = "pt-PT"
+	fl.APIAddr = "123.123.123.123"
+	fl.APIPort = "999"
 
 	e := general.Model{
 		HostIP:      "123.123.123.123",
@@ -164,6 +182,8 @@ func updateGeneralForce(t *testing.T) {
 		CSAddr:      "234.234.234.234",
 		CSPort:      "444",
 		Lang:        "pt-PT",
+		APIAddr:     "123.123.123.123",
+		APIPort:     "999",
 	}
 
 	a := general.General(common.DefGSPath, &fl)
