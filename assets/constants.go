@@ -27,7 +27,6 @@ const (
 
 	Inoperative Availability = "Inoperative"
 	Operative   Availability = "Operative"
-	Scheduled   Availability = "Scheduled"
 )
 
 var (
