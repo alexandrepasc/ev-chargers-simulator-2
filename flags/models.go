@@ -28,4 +28,6 @@ type Flags struct {
 	GCFolder    string // Folder where the application general configuration files are located.
 	SCFolder    string // Folder where the simulators configuration files are located.
 	Language    string // The language used by the application.
+	APIAddr     string // The ip address/hostname to serve the http server
+	APIPort     string // The port to serve the http server
 }

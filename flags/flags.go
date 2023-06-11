@@ -32,6 +32,10 @@ func SetFlags() Flags {
 
 	var l = common.DefLanguage
 
+	var ai = common.DefAPIAddr
+
+	var ap = common.DefAPIPort
+
 	var v bool
 
 	var i = flag.Bool("i", false, "Force the update of the configurations with the values in the flags")
@@ -49,6 +53,10 @@ func SetFlags() Flags {
 	flag.StringVar(&ss, "ss", common.DefSCPath, "Simulators configuration folder, store the simulators configurations")
 
 	flag.StringVar(&l, "l", common.DefLanguage, "Language used by the application ["+strings.Join(translation.Translation{}.List(), ", ")+"]")
+
+	flag.StringVar(&ai, "ai", common.DefAPIAddr, "Address used to serve the api http server")
+
+	flag.StringVar(&ap, "ap", common.DefAPIPort, "")
 
 	flag.BoolVar(&v, "v", false, "Return the current application version")
 
@@ -89,6 +97,14 @@ func SetFlags() Flags {
 
 	if isFlagPassed("l") {
 		f.Language = l
+	}
+
+	if isFlagPassed("ai") {
+		f.APIAddr = ai
+	}
+
+	if isFlagPassed("ap") {
+		f.APIPort = ap
 	}
 
 	return f

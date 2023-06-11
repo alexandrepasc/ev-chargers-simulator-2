@@ -56,7 +56,9 @@ Runs the http server for the api instace
 router	-	framework engine instance (*gin.Engine)
 */
 func (a *API) Serve(router *gin.Engine) {
-	var err = router.Run("localhost:8000")
+	var addr = a.General.APIAddr + ":" + a.General.APIPort
+
+	var err = router.Run(addr)
 
 	if err != nil {
 		common.APILog("Serve").Error(err)

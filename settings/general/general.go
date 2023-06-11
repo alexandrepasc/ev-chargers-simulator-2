@@ -25,7 +25,7 @@ func General(p string, fl *flags.Flags) Model {
 		gen = openGeneralFile(fp)
 
 		if fl.ForceUpdate {
-			gen = updateGeneralFile(fl, gen, fp)
+			gen = *updateGeneralFile(fl, &gen, fp)
 		}
 	} else {
 		createGeneralFile(fp)
@@ -113,6 +113,8 @@ func updateNewGeneralFile(fl *flags.Flags, fp string) Model {
 		CSAddr:      common.DefCSIP,
 		CSPort:      common.DefCSPort,
 		Lang:        common.DefLanguage,
+		APIAddr:     common.DefAPIAddr,
+		APIPort:     common.DefAPIPort,
 	}
 
 	if fl.HostAddr != "" {
@@ -135,7 +137,15 @@ func updateNewGeneralFile(fl *flags.Flags, fp string) Model {
 		configs.Lang = fl.Language
 	}
 
-	var b = marshalIndentGeneral(configs)
+	if fl.APIAddr != "" {
+		configs.APIAddr = fl.APIAddr
+	}
+
+	if fl.APIPort != "" {
+		configs.APIPort = fl.APIPort
+	}
+
+	var b = marshalIndentGeneral(&configs)
 
 	var err = os.WriteFile(fp, b, fs.FileMode(common.FilePermissions))
 
@@ -159,7 +169,7 @@ c	-	Model with the data read from the file (Model)
 
 fp	-	Full path and file name for the general configurations (string)
 */
-func updateGeneralFile(fl *flags.Flags, c Model, fp string) Model {
+func updateGeneralFile(fl *flags.Flags, c *Model, fp string) *Model {
 	var nc = Model{}
 
 	if fl.HostAddr != "" {
@@ -192,7 +202,19 @@ func updateGeneralFile(fl *flags.Flags, c Model, fp string) Model {
 		nc.Lang = c.Lang
 	}
 
-	var b = marshalIndentGeneral(nc)
+	if fl.APIAddr != "" {
+		nc.APIAddr = fl.APIAddr
+	} else {
+		nc.APIAddr = c.APIAddr
+	}
+
+	if fl.APIPort != "" {
+		nc.APIPort = fl.APIPort
+	} else {
+		nc.APIPort = c.APIPort
+	}
+
+	var b = marshalIndentGeneral(&nc)
 
 	var err = os.WriteFile(fp, b, fs.FileMode(common.FilePermissions))
 
@@ -204,7 +226,7 @@ func updateGeneralFile(fl *flags.Flags, c Model, fp string) Model {
 
 	common.Log("updateGeneralFile").Info(translation.Translation{L: translation.EnGb}.Get(text.GeneralWritten))
 
-	return nc
+	return &nc
 }
 
 /*
@@ -229,7 +251,7 @@ Returns []byte.
 
 c	-	The model with the file data (Model)
 */
-func marshalIndentGeneral(c Model) []byte {
+func marshalIndentGeneral(c *Model) []byte {
 	b, err := json.MarshalIndent(c, "", " ")
 
 	if err != nil {
