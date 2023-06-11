@@ -313,9 +313,14 @@ func (o *Ocpp16) updateData() {
 			if o.Asset.StartCharging {
 				if canEnable(e.Connectors) {
 					o.Asset.Evses[x].Connectors[y].Enabled = true
+
+					// hard code the transaction id to the start charging simulator
+					o.chargeProfile = &types.ChargingProfile{
+						TransactionId: 1,
+					}
 				}
 
-				if c.Enabled {
+				if o.Asset.Evses[x].Connectors[y].Enabled {
 					var cs = c.Data[c.DP.Position].ChargingState
 
 					if c.DP.Ticker < c.Data[c.DP.Position].Duration {
@@ -330,8 +335,12 @@ func (o *Ocpp16) updateData() {
 						}
 					}
 
-					if cs != c.Data[c.DP.Position].ChargingState {
+					if cs != c.Data[o.Asset.Evses[x].Connectors[y].DP.Position].ChargingState {
 						o.statusNotification(&o.Asset.Evses[x].Connectors[y])
+
+						if c.Data[o.Asset.Evses[x].Connectors[y].DP.Position].ChargingState == int64(assets.Finishing) {
+							o.stopTransaction(&o.Asset.Evses[x].Connectors[y])
+						}
 					}
 				} else {
 					o.Asset.Evses[x].Connectors[y].DP.Position = 0
@@ -504,6 +513,7 @@ func (o *Ocpp16) stopTransaction(c *simulator.Connector) {
 		"type":      assets.Request,
 	}
 
+	// TODO: the id tag needs to be created and stored and not hard coded
 	var req = core.StopTransactionRequest{
 		IdTag:         "asdasdasd",
 		MeterStop:     int(c.Energy),
