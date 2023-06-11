@@ -3,6 +3,8 @@ package assets
 import (
 	"math"
 	"time"
+
+	"github.com/alexandrepasc/ev-chargers-simulator-2/common"
 )
 
 /*
@@ -65,4 +67,24 @@ func CalculateEnergy(tp, ce float64, cp int64, st time.Time) (e float64) {
 	e = tp * time.Since(st).Hours()
 
 	return e
+}
+
+func IsDataChanClosed(ch <-chan common.Channel) bool {
+	select {
+	case <-ch:
+		return true
+	default:
+	}
+
+	return false
+}
+
+func IsChanClosed(ch <-chan bool) bool {
+	select {
+	case <-ch:
+		return true
+	default:
+	}
+
+	return false
 }
