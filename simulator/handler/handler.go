@@ -2,11 +2,14 @@ package handler
 
 import (
 	"fmt"
-	"time"
+	"strings"
 
+	"github.com/alexandrepasc/ev-chargers-simulator-2/assets/ocpp16"
+	"github.com/alexandrepasc/ev-chargers-simulator-2/common"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/simulator"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/simulator/model"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/translation"
+	"github.com/google/uuid"
 )
 
 const buf = 10
@@ -14,9 +17,11 @@ const buf = 10
 type Handler struct {
 	L       translation.Translation // Translation language settings
 	Al      []*simulator.Asset      // Assets list
-	Oml     []model.OcppModel       // Ocpp models list
-	Sims    []sim                   // List of simulators
-	Channel chan channel            // Channel that will enable the communication between the sims
+	Ml      []*model.Struct         // Ocpp models list
+	Addr    string                  // Central system ip address
+	Port    string                  // Central system port
+	Tout    int64                   // Timeout configuration
+	Channel chan common.Channel     // Channel that will enable the communication between the sims
 	Quit    []chan bool             // Channel that is used to stop the routines
 }
 
@@ -27,21 +32,36 @@ Build the channels, the simulators routines, and start the routines.
 It returns an array of boolean channels ([]chan bool), one for each simulator running.
 */
 func (h *Handler) Start() []chan bool {
-	h.Channel = make(chan channel, len(h.Al)+buf)
+	h.Channel = make(chan common.Channel, len(h.Al)+buf)
 	h.Quit = make([]chan bool, len(h.Al))
 
 	for i, a := range h.Al {
-		var sa = sim{
-			asset: a,
-		}
-
 		h.Quit[i] = make(chan bool, 1)
 
-		h.Sims = append(h.Sims, sa)
-	}
+		var m = getModel(a.Model, a.Protocol, h.Ml)
 
-	for i, s := range h.Sims {
-		go runSimulator(s, h.Channel, h.Quit[i])
+		switch a.Protocol {
+		case simulator.Ocpp16:
+			var s = ocpp16.Ocpp16{
+				L:       h.L,
+				Timeout: h.Tout,
+				CSAddr:  h.Addr,
+				CSPort:  h.Port,
+				Asset:   a,
+				Mod:     m,
+			}
+
+			for x := range s.Asset.Evses {
+				for y := range s.Asset.Evses[x].Connectors {
+					s.Asset.Evses[x].Connectors[y].Enabled = false
+				}
+			}
+
+			go s.Start(h.Channel, h.Quit[i])
+		case simulator.Ocpp201:
+
+		case simulator.Modbus:
+		}
 	}
 
 	go receiverName(h.Channel)
@@ -61,27 +81,50 @@ func (h *Handler) Stop() {
 /*
 Mock a simulator routine to test the channel communication.
 */
-func runSimulator(s sim, c chan channel, q chan bool) {
-	for i := 0; i < 20; i++ {
-		time.Sleep(1 * time.Second)
+// func runSimulator(s sim, c chan common.Channel, q chan bool) {
+// 	for i := 0; i < 20; i++ {
+// 		time.Sleep(1 * time.Second)
 
-		select {
-		case <-q:
-			return
-		default:
-			c <- channel{
-				name: s.asset.Name,
-				uuid: s.asset.SimID,
-			}
-		}
-	}
-}
+// 		select {
+// 		case <-q:
+// 			return
+// 		default:
+// 			c <- common.Channel{
+// 				Name: s.asset.Name,
+// 				Uuid: s.asset.SimID,
+// 			}
+// 		}
+// 	}
+// }
 
 /*
 Mock a receiver to test the channel communication.
 */
-func receiverName(c chan channel) {
+func receiverName(c chan common.Channel) {
 	for msg := range c {
 		fmt.Println(msg)
+	}
+}
+
+// TODO: Handle modbus protocol
+/**/
+func getModel(id uuid.UUID, p simulator.Protocol, al []*model.Struct) *model.Struct {
+	for _, m := range al {
+		if m.ID == id {
+			if strings.Contains(string(p), string(m.Type)) {
+				return m
+			}
+		}
+	}
+
+	switch p {
+	case simulator.Ocpp16:
+		return &model.DefOcppMod
+	case simulator.Ocpp201:
+		return &model.DefOcppMod
+	case simulator.Modbus:
+		return nil
+	default:
+		return nil
 	}
 }
