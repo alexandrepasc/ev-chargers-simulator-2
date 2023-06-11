@@ -269,17 +269,40 @@ func (o *Ocpp16) processReset(r *core.ResetRequest) *core.ResetConfirmation {
 }
 
 /**/
-func (o *Ocpp16) processChangeAvailability(r *core.ChangeAvailabilityRequest) {
+func (o *Ocpp16) processChangeAvailability(r *core.ChangeAvailabilityRequest) *core.ChangeAvailabilityConfirmation {
 	// at the moment it is only supporting one evse per simulator so the evse will be set to 0 position
 	for i, c := range o.Asset.Evses[0].Connectors {
 		if r.ConnectorId != int(c.ID) {
 			continue
 		}
 
-		if c.Availability != assets.Status[assets.Charging] {
+		var aux simulator.Connector
+
+		// if the status of the connector is not charging change the availability to the sent by the request
+		if c.Data[c.DP.Position].ChargingState != int64(assets.Charging) {
 			o.Asset.Evses[0].Connectors[i].Availability = string(r.Type)
+
+			aux = o.Asset.Evses[0].Connectors[i]
+
+			switch o.Asset.Evses[0].Connectors[i].Availability {
+			case string(assets.Inoperative):
+				aux.Data[aux.DP.Position].ChargingState = int64(assets.Unavailable)
+
+			case string(assets.Operative):
+				aux.Data[aux.DP.Position].ChargingState = int64(assets.Available)
+			}
+
+			go o.statusNotification(&aux)
+
+			return &core.ChangeAvailabilityConfirmation{Status: core.AvailabilityStatusAccepted}
 		}
+
+		o.Asset.Evses[0].Connectors[i].Availability = string(assets.Scheduled)
+
+		return &core.ChangeAvailabilityConfirmation{Status: core.AvailabilityStatusScheduled}
 	}
+
+	return &core.ChangeAvailabilityConfirmation{Status: core.AvailabilityStatusRejected}
 }
 
 /**/
@@ -612,6 +635,18 @@ func (o *Ocpp16) notAutoChargePoint(c *simulator.Connector, x, y int) {
 			if assets.Status[c.Data[c.DP.Position].ChargingState] == "Finishing" {
 				o.Asset.Evses[x].Connectors[y].DP.Position = 0
 				o.Asset.Evses[x].Connectors[y].Enabled = false
+
+				// if the avalability status is scheduled change it to inoperative and change the current data position to unavailable
+				if c.Availability == string(assets.Scheduled) {
+					o.Asset.Evses[x].Connectors[y].Availability = string(assets.Inoperative)
+
+					var aux = o.Asset.Evses[x].Connectors[y]
+					aux.Data[o.Asset.Evses[x].Connectors[y].DP.Position].ChargingState = int64(assets.Unavailable)
+
+					go o.statusNotification(&aux)
+
+					return
+				}
 
 				go o.statusNotification(&o.Asset.Evses[x].Connectors[y])
 

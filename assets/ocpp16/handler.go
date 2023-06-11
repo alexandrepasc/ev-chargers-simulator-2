@@ -9,7 +9,25 @@ import (
 type Handler struct{}
 
 /**/
-func (o *Ocpp16) OnChangeAvailability(_ *core.ChangeAvailabilityRequest) (res *core.ChangeAvailabilityConfirmation, err error) {
+func (o *Ocpp16) OnChangeAvailability(req *core.ChangeAvailabilityRequest) (res *core.ChangeAvailabilityConfirmation, err error) {
+	var lm = map[string]string{
+		"protocol":  string(o.Asset.Protocol),
+		"function":  "OnChangeAvailability",
+		"feature":   req.GetFeatureName(),
+		"simulator": o.Asset.Name,
+		"sender":    assets.CS,
+		"type":      assets.Request,
+	}
+
+	o.logger.log(lm, req, assets.Info)
+
+	res = o.processChangeAvailability(req)
+
+	lm["sender"] = assets.CP
+	lm["type"] = assets.Response
+
+	o.logger.log(lm, res, assets.Info)
+
 	return res, nil
 }
 
