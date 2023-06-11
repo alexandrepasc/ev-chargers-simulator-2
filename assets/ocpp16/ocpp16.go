@@ -65,8 +65,13 @@ func (o *Ocpp16) Start(c chan common.Channel, q chan bool) {
 
 			o.s.Stop()
 
-			close(c)
-			close(q)
+			if !assets.IsDataChanClosed(c) {
+				close(c)
+			}
+
+			if !assets.IsChanClosed(q) {
+				close(q)
+			}
 
 			return
 		default:
