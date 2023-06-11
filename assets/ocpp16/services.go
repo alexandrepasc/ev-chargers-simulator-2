@@ -61,6 +61,7 @@ func (o *Ocpp16) setStartUpConfigurations() {
 /*
 Sends the boot notification to the central system.
 */
+// TODO: change the logging to have all the properties as the rest
 func (o *Ocpp16) sendBootNotification() {
 	var bn = core.BootNotificationRequest{
 		ChargePointSerialNumber: o.Mod.Ocpp.SerialNumb,
@@ -206,7 +207,15 @@ func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionReq
 	return &core.RemoteStartTransactionConfirmation{Status: types.RemoteStartStopStatusRejected}
 }
 
-/**/
+/*
+Handles the logic for the remote stop transaction filtering the transaction ID, and the active
+connector to stop the session.
+
+In case a session is stopped sends a status notification with the new connector status, the
+stop transaction request, and the accepted response.
+
+If none of the filters pass the response will be rejected.
+*/
 func (o *Ocpp16) processRemoteStopTransaction(r *core.RemoteStopTransactionRequest) *core.RemoteStopTransactionConfirmation {
 	if r.TransactionId == o.chargeProfile.TransactionId {
 		// at the moment this is only supporting 1 evse per simulator, so this will only look for one position
@@ -229,7 +238,14 @@ func (o *Ocpp16) processRemoteStopTransaction(r *core.RemoteStopTransactionReque
 	return &core.RemoteStopTransactionConfirmation{Status: types.RemoteStartStopStatusRejected}
 }
 
-/**/
+/*
+Has the reset logic for the soft and hard reset.
+
+If is a soft and a connector is enabled will set the data position to 0, disable it and send a stop
+transaction request.
+
+In a hard reset will set all the connectors data and the asset data.
+*/
 func (o *Ocpp16) processReset(r *core.ResetRequest) *core.ResetConfirmation {
 	if r.Type == core.ResetType(assets.Soft) {
 		for x, e := range o.Asset.Evses {
@@ -256,6 +272,7 @@ func (o *Ocpp16) processReset(r *core.ResetRequest) *core.ResetConfirmation {
 			o.Asset.Evses[x].Connectors[y].DP.Ticker = 0
 			o.Asset.Evses[x].Connectors[y].TPower = 0
 			o.Asset.Evses[x].Connectors[y].Energy = 0
+			o.Asset.Evses[x].Connectors[y].Availability = string(assets.Operative)
 		}
 	}
 
@@ -268,7 +285,15 @@ func (o *Ocpp16) processReset(r *core.ResetRequest) *core.ResetConfirmation {
 	return &core.ResetConfirmation{Status: core.ResetStatusAccepted}
 }
 
-/**/
+/*
+Filter the connector in the request, change it's availability, and sends an accepted response.
+
+In case the connector has a session it will change the availability, but the response will be
+scheduled.
+
+If the connector sent doesn't match the CP connectors will return rejected.
+*/
+// TODO: does not support the 0 connector logic that would change the state of the CP and all it's connectors
 func (o *Ocpp16) processChangeAvailability(r *core.ChangeAvailabilityRequest) *core.ChangeAvailabilityConfirmation {
 	// at the moment it is only supporting one evse per simulator so the evse will be set to 0 position
 	for i, c := range o.Asset.Evses[0].Connectors {
@@ -308,7 +333,19 @@ func (o *Ocpp16) processChangeAvailability(r *core.ChangeAvailabilityRequest) *c
 	return &core.ChangeAvailabilityConfirmation{Status: core.AvailabilityStatusRejected}
 }
 
-/**/
+/*
+Updates the connectors data position and ticker, it filters if the simulator has the start charging
+at true (automatic) or false (passive) to do these logic.
+
+In automatic mode if no connector is enabled will enable one, if the connector is enabled will
+do the logic of passing on all the data that is defined in the connector data configuration file.
+In case the connector data changes state it will send the status notification to the CS. If the
+data charging state is Finishing (6) sends the stop transaction request. If the connector is not
+enable sets the data position and ticker to 0.
+
+If the start charging in the simulator is false (passive) it will call the notAutoChargePoint
+function to handle the logic.
+*/
 // TODO: the total power calculation need to be reviewed, at the moment with 100 w in a couple of secs the result is 0
 func (o *Ocpp16) updateData() {
 	for x, e := range o.Asset.Evses {
@@ -364,10 +401,14 @@ func (o *Ocpp16) updateData() {
 	}
 }
 
-/**/
-func (o *Ocpp16) meterValuesSampledData() {
-	fmt.Println("meter values")
+/*
+Sends the meter values sampled data request to the CS with the information set in the conf
+simulator variable. It will send a request with all the fases data for each of the evse connectors.
 
+The supported information keys that can be used in this request are specified in the constants
+file.
+*/
+func (o *Ocpp16) meterValuesSampledData() {
 	for _, c := range o.Asset.Evses[0].Connectors {
 		var mvl []types.MeterValue
 
@@ -462,7 +503,11 @@ func (o *Ocpp16) meterValuesSampledData() {
 	}
 }
 
-/**/
+/*
+Execute the status notification request with the current charging state of the connector.
+
+c	-	Connector structure with all it's data (*simulator.Connector)
+*/
 func (o *Ocpp16) statusNotification(c *simulator.Connector) {
 	var lm = map[string]string{
 		"protocol":  string(o.Asset.Protocol),
@@ -505,7 +550,11 @@ func (o *Ocpp16) statusNotification(c *simulator.Connector) {
 	}
 }
 
-/**/
+/*
+Sends the stop transaction request for the connector.
+
+c	- Evse connector information (*simulator.Connector)
+*/
 func (o *Ocpp16) stopTransaction(c *simulator.Connector) {
 	var lm = map[string]string{
 		"protocol":  string(o.Asset.Protocol),
@@ -543,6 +592,7 @@ func (o *Ocpp16) stopTransaction(c *simulator.Connector) {
 
 	err := o.s.SendRequestAsync(req, cb)
 
+	lm["sender"] = assets.CS
 	lm["type"] = assets.Response
 
 	if err != nil {
@@ -610,7 +660,10 @@ func (o *Ocpp16) setConfiguration(c *core.ChangeConfigurationRequest) core.Confi
 	return core.ConfigurationStatusAccepted
 }
 
-/**/
+/*
+Handles the counter from the simulator and handles the max int64 value, in case it is reaching the
+max value (max int64 value - 7) it will be reseted to 0.
+*/
 func (o *Ocpp16) handleTick() {
 	const rInt64 = math.MaxInt64 - 7
 
@@ -637,7 +690,20 @@ func canEnable(cl []simulator.Connector) bool {
 	return true
 }
 
-/**/
+/*
+Handles the update data for a simulator that has the start charging with false. It will only
+update the data position and ticker in case the connector is enabled. In case the charging state
+changes send the status notification request. If the charging state is Finishing (6) it will
+evaluate the availability and send the status notification with the corresponding charging state.
+
+If the connector is not enabled resets the data position and ticker to 0.
+
+c	-	Evse connector information (*simulator.Connector)
+
+x	-	Evse index position (int)
+
+y	-	Evse connector index position (int)
+*/
 func (o *Ocpp16) notAutoChargePoint(c *simulator.Connector, x, y int) {
 	if c.Enabled {
 		if c.DP.Ticker < c.Data[c.DP.Position].Duration {
