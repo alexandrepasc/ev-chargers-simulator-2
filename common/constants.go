@@ -14,6 +14,8 @@ const (
 	FolderPermissions int    = 0o777               // Folder permissions used to the settings folders in octal
 	FilePermissions   int    = 0o600               // File permissions used to the configuration files in octal
 	DefLanguage       string = "en-GB"             // Default language definition
+	DefAPIAddr        string = "localhost"         // Default api address
+	DefAPIPort        string = "8000"              // Default api port
 )
 
 var (
