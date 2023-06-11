@@ -1,4 +1,4 @@
-//nolint:gocritic,nolintlint,errcheck
+//nolint:gocritic,nolintlint,errcheck,goconst
 package general_test
 
 import (
