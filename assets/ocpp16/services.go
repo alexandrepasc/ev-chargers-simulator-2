@@ -430,6 +430,16 @@ func (o *Ocpp16) meterValuesSampledData() {
 						Phase:     types.Phase(assets.Phases[i]),
 					}
 
+				// TODO: this is not being calculated and the value is set to 0
+				case assets.EnergyReactiveImportRegister:
+					sp = types.SampledValue{
+						Value:     "0",
+						Unit:      types.UnitOfMeasureVarh,
+						Format:    types.ValueFormatRaw,
+						Measurand: types.Measurand(assets.EnergyReactiveImportRegister),
+						Phase:     types.Phase(assets.Phases[i]),
+					}
+
 				case assets.Voltage:
 					sp = types.SampledValue{
 						Value:     strconv.FormatInt(c.Data[c.DP.Position].Voltage[i], 10),

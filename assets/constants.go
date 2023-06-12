@@ -30,15 +30,16 @@ const (
 )
 
 var (
-	Current                    = "Current"
-	Power                      = "Power"
-	EnergyActiveExportRegister = "Energy.Active.Export.Register"
-	EnergyActiveImportRegister = "Energy.Active.Import.Register"
-	Voltage                    = "Voltage"
-	CurrentImport              = "Current.Import"
-	PowerActiveImport          = "Power.Active.Import"
-	Phases                     = []string{"L1", "L2", "L3"}
-	Status                     = []string{
+	Current                      = "Current"
+	Power                        = "Power"
+	EnergyActiveExportRegister   = "Energy.Active.Export.Register"
+	EnergyActiveImportRegister   = "Energy.Active.Import.Register"
+	EnergyReactiveImportRegister = "Energy.Reactive.Import.Register"
+	Voltage                      = "Voltage"
+	CurrentImport                = "Current.Import"
+	PowerActiveImport            = "Power.Active.Import"
+	Phases                       = []string{"L1", "L2", "L3"}
+	Status                       = []string{
 		"",
 		"Available",
 		"Preparing",
