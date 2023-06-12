@@ -4,6 +4,7 @@ import (
 	"github.com/alexandrepasc/ev-chargers-simulator-2/assets"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/localauth"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/remotetrigger"
 )
 
 type Handler struct{}
@@ -264,5 +265,22 @@ func (o *Ocpp16) OnGetLocalListVersion(_ *localauth.GetLocalListVersionRequest) 
 }
 
 func (o *Ocpp16) OnSendLocalList(_ *localauth.SendLocalListRequest) (res *localauth.SendLocalListConfirmation, err error) {
+	return res, nil
+}
+
+func (o *Ocpp16) OnTriggerMessage(req *remotetrigger.TriggerMessageRequest) (res *remotetrigger.TriggerMessageConfirmation, err error) {
+	var lm = map[string]string{
+		"protocol":  string(o.Asset.Protocol),
+		"function":  "OnTriggerMessage",
+		"feature":   req.GetFeatureName(),
+		"simulator": o.Asset.Name,
+		"sender":    assets.CS,
+		"type":      assets.Request,
+	}
+
+	o.logger.log(lm, req, assets.Info)
+
+	res = &remotetrigger.TriggerMessageConfirmation{Status: remotetrigger.TriggerMessageStatusNotImplemented}
+
 	return res, nil
 }
