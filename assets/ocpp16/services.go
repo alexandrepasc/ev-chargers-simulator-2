@@ -11,6 +11,7 @@ import (
 	"github.com/alexandrepasc/ev-chargers-simulator-2/simulator"
 	"github.com/lorenzodonini/ocpp-go/ocpp"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/localauth"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 )
 
@@ -331,6 +332,38 @@ func (o *Ocpp16) processChangeAvailability(r *core.ChangeAvailabilityRequest) *c
 	}
 
 	return &core.ChangeAvailabilityConfirmation{Status: core.AvailabilityStatusRejected}
+}
+
+/**/
+func (o *Ocpp16) processSendLocalList(r *localauth.SendLocalListRequest) *localauth.SendLocalListConfirmation {
+	if r.UpdateType == localauth.UpdateTypeFull {
+		o.localAuth.version = int64(r.ListVersion)
+		o.localAuth.list = r.LocalAuthorizationList
+
+		return &localauth.SendLocalListConfirmation{Status: localauth.UpdateStatusAccepted}
+	}
+
+	if r.ListVersion <= int(o.localAuth.version) {
+		return &localauth.SendLocalListConfirmation{Status: localauth.UpdateStatusVersionMismatch}
+	}
+
+	var al []localauth.AuthorizationData
+
+	for i := range r.LocalAuthorizationList {
+		if i < len(o.localAuth.list) {
+			if r.LocalAuthorizationList[i].IdTag == o.localAuth.list[i].IdTag {
+				al = append(al, r.LocalAuthorizationList[i])
+			} else {
+				return &localauth.SendLocalListConfirmation{Status: localauth.UpdateStatusFailed}
+			}
+		} else {
+			al = append(al, r.LocalAuthorizationList[i])
+		}
+	}
+
+	o.localAuth.list = al
+
+	return &localauth.SendLocalListConfirmation{Status: localauth.UpdateStatusAccepted}
 }
 
 /*

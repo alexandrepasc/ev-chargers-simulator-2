@@ -18,17 +18,21 @@ import (
 )
 
 type Ocpp16 struct {
-	lock          sync.RWMutex                     // Lock goroutine
-	logger        logging                          // Logging
-	L             translation.Translation          // translation
-	Timeout       int64                            // Connection timeout
-	CSAddr        string                           // Central system ip address
-	CSPort        string                           // Central system port
-	Asset         *simulator.Asset                 // Asset data for the simulator
-	Mod           *model.Struct                    // Model data for the asset
-	s             ocpp16.ChargePoint               // Ocpp charge point server
-	Conf          map[string]core.ConfigurationKey // Configuration key map
-	Auth          []localauth.AuthorizationData    // Authorization list
+	lock      sync.RWMutex                     // Lock goroutine
+	logger    logging                          // Logging
+	L         translation.Translation          // translation
+	Timeout   int64                            // Connection timeout
+	CSAddr    string                           // Central system ip address
+	CSPort    string                           // Central system port
+	Asset     *simulator.Asset                 // Asset data for the simulator
+	Mod       *model.Struct                    // Model data for the asset
+	s         ocpp16.ChargePoint               // Ocpp charge point server
+	Conf      map[string]core.ConfigurationKey // Configuration key map
+	Auth      []localauth.AuthorizationData    // Authorization list
+	localAuth struct {                         // Local auth list
+		version int64
+		list    []localauth.AuthorizationData
+	}
 	chargeProfile *types.ChargingProfile
 	t             int64
 	st            time.Time

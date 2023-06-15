@@ -257,6 +257,11 @@ func (o *Ocpp16) OnUnlockConnector(req *core.UnlockConnectorRequest) (res *core.
 		res = &core.UnlockConnectorConfirmation{Status: core.UnlockStatusUnlocked}
 	}
 
+	lm["sender"] = assets.CP
+	lm["type"] = assets.Response
+
+	o.logger.log(lm, res, assets.Info)
+
 	return res, nil
 }
 
@@ -264,7 +269,25 @@ func (o *Ocpp16) OnGetLocalListVersion(_ *localauth.GetLocalListVersionRequest) 
 	return res, nil
 }
 
-func (o *Ocpp16) OnSendLocalList(_ *localauth.SendLocalListRequest) (res *localauth.SendLocalListConfirmation, err error) {
+func (o *Ocpp16) OnSendLocalList(req *localauth.SendLocalListRequest) (res *localauth.SendLocalListConfirmation, err error) {
+	var lm = map[string]string{
+		"protocol":  string(o.Asset.Protocol),
+		"function":  "OnSendLocalList",
+		"feature":   req.GetFeatureName(),
+		"simulator": o.Asset.Name,
+		"sender":    assets.CS,
+		"type":      assets.Request,
+	}
+
+	o.logger.log(lm, req, assets.Info)
+
+	res = o.processSendLocalList(req)
+
+	lm["sender"] = assets.CP
+	lm["type"] = assets.Response
+
+	o.logger.log(lm, res, assets.Info)
+
 	return res, nil
 }
 
