@@ -13,6 +13,7 @@ type Asset struct {
 	StartCharging bool        `json:"startCharging" validate:"boolean"`                         // Set the asset to start charging behaviour by itself
 	Phases        Phases      `json:"phases" validate:"required,oneof=1 3"`                     // Phases number
 	CurrentType   CurrentType `json:"curentType" validate:"required,oneof=ac dc"`               // Type of current of the asset (AC or DC)
+	AuthList      bool        `json:"authList" validate:"required,boolean"`                     // Enable or disable authorization local list
 	Evses         []Evse      `json:"evses" validate:"required"`                                // List of evses that the asset has
 }
 

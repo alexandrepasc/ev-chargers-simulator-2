@@ -281,7 +281,11 @@ func (o *Ocpp16) OnSendLocalList(req *localauth.SendLocalListRequest) (res *loca
 
 	o.logger.log(lm, req, assets.Info)
 
-	res = o.processSendLocalList(req)
+	if o.Asset.AuthList {
+		res = o.processSendLocalList(req)
+	} else {
+		res = &localauth.SendLocalListConfirmation{Status: localauth.UpdateStatusNotSupported}
+	}
 
 	lm["sender"] = assets.CP
 	lm["type"] = assets.Response

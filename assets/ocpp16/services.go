@@ -57,6 +57,11 @@ func (o *Ocpp16) setStartUpConfigurations() {
 			o.Asset.Evses[x].Connectors[y].Availability = string(assets.Operative)
 		}
 	}
+
+	o.localAuth.version = 0
+	if !o.Asset.AuthList {
+		o.localAuth.version = -1
+	}
 }
 
 /*
