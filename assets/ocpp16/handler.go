@@ -110,7 +110,8 @@ func (o *Ocpp16) OnClearCache(req *core.ClearCacheRequest) (res *core.ClearCache
 
 	o.logger.log(lm, req, assets.Info)
 
-	o.Auth = nil
+	o.localAuth.version = 0
+	o.localAuth.list = nil
 
 	res = &core.ClearCacheConfirmation{Status: core.ClearCacheStatusAccepted}
 

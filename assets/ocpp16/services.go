@@ -112,7 +112,7 @@ func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionReq
 		"type":      assets.Request,
 	}
 
-	if !o.Mod.Ocpp.AuthorizeRemote {
+	if !o.Asset.AuthorizeRemote {
 		// TODO: the store of the charging profile should not be set at this point, since the validations if the session can be started are not done yet
 		o.chargeProfile = r.ChargingProfile
 
@@ -282,7 +282,8 @@ func (o *Ocpp16) processReset(r *core.ResetRequest) *core.ResetConfirmation {
 		}
 	}
 
-	o.Auth = nil
+	o.localAuth.version = 0
+	o.localAuth.list = nil
 	o.chargeProfile = nil
 	o.t = 0
 
@@ -647,6 +648,9 @@ func (o *Ocpp16) stopTransaction(c *simulator.Connector) {
 		o.logger.log(lm, err, assets.Error)
 	}
 }
+
+/**/
+func (o *Ocpp16) authorize() {}
 
 /*
 Get and return the configurations set to the asset. It receives the list of configurations

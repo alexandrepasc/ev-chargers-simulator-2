@@ -28,7 +28,6 @@ type Ocpp16 struct {
 	Mod       *model.Struct                    // Model data for the asset
 	s         ocpp16.ChargePoint               // Ocpp charge point server
 	Conf      map[string]core.ConfigurationKey // Configuration key map
-	Auth      []localauth.AuthorizationData    // Authorization list
 	localAuth struct {                         // Local auth list
 		version int64
 		list    []localauth.AuthorizationData
