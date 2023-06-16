@@ -265,10 +265,35 @@ func (o *Ocpp16) OnUnlockConnector(req *core.UnlockConnectorRequest) (res *core.
 	return res, nil
 }
 
-func (o *Ocpp16) OnGetLocalListVersion(_ *localauth.GetLocalListVersionRequest) (res *localauth.GetLocalListVersionConfirmation, err error) {
+/*
+Receives the CS request and returns the local list version.
+*/
+func (o *Ocpp16) OnGetLocalListVersion(req *localauth.GetLocalListVersionRequest) (res *localauth.GetLocalListVersionConfirmation, err error) {
+	var lm = map[string]string{
+		"protocol":  string(o.Asset.Protocol),
+		"function":  "OnGetLocalListVersion",
+		"feature":   req.GetFeatureName(),
+		"simulator": o.Asset.Name,
+		"sender":    assets.CS,
+		"type":      assets.Request,
+	}
+
+	o.logger.log(lm, req, assets.Info)
+
+	res = &localauth.GetLocalListVersionConfirmation{ListVersion: int(o.localAuth.version)}
+
+	lm["sender"] = assets.CP
+	lm["type"] = assets.Response
+
+	o.logger.log(lm, res, assets.Info)
+
 	return res, nil
 }
 
+/*
+Handles the request filter if the feature is supported. In case it is supported execute the logic
+to update the local list.
+*/
 func (o *Ocpp16) OnSendLocalList(req *localauth.SendLocalListRequest) (res *localauth.SendLocalListConfirmation, err error) {
 	var lm = map[string]string{
 		"protocol":  string(o.Asset.Protocol),
