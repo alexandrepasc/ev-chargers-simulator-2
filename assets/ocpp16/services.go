@@ -252,7 +252,12 @@ func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionReq
 
 	o.cIDTag = r.IdTag
 
-	o.startTransaction(o.cIDTag, c)
+	var resp = o.startTransaction(o.cIDTag, c)
+	if resp.IdTagInfo.Status != types.AuthorizationStatusAccepted {
+		o.Asset.Evses[0].Connectors[i].DP.Position = 0
+		o.Asset.Evses[0].Connectors[i].Enabled = false
+		o.statusNotification(&o.Asset.Evses[0].Connectors[i])
+	}
 }
 
 /*
@@ -466,6 +471,25 @@ func (o *Ocpp16) updateData() {
 
 						if c.Data[o.Asset.Evses[x].Connectors[y].DP.Position].ChargingState == int64(assets.Finishing) {
 							o.stopTransaction(&o.Asset.Evses[x].Connectors[y])
+						}
+
+						// If the connector starts charging send the start transaction request
+						if c.Data[o.Asset.Evses[x].Connectors[y].DP.Position].ChargingState == int64(assets.Charging) {
+							// TODO: need to review the id tag
+							var resp = o.startTransaction("QWEASDZXC", &o.Asset.Evses[x].Connectors[y])
+							if resp.IdTagInfo.Status != types.AuthorizationStatusAccepted {
+								// TODO: At the moment it will only log as error this, but this should be reviewed
+								var lm = map[string]string{
+									"protocol":  string(o.Asset.Protocol),
+									"function":  "updateData",
+									"feature":   resp.GetFeatureName(),
+									"simulator": o.Asset.Name,
+									"sender":    assets.CS,
+									"type":      assets.Response,
+								}
+
+								o.logger.log(lm, resp, assets.Error)
+							}
 						}
 					}
 				} else {
