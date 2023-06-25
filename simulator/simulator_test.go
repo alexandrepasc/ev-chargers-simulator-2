@@ -55,13 +55,15 @@ func TestCreateSimulator(t *testing.T) {
 	mID, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0")
 
 	sim := simulator.Asset{
-		Name:          "sim1",
-		Type:          simulator.Evc,
-		Protocol:      simulator.Ocpp201,
-		Model:         mID,
-		StartCharging: true,
-		Phases:        simulator.One,
-		CurrentType:   simulator.Ac,
+		Name:            "sim1",
+		Type:            simulator.Evc,
+		Protocol:        simulator.Ocpp201,
+		Model:           mID,
+		StartCharging:   true,
+		Phases:          simulator.One,
+		CurrentType:     simulator.Ac,
+		AuthorizeRemote: true,
+		AuthList:        true,
 		Evses: []simulator.Evse{
 			{
 				ID: 1,
@@ -307,11 +309,13 @@ func TestUpdateSimulator(t *testing.T) {
 	id, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0")
 
 	a := simulator.Asset{
-		Type:        simulator.Pm,
-		Protocol:    simulator.Ocpp16,
-		Phases:      simulator.Three,
-		CurrentType: simulator.Dc,
-		Evses:       []simulator.Evse{},
+		Type:            simulator.Pm,
+		Protocol:        simulator.Ocpp16,
+		Phases:          simulator.Three,
+		CurrentType:     simulator.Dc,
+		AuthorizeRemote: true,
+		AuthList:        true,
+		Evses:           []simulator.Evse{},
 	}
 
 	ab, _, c, aa := s.UpdateSimConf(id, &a)
@@ -439,12 +443,14 @@ func TestUpdateSimulatorChangeName(t *testing.T) {
 	id, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0")
 
 	a := simulator.Asset{
-		Name:        "asdasd",
-		Type:        simulator.Pm,
-		Protocol:    simulator.Ocpp16,
-		Phases:      simulator.Three,
-		CurrentType: simulator.Dc,
-		Evses:       []simulator.Evse{},
+		Name:            "asdasd",
+		Type:            simulator.Pm,
+		Protocol:        simulator.Ocpp16,
+		Phases:          simulator.Three,
+		CurrentType:     simulator.Dc,
+		AuthorizeRemote: true,
+		AuthList:        true,
+		Evses:           []simulator.Evse{},
 	}
 
 	ab, am, c, aa := s.UpdateSimConf(id, &a)
