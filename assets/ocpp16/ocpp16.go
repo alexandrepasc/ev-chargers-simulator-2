@@ -29,11 +29,11 @@ type Ocpp16 struct {
 	s         ocpp16.ChargePoint               // Ocpp charge point server
 	Conf      map[string]core.ConfigurationKey // Configuration key map
 	localAuth struct {                         // Local auth list
-		version int64
-		list    []localauth.AuthorizationData
+		version int64                         // Version identifier
+		list    []localauth.AuthorizationData // List with the authorization information
 	}
-	chargeProfile *types.ChargingProfile
-	cIDTag        string // Currently used id tag
+	chargeProfile *types.ChargingProfile // Charging profile set by the CS
+	cIDTag        string                 // Currently used id tag
 	t             int64
 	st            time.Time
 }

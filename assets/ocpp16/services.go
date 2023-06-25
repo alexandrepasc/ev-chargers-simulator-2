@@ -382,7 +382,12 @@ func (o *Ocpp16) processChangeAvailability(r *core.ChangeAvailabilityRequest) *c
 	return &core.ChangeAvailabilityConfirmation{Status: core.AvailabilityStatusRejected}
 }
 
-/**/
+/*
+Logic to handle the update of the local authorization request from the CS. Checks if the update
+type is full or differential and behaves according.
+
+Validates if there is no problem with the update and fails the request in case of a failure.
+*/
 func (o *Ocpp16) processSendLocalList(r *localauth.SendLocalListRequest) *localauth.SendLocalListConfirmation {
 	if r.UpdateType == localauth.UpdateTypeFull {
 		o.localAuth.version = int64(r.ListVersion)
@@ -729,7 +734,12 @@ func (o *Ocpp16) stopTransaction(c *simulator.Connector) {
 	}
 }
 
-/**/
+/*
+Sends the authorize request to the CS and returns true (bool) if the id was accepted, and false if
+not.
+
+id	-	The user tag id that tries to start the session (string)
+*/
 func (o *Ocpp16) authorize(id string) bool {
 	var lm = map[string]string{
 		"protocol":  string(o.Asset.Protocol),
