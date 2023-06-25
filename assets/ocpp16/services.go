@@ -11,6 +11,7 @@ import (
 	"github.com/alexandrepasc/ev-chargers-simulator-2/simulator"
 	"github.com/lorenzodonini/ocpp-go/ocpp"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/localauth"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 )
 
@@ -56,6 +57,11 @@ func (o *Ocpp16) setStartUpConfigurations() {
 			o.Asset.Evses[x].Connectors[y].Availability = string(assets.Operative)
 		}
 	}
+
+	o.localAuth.version = 0
+	if !o.Asset.AuthList {
+		o.localAuth.version = -1
+	}
 }
 
 /*
@@ -96,7 +102,8 @@ Validates if the connector selected is not active, activate it. If no connector 
 validate if any of them can be activated, if so activate it.
 */
 // TODO: need to check the start transaction to go throw the preparing state instead of directly to charging
-func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionRequest) *core.RemoteStartTransactionConfirmation {
+// TODO: need to check the best way to handle the id tag being used in the current transaction
+func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionRequest) {
 	var lm = map[string]string{
 		"protocol":  string(o.Asset.Protocol),
 		"function":  "processRemoteStartTransaction",
@@ -106,7 +113,7 @@ func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionReq
 		"type":      assets.Request,
 	}
 
-	if !o.Mod.Ocpp.AuthorizeRemote {
+	if !o.Asset.AuthorizeRemote {
 		// TODO: the store of the charging profile should not be set at this point, since the validations if the session can be started are not done yet
 		o.chargeProfile = r.ChargingProfile
 
@@ -171,10 +178,10 @@ func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionReq
 
 					o.statusNotification(&o.Asset.Evses[0].Connectors[i])
 
-					return &core.RemoteStartTransactionConfirmation{Status: types.RemoteStartStopStatusAccepted}
+					return
 				}
 			} else {
-				return &core.RemoteStartTransactionConfirmation{Status: types.RemoteStartStopStatusRejected}
+				return
 			}
 		}
 
@@ -196,15 +203,61 @@ func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionReq
 
 				go o.s.SendRequest(req) //nolint:errcheck // because at the moment can not handle the error since it is in a routine
 
-				return &core.RemoteStartTransactionConfirmation{Status: types.RemoteStartStopStatusAccepted}
+				return
 			}
 		} else {
-			return &core.RemoteStartTransactionConfirmation{Status: types.RemoteStartStopStatusRejected}
+			return
 		}
 	}
-	// TODO: need the logic when it needs to authenticate
 
-	return &core.RemoteStartTransactionConfirmation{Status: types.RemoteStartStopStatusRejected}
+	/*
+		In case the AuthorizeRemoteTxRequests (AuthorizeRemote) is true, the CP will behave as it
+		starts the session by it self. This behaviour is to try to authorize the tag in the local auth
+		list and/or requesting the authorize request ot the CS.
+	*/
+
+	var c, i = o.getConnectorAndIndex(r.ConnectorId)
+
+	if c.Availability != string(assets.Operative) {
+		return
+	}
+
+	o.Asset.Evses[0].Connectors[i].DP.Position = 1
+
+	o.statusNotification(&o.Asset.Evses[0].Connectors[i])
+
+	var na = true
+
+	if o.localAuth.version > 0 {
+		for _, a := range o.localAuth.list {
+			if a.IdTag == r.IdTag && a.IdTagInfo.Status == types.AuthorizationStatusAccepted {
+				na = false
+			}
+		}
+	}
+
+	if na {
+		if !o.authorize(r.IdTag) {
+			o.Asset.Evses[0].Connectors[i].DP.Position = 0
+
+			o.statusNotification(&o.Asset.Evses[0].Connectors[i])
+
+			return
+		}
+	}
+
+	o.Asset.Evses[0].Connectors[i].Enabled = true
+
+	o.chargeProfile = r.ChargingProfile
+
+	o.cIDTag = r.IdTag
+
+	var resp = o.startTransaction(o.cIDTag, c)
+	if resp.IdTagInfo.Status != types.AuthorizationStatusAccepted {
+		o.Asset.Evses[0].Connectors[i].DP.Position = 0
+		o.Asset.Evses[0].Connectors[i].Enabled = false
+		o.statusNotification(&o.Asset.Evses[0].Connectors[i])
+	}
 }
 
 /*
@@ -276,7 +329,8 @@ func (o *Ocpp16) processReset(r *core.ResetRequest) *core.ResetConfirmation {
 		}
 	}
 
-	o.Auth = nil
+	o.localAuth.version = 0
+	o.localAuth.list = nil
 	o.chargeProfile = nil
 	o.t = 0
 
@@ -334,6 +388,43 @@ func (o *Ocpp16) processChangeAvailability(r *core.ChangeAvailabilityRequest) *c
 }
 
 /*
+Logic to handle the update of the local authorization request from the CS. Checks if the update
+type is full or differential and behaves according.
+
+Validates if there is no problem with the update and fails the request in case of a failure.
+*/
+func (o *Ocpp16) processSendLocalList(r *localauth.SendLocalListRequest) *localauth.SendLocalListConfirmation {
+	if r.UpdateType == localauth.UpdateTypeFull {
+		o.localAuth.version = int64(r.ListVersion)
+		o.localAuth.list = r.LocalAuthorizationList
+
+		return &localauth.SendLocalListConfirmation{Status: localauth.UpdateStatusAccepted}
+	}
+
+	if r.ListVersion <= int(o.localAuth.version) {
+		return &localauth.SendLocalListConfirmation{Status: localauth.UpdateStatusVersionMismatch}
+	}
+
+	var al []localauth.AuthorizationData
+
+	for i := range r.LocalAuthorizationList {
+		if i < len(o.localAuth.list) {
+			if r.LocalAuthorizationList[i].IdTag == o.localAuth.list[i].IdTag {
+				al = append(al, r.LocalAuthorizationList[i])
+			} else {
+				return &localauth.SendLocalListConfirmation{Status: localauth.UpdateStatusFailed}
+			}
+		} else {
+			al = append(al, r.LocalAuthorizationList[i])
+		}
+	}
+
+	o.localAuth.list = al
+
+	return &localauth.SendLocalListConfirmation{Status: localauth.UpdateStatusAccepted}
+}
+
+/*
 Updates the connectors data position and ticker, it filters if the simulator has the start charging
 at true (automatic) or false (passive) to do these logic.
 
@@ -381,6 +472,25 @@ func (o *Ocpp16) updateData() {
 						if c.Data[o.Asset.Evses[x].Connectors[y].DP.Position].ChargingState == int64(assets.Finishing) {
 							o.stopTransaction(&o.Asset.Evses[x].Connectors[y])
 						}
+
+						// If the connector starts charging send the start transaction request
+						if c.Data[o.Asset.Evses[x].Connectors[y].DP.Position].ChargingState == int64(assets.Charging) {
+							// TODO: need to review the id tag
+							var resp = o.startTransaction("QWEASDZXC", &o.Asset.Evses[x].Connectors[y])
+							if resp.IdTagInfo.Status != types.AuthorizationStatusAccepted {
+								// TODO: At the moment it will only log as error this, but this should be reviewed
+								var lm = map[string]string{
+									"protocol":  string(o.Asset.Protocol),
+									"function":  "updateData",
+									"feature":   resp.GetFeatureName(),
+									"simulator": o.Asset.Name,
+									"sender":    assets.CS,
+									"type":      assets.Response,
+								}
+
+								o.logger.log(lm, resp, assets.Error)
+							}
+						}
 					}
 				} else {
 					o.Asset.Evses[x].Connectors[y].DP.Position = 0
@@ -427,6 +537,16 @@ func (o *Ocpp16) meterValuesSampledData() {
 						Unit:      types.UnitOfMeasureWh,
 						Format:    types.ValueFormatRaw,
 						Measurand: types.Measurand(assets.EnergyActiveImportRegister),
+						Phase:     types.Phase(assets.Phases[i]),
+					}
+
+				// TODO: this is not being calculated and the value is set to 0
+				case assets.EnergyReactiveImportRegister:
+					sp = types.SampledValue{
+						Value:     "0",
+						Unit:      types.UnitOfMeasureVarh,
+						Format:    types.ValueFormatRaw,
+						Measurand: types.Measurand(assets.EnergyReactiveImportRegister),
 						Phase:     types.Phase(assets.Phases[i]),
 					}
 
@@ -551,6 +671,44 @@ func (o *Ocpp16) statusNotification(c *simulator.Connector) {
 }
 
 /*
+id	-	The tag id used to authorize the session (string)
+
+c	-	The connector that will be used in the session (*simulator.Connector)
+*/
+func (o *Ocpp16) startTransaction(id string, c *simulator.Connector) *core.StartTransactionConfirmation {
+	var lm = map[string]string{
+		"protocol":  string(o.Asset.Protocol),
+		"function":  "startTransaction",
+		"feature":   core.StartTransactionFeatureName,
+		"simulator": o.Asset.Name,
+		"sender":    assets.CP,
+		"type":      assets.Request,
+	}
+
+	var req = core.StartTransactionRequest{
+		ConnectorId: int(c.ID),
+		IdTag:       id,
+		MeterStart:  int(c.Energy),
+		Timestamp:   types.NewDateTime(time.Now()),
+	}
+
+	o.logger.log(lm, req, assets.Info)
+
+	var res, err = o.s.SendRequest(req)
+
+	lm["sender"] = assets.CS
+	lm["type"] = assets.Response
+
+	if err != nil {
+		o.logger.log(lm, err, assets.Error)
+	}
+
+	o.logger.log(lm, res.(*core.StartTransactionConfirmation), assets.Info)
+
+	return res.(*core.StartTransactionConfirmation)
+}
+
+/*
 Sends the stop transaction request for the connector.
 
 c	- Evse connector information (*simulator.Connector)
@@ -567,7 +725,7 @@ func (o *Ocpp16) stopTransaction(c *simulator.Connector) {
 
 	// TODO: the id tag needs to be created and stored and not hard coded
 	var req = core.StopTransactionRequest{
-		IdTag:         "asdasdasd",
+		IdTag:         o.cIDTag,
 		MeterStop:     int(c.Energy),
 		Timestamp:     types.NewDateTime(time.Now()),
 		TransactionId: o.chargeProfile.TransactionId,
@@ -598,6 +756,43 @@ func (o *Ocpp16) stopTransaction(c *simulator.Connector) {
 	if err != nil {
 		o.logger.log(lm, err, assets.Error)
 	}
+}
+
+/*
+Sends the authorize request to the CS and returns true (bool) if the id was accepted, and false if
+not.
+
+id	-	The user tag id that tries to start the session (string)
+*/
+func (o *Ocpp16) authorize(id string) bool {
+	var lm = map[string]string{
+		"protocol":  string(o.Asset.Protocol),
+		"function":  "authorize",
+		"feature":   core.AuthorizeFeatureName,
+		"simulator": o.Asset.Name,
+		"sender":    assets.CP,
+		"type":      assets.Request,
+	}
+
+	var req = core.AuthorizeRequest{
+		IdTag: id,
+	}
+
+	o.logger.log(lm, req, assets.Info)
+
+	res, err := o.s.SendRequest(req)
+
+	lm["sender"] = assets.CS
+	lm["type"] = assets.Response
+
+	if err != nil {
+		o.logger.log(lm, err, assets.Error)
+		return false
+	}
+
+	o.logger.log(lm, res.(*core.AuthorizeConfirmation), assets.Info)
+
+	return res.(*core.AuthorizeConfirmation).IdTagInfo.Status == types.AuthorizationStatusAccepted
 }
 
 /*
@@ -711,6 +906,8 @@ func (o *Ocpp16) notAutoChargePoint(c *simulator.Connector, x, y int) {
 		} else {
 			o.Asset.Evses[x].Connectors[y].DP.Ticker = 0
 
+			var cs = c.Data[c.DP.Position].ChargingState
+
 			if assets.Status[c.Data[c.DP.Position].ChargingState] == assets.Status[assets.Finishing] {
 				o.Asset.Evses[x].Connectors[y].DP.Position = 0
 				o.Asset.Evses[x].Connectors[y].Enabled = false
@@ -747,10 +944,50 @@ func (o *Ocpp16) notAutoChargePoint(c *simulator.Connector, x, y int) {
 					o.Asset.Evses[x].Connectors[y].DP.Position = 0
 				}
 			}
+
+			if cs != c.Data[o.Asset.Evses[x].Connectors[y].DP.Position].ChargingState {
+				o.statusNotification(&o.Asset.Evses[x].Connectors[y])
+
+				if c.Data[o.Asset.Evses[x].Connectors[y].DP.Position].ChargingState == int64(assets.Finishing) {
+					o.stopTransaction(&o.Asset.Evses[x].Connectors[y])
+				}
+			}
 		}
 	} else {
 		o.Asset.Evses[x].Connectors[y].DP.Position = 0
 		o.Asset.Evses[x].Connectors[y].DP.Ticker = 0
 		o.Asset.Evses[x].Connectors[y].Enabled = false
 	}
+}
+
+/*
+Get the connector object that match the id argument value. It will return the object and the
+connector index from the asset object.
+
+If the id value doesn't match any of the evse connectors it will return a nil objet and the index
+with the 0 value.
+
+In case the id argument has the value nil it will return the first connector that is not set as
+enabled.
+
+id	-	The id returned by the CS request (*int)
+*/
+func (o *Ocpp16) getConnectorAndIndex(id *int) (ci *simulator.Connector, index int) {
+	if id != nil {
+		for i, c := range o.Asset.Evses[0].Connectors {
+			if c.ID == int64(*id) {
+				return &c, i
+			}
+		}
+
+		return nil, 0
+	}
+
+	for i, c := range o.Asset.Evses[0].Connectors {
+		if !c.Enabled {
+			return &c, i
+		}
+	}
+
+	return nil, 0
 }

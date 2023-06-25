@@ -17,7 +17,6 @@ type OcppModel struct {
 	VendorID        string    `json:"vendorId"`        // Vendor identifier
 	FwVersion       string    `json:"fwVersion"`       // Firmware version
 	MeterSerialNumb string    `json:"meterSerialNumb"` // Power meter serial number
-	AuthorizeRemote bool      `json:"authorizeRemote"` // Authorize remote start charge session
 	Modem           OcppModem `json:"modem"`           // Modem information
 }
 

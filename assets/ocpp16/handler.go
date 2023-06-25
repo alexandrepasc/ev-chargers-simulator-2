@@ -4,6 +4,8 @@ import (
 	"github.com/alexandrepasc/ev-chargers-simulator-2/assets"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/localauth"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/remotetrigger"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 )
 
 type Handler struct{}
@@ -109,7 +111,8 @@ func (o *Ocpp16) OnClearCache(req *core.ClearCacheRequest) (res *core.ClearCache
 
 	o.logger.log(lm, req, assets.Info)
 
-	o.Auth = nil
+	o.localAuth.version = 0
+	o.localAuth.list = nil
 
 	res = &core.ClearCacheConfirmation{Status: core.ClearCacheStatusAccepted}
 
@@ -166,7 +169,13 @@ func (o *Ocpp16) OnRemoteStartTransaction(req *core.RemoteStartTransactionReques
 
 	o.logger.log(lm, req, assets.Info)
 
-	res = o.processRemoteStartTransaction(req)
+	res = &core.RemoteStartTransactionConfirmation{Status: types.RemoteStartStopStatusRejected}
+
+	if canEnable(o.Asset.Evses[0].Connectors) {
+		res = &core.RemoteStartTransactionConfirmation{Status: types.RemoteStartStopStatusAccepted}
+
+		go o.processRemoteStartTransaction(req)
+	}
 
 	lm["sender"] = assets.CP
 	lm["type"] = assets.Response
@@ -256,13 +265,82 @@ func (o *Ocpp16) OnUnlockConnector(req *core.UnlockConnectorRequest) (res *core.
 		res = &core.UnlockConnectorConfirmation{Status: core.UnlockStatusUnlocked}
 	}
 
+	lm["sender"] = assets.CP
+	lm["type"] = assets.Response
+
+	o.logger.log(lm, res, assets.Info)
+
 	return res, nil
 }
 
-func (o *Ocpp16) OnGetLocalListVersion(_ *localauth.GetLocalListVersionRequest) (res *localauth.GetLocalListVersionConfirmation, err error) {
+/*
+Receives the CS request and returns the local list version.
+*/
+func (o *Ocpp16) OnGetLocalListVersion(req *localauth.GetLocalListVersionRequest) (res *localauth.GetLocalListVersionConfirmation, err error) {
+	var lm = map[string]string{
+		"protocol":  string(o.Asset.Protocol),
+		"function":  "OnGetLocalListVersion",
+		"feature":   req.GetFeatureName(),
+		"simulator": o.Asset.Name,
+		"sender":    assets.CS,
+		"type":      assets.Request,
+	}
+
+	o.logger.log(lm, req, assets.Info)
+
+	res = &localauth.GetLocalListVersionConfirmation{ListVersion: int(o.localAuth.version)}
+
+	lm["sender"] = assets.CP
+	lm["type"] = assets.Response
+
+	o.logger.log(lm, res, assets.Info)
+
 	return res, nil
 }
 
-func (o *Ocpp16) OnSendLocalList(_ *localauth.SendLocalListRequest) (res *localauth.SendLocalListConfirmation, err error) {
+/*
+Handles the request filter if the feature is supported. In case it is supported execute the logic
+to update the local list.
+*/
+func (o *Ocpp16) OnSendLocalList(req *localauth.SendLocalListRequest) (res *localauth.SendLocalListConfirmation, err error) {
+	var lm = map[string]string{
+		"protocol":  string(o.Asset.Protocol),
+		"function":  "OnSendLocalList",
+		"feature":   req.GetFeatureName(),
+		"simulator": o.Asset.Name,
+		"sender":    assets.CS,
+		"type":      assets.Request,
+	}
+
+	o.logger.log(lm, req, assets.Info)
+
+	if o.Asset.AuthList {
+		res = o.processSendLocalList(req)
+	} else {
+		res = &localauth.SendLocalListConfirmation{Status: localauth.UpdateStatusNotSupported}
+	}
+
+	lm["sender"] = assets.CP
+	lm["type"] = assets.Response
+
+	o.logger.log(lm, res, assets.Info)
+
+	return res, nil
+}
+
+func (o *Ocpp16) OnTriggerMessage(req *remotetrigger.TriggerMessageRequest) (res *remotetrigger.TriggerMessageConfirmation, err error) {
+	var lm = map[string]string{
+		"protocol":  string(o.Asset.Protocol),
+		"function":  "OnTriggerMessage",
+		"feature":   req.GetFeatureName(),
+		"simulator": o.Asset.Name,
+		"sender":    assets.CS,
+		"type":      assets.Request,
+	}
+
+	o.logger.log(lm, req, assets.Info)
+
+	res = &remotetrigger.TriggerMessageConfirmation{Status: remotetrigger.TriggerMessageStatusNotImplemented}
+
 	return res, nil
 }
