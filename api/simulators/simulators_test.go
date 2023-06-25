@@ -138,12 +138,14 @@ func TestPostSimulators(t *testing.T) {
 	}
 
 	body := simulator.Asset{
-		Name:          "name",
-		Type:          simulator.Evc,
-		Protocol:      simulator.Modbus,
-		StartCharging: true,
-		Phases:        simulator.One,
-		CurrentType:   simulator.Ac,
+		Name:            "name",
+		Type:            simulator.Evc,
+		Protocol:        simulator.Modbus,
+		StartCharging:   true,
+		Phases:          simulator.One,
+		CurrentType:     simulator.Ac,
+		AuthorizeRemote: true,
+		AuthList:        true,
 		Evses: []simulator.Evse{
 			{
 				ID: 1,
@@ -335,12 +337,14 @@ func TestNotAblePostSimulatorsSameName(t *testing.T) {
 	}
 
 	body := simulator.Asset{
-		Name:          "test1",
-		Type:          simulator.Evc,
-		Protocol:      simulator.Modbus,
-		StartCharging: true,
-		Phases:        simulator.One,
-		CurrentType:   simulator.Ac,
+		Name:            "test1",
+		Type:            simulator.Evc,
+		Protocol:        simulator.Modbus,
+		StartCharging:   true,
+		Phases:          simulator.One,
+		CurrentType:     simulator.Ac,
+		AuthorizeRemote: true,
+		AuthList:        true,
 		Evses: []simulator.Evse{
 			{
 				ID: 1,
@@ -399,12 +403,14 @@ func TestPutSimulators(t *testing.T) {
 	}
 
 	e := simulator.Asset{
-		Type:          simulator.Pm,
-		Protocol:      simulator.Ocpp16,
-		StartCharging: false,
-		Phases:        simulator.Three,
-		CurrentType:   simulator.Ac,
-		Evses:         []simulator.Evse{},
+		Type:            simulator.Pm,
+		Protocol:        simulator.Ocpp16,
+		StartCharging:   false,
+		Phases:          simulator.Three,
+		CurrentType:     simulator.Ac,
+		AuthorizeRemote: true,
+		AuthList:        true,
+		Evses:           []simulator.Evse{},
 	}
 
 	j, _ := json.Marshal(e)
@@ -574,14 +580,16 @@ func TestPutSimulatorsChangeNameID(t *testing.T) {
 
 	eid, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa9")
 	e := simulator.Asset{
-		SimID:         eid,
-		Name:          "testing",
-		Type:          simulator.Pm,
-		Protocol:      simulator.Ocpp16,
-		StartCharging: false,
-		Phases:        simulator.Three,
-		CurrentType:   simulator.Ac,
-		Evses:         []simulator.Evse{},
+		SimID:           eid,
+		Name:            "testing",
+		Type:            simulator.Pm,
+		Protocol:        simulator.Ocpp16,
+		StartCharging:   false,
+		Phases:          simulator.Three,
+		CurrentType:     simulator.Ac,
+		AuthorizeRemote: true,
+		AuthList:        true,
+		Evses:           []simulator.Evse{},
 	}
 
 	j, _ := json.Marshal(e)
