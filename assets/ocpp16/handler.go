@@ -5,6 +5,7 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/localauth"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/remotetrigger"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 )
 
 type Handler struct{}
@@ -168,7 +169,13 @@ func (o *Ocpp16) OnRemoteStartTransaction(req *core.RemoteStartTransactionReques
 
 	o.logger.log(lm, req, assets.Info)
 
-	res = o.processRemoteStartTransaction(req)
+	res = &core.RemoteStartTransactionConfirmation{Status: types.RemoteStartStopStatusRejected}
+
+	if canEnable(o.Asset.Evses[0].Connectors) {
+		res = &core.RemoteStartTransactionConfirmation{Status: types.RemoteStartStopStatusAccepted}
+
+		go o.processRemoteStartTransaction(req)
+	}
 
 	lm["sender"] = assets.CP
 	lm["type"] = assets.Response
