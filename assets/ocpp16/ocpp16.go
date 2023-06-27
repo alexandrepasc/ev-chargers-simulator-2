@@ -33,7 +33,6 @@ type Ocpp16 struct {
 		list    []localauth.AuthorizationData // List with the authorization information
 	}
 	chargeProfile *types.ChargingProfile // Charging profile set by the CS
-	cIDTag        string                 // Currently used id tag
 	t             int64
 	st            time.Time
 }

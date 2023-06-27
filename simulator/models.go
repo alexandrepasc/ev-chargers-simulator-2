@@ -21,6 +21,7 @@ type Asset struct {
 type Evse struct {
 	ID         int64       `json:"id"`         // Evse identifier number
 	Connectors []Connector `json:"connectors"` // The list of connectors of the evse
+	CIDTag     string      `json:"cIdTag"`     // current id tag being used in the charge session
 }
 
 type Connector struct {

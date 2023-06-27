@@ -3,7 +3,7 @@ package common
 import "github.com/google/uuid"
 
 const (
-	Version           string = "0.9.4"             // Application version
+	Version           string = "0.9.5"             // Application version
 	DefSimIP          string = "84.5.7.64"         // Default simulator ip address from the machine that is running the application
 	DefTimeout        int64  = 70                  // Default simulators timeout
 	DefCSIP           string = "iot-gate-imx8.lan" // Default central system ip address
