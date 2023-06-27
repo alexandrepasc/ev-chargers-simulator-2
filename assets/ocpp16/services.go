@@ -250,9 +250,9 @@ func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionReq
 
 	o.chargeProfile = r.ChargingProfile
 
-	o.cIDTag = r.IdTag
+	o.Asset.Evses[0].CIDTag = r.IdTag
 
-	var resp = o.startTransaction(o.cIDTag, c)
+	var resp = o.startTransaction(o.Asset.Evses[0].CIDTag, c)
 	if resp.IdTagInfo.Status != types.AuthorizationStatusAccepted {
 		o.Asset.Evses[0].Connectors[i].DP.Position = 0
 		o.Asset.Evses[0].Connectors[i].Enabled = false
@@ -282,7 +282,7 @@ func (o *Ocpp16) processRemoteStopTransaction(r *core.RemoteStopTransactionReque
 
 			go o.statusNotification(&o.Asset.Evses[0].Connectors[i])
 
-			go o.stopTransaction(&o.Asset.Evses[0].Connectors[i])
+			go o.stopTransaction(o.Asset.Evses[0].CIDTag, &o.Asset.Evses[0].Connectors[i])
 
 			return &core.RemoteStopTransactionConfirmation{Status: types.RemoteStartStopStatusAccepted}
 		}
@@ -311,7 +311,7 @@ func (o *Ocpp16) processReset(r *core.ResetRequest) *core.ResetConfirmation {
 				o.Asset.Evses[x].Connectors[y].DP.Position = 0
 				o.Asset.Evses[x].Connectors[y].DP.Ticker = 0
 
-				go o.stopTransaction(&o.Asset.Evses[x].Connectors[y])
+				go o.stopTransaction(o.Asset.Evses[x].CIDTag, &o.Asset.Evses[x].Connectors[y])
 			}
 		}
 
@@ -470,7 +470,7 @@ func (o *Ocpp16) updateData() {
 						o.statusNotification(&o.Asset.Evses[x].Connectors[y])
 
 						if c.Data[o.Asset.Evses[x].Connectors[y].DP.Position].ChargingState == int64(assets.Finishing) {
-							o.stopTransaction(&o.Asset.Evses[x].Connectors[y])
+							o.stopTransaction(o.Asset.Evses[x].CIDTag, &o.Asset.Evses[x].Connectors[y])
 						}
 
 						// If the connector starts charging send the start transaction request
@@ -711,9 +711,11 @@ func (o *Ocpp16) startTransaction(id string, c *simulator.Connector) *core.Start
 /*
 Sends the stop transaction request for the connector.
 
-c	- Evse connector information (*simulator.Connector)
+id	-	Session id tag (string)
+
+c	-	Evse connector information (*simulator.Connector)
 */
-func (o *Ocpp16) stopTransaction(c *simulator.Connector) {
+func (o *Ocpp16) stopTransaction(id string, c *simulator.Connector) {
 	var lm = map[string]string{
 		"protocol":  string(o.Asset.Protocol),
 		"function":  "stopTransaction",
@@ -725,7 +727,7 @@ func (o *Ocpp16) stopTransaction(c *simulator.Connector) {
 
 	// TODO: the id tag needs to be created and stored and not hard coded
 	var req = core.StopTransactionRequest{
-		IdTag:         o.cIDTag,
+		IdTag:         id,
 		MeterStop:     int(c.Energy),
 		Timestamp:     types.NewDateTime(time.Now()),
 		TransactionId: o.chargeProfile.TransactionId,
@@ -949,7 +951,7 @@ func (o *Ocpp16) notAutoChargePoint(c *simulator.Connector, x, y int) {
 				o.statusNotification(&o.Asset.Evses[x].Connectors[y])
 
 				if c.Data[o.Asset.Evses[x].Connectors[y].DP.Position].ChargingState == int64(assets.Finishing) {
-					o.stopTransaction(&o.Asset.Evses[x].Connectors[y])
+					o.stopTransaction(o.Asset.Evses[x].CIDTag, &o.Asset.Evses[x].Connectors[y])
 				}
 			}
 		}
