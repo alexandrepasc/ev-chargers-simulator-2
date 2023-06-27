@@ -40,11 +40,12 @@ func main() {
 	}
 
 	var a = api.API{
-		Lang:    t,
-		General: g,
-		Sim:     s,
-		Mod:     m,
-		Hand:    h,
+		Lang:        t,
+		General:     g,
+		GeneralPath: c.GeneralConfigFolder,
+		Sim:         s,
+		Mod:         m,
+		Hand:        h,
 	}
 
 	var srv = a.New()
