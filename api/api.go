@@ -41,6 +41,7 @@ func (a *API) New() (r *gin.Engine) {
 
 	c := config.Configs{
 		Lang: a.Lang,
+		Path: a.GeneralPath,
 	}
 	c.Configs(r)
 
