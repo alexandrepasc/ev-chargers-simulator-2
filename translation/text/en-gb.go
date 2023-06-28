@@ -12,6 +12,8 @@ var EnGB = map[Key]string{
 	GeneralNotExist:               "General configuration file doesn't exist.",
 	GeneralCreated:                "Created general configuration file.",
 	GeneralWritten:                "General configurations written to file.",
+	GeneralErrorRead:              "There was an error reading the configuration.",
+	GeneralErrorUpdate:            "There was an error updating the configuration.",
 	LocalizationNotSet:            "Language localization not set.",
 	RouteNotFound:                 "Route not found.",
 	MethodNotAllowed:              "Method not allowed.",

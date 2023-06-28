@@ -14,6 +14,8 @@ const (
 	GeneralNotExist               Key = "GeneralNotExist"               // General settings file doesn't exist
 	GeneralCreated                Key = "GeneralCreated"                // General settings file created
 	GeneralWritten                Key = "GeneralWritten"                // General settings saved
+	GeneralErrorRead              Key = "GeneralErrorRead"              // General error get the configuration
+	GeneralErrorUpdate            Key = "GeneralErrorUpdate"            // Generla error updating the configuration
 	LocalizationNotSet            Key = "LocalizationNotSet"            // Localization not set when retreiving text key
 	RouteNotFound                 Key = "RouteNotFound"                 // API message returned when the route requested is not mapped
 	MethodNotAllowed              Key = "MethodNotAllowed"              // API message returned when the method requested doesn't match the route
