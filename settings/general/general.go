@@ -3,12 +3,14 @@ package general
 import (
 	"encoding/json"
 	"io/fs"
+	"net/http"
 	"os"
 
 	"github.com/alexandrepasc/ev-chargers-simulator-2/common"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/flags"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/translation"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/translation/text"
+	"github.com/go-playground/validator/v10"
 )
 
 /*
@@ -34,6 +36,66 @@ func General(p string, fl *flags.Flags) Model {
 	}
 
 	return gen
+}
+
+/**/
+// TODO: there are some duplicated code to be able to handle the api erros, this needs to be reviewed
+func GetGeneralConf(p string, t translation.Translation) (ok bool, msg string, code int, g *Model) {
+	var fp = p + generalFile
+
+	b, err := os.ReadFile(fp)
+
+	if err != nil {
+		common.Log("GetGeneralConf").Error(err)
+		return false, t.Get(text.GeneralErrorRead), http.StatusInternalServerError, nil
+	}
+
+	var m Model
+
+	mErr := json.Unmarshal(b, &m)
+
+	if mErr != nil {
+		common.Log("GetGeneralConf").Error(mErr)
+		return false, t.Get(text.GeneralErrorRead), http.StatusInternalServerError, nil
+	}
+
+	return true, "", http.StatusOK, &m
+}
+
+/**/
+// TODO: there are some duplicated code to be able to handle the api erros, this needs to be reviewed
+func UpdateGeneralConf(ng *Model, p string, t translation.Translation) (ok bool, msg string, code int, g *Model) {
+	var fp = p + generalFile
+
+	var vErr = validator.New().Struct(ng)
+
+	if vErr != nil {
+		common.Log("UpdateGeneralConf").Error(vErr)
+		return false, vErr.Error(), http.StatusBadRequest, nil
+	}
+
+	var b, err = json.MarshalIndent(ng, "", " ")
+
+	if err != nil {
+		common.Log("UpdateGeneralConf").Error(err)
+		return false, t.Get(text.GeneralErrorUpdate), http.StatusInternalServerError, nil
+	}
+
+	var wErr = os.WriteFile(fp, b, fs.FileMode(common.FilePermissions))
+
+	if wErr != nil {
+		common.Log("UpdateGeneralConf").Error(wErr)
+		return false, t.Get(text.GeneralErrorUpdate), http.StatusInternalServerError, nil
+	}
+
+	var gOk, gMsg, gCode, gg = GetGeneralConf(p, t)
+
+	if !gOk {
+		common.Log("UpdateGeneralConf").Error(gMsg)
+		return false, gMsg, gCode, nil
+	}
+
+	return true, "", http.StatusOK, gg
 }
 
 /*
