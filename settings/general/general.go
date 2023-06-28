@@ -38,7 +38,14 @@ func General(p string, fl *flags.Flags) Model {
 	return gen
 }
 
-/**/
+/*
+Opens the general settings file, returns it (*Model), and the http status code (int). It handles
+the errors and returns the message translated as the ok variable with false (bool).
+
+p	-	The path where the general settings file is located (string)
+
+t	-	The translation structure with the language defined (translation.Translation)
+*/
 // TODO: there are some duplicated code to be able to handle the api erros, this needs to be reviewed
 func GetGeneralConf(p string, t translation.Translation) (ok bool, msg string, code int, g *Model) {
 	var fp = p + generalFile
@@ -62,7 +69,17 @@ func GetGeneralConf(p string, t translation.Translation) (ok bool, msg string, c
 	return true, "", http.StatusOK, &m
 }
 
-/**/
+/*
+Update the general settings file with the model sent. After the update will read the file and
+returns the data (*Model). It handles the errors and returns the ok varial as false (bool), the
+error translated message (string). In both cases returns the http status code (int).
+
+ng	-	The model with the data to update the file (*Model)
+
+p	-	The path where the general settings file is located (string)
+
+t	-	The translation structure with the language defined (translation.Translation)
+*/
 // TODO: there are some duplicated code to be able to handle the api erros, this needs to be reviewed
 func UpdateGeneralConf(ng *Model, p string, t translation.Translation) (ok bool, msg string, code int, g *Model) {
 	var fp = p + generalFile
