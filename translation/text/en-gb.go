@@ -9,6 +9,8 @@ var EnGB = map[Key]string{
 	ConfigsNotExist:               "Configurations file doesn't exist.",
 	ConfigsCreated:                "Created configuration file",
 	ConfigsWritten:                "Configurations written to file.",
+	ConfigsErrorRead:              "There was an error reading the configuration.",
+	ConfigsErrorUpdate:            "There was an error updating the configuration.",
 	GeneralNotExist:               "General configuration file doesn't exist.",
 	GeneralCreated:                "Created general configuration file.",
 	GeneralWritten:                "General configurations written to file.",
