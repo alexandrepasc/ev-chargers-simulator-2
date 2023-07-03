@@ -8,6 +8,8 @@ import (
 	"github.com/alexandrepasc/ev-chargers-simulator-2/common"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/flags"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/settings/configs"
+	"github.com/alexandrepasc/ev-chargers-simulator-2/translation"
+	"github.com/alexandrepasc/ev-chargers-simulator-2/translation/text"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -54,6 +56,22 @@ func TestConfigs(t *testing.T) {
 	os.Remove(common.GetThePath(file))
 
 	updateConfigsForce(t)
+
+	os.Remove(common.GetThePath(file))
+
+	getConfigsSimPath(t)
+
+	os.Remove(common.GetThePath(file))
+
+	getConfigsSimPathFailRead(t)
+
+	os.Remove(common.GetThePath(file))
+
+	updateConfigsSimPath(t)
+
+	os.Remove(common.GetThePath(file))
+
+	updateConfigsSimPathFailRead(t)
 }
 
 func configsNoFileWithFlags(t *testing.T) {
@@ -140,4 +158,106 @@ func updateConfigsForce(t *testing.T) {
 	a := configs.Configs(&fl)
 
 	assert.Equal(t, e, a)
+}
+
+func getConfigsSimPath(t *testing.T) {
+	t.Helper()
+
+	var fl = flags.Flags{
+		ForceUpdate: true,
+		HostAddr:    "",
+		ConnTimeout: -1,
+		CSAddr:      "",
+		CSPort:      "",
+		GCFolder:    "",
+		SCFolder:    simulatorFolder,
+	}
+
+	configs.Configs(&fl)
+
+	var e = configs.SimPathModel{
+		SimulatorsConfigFolder: simulatorFolder,
+	}
+
+	var ok, msg, code, a = configs.GetConfigsSimPath(translation.Translation{L: translation.PtPt})
+
+	assert.True(t, ok)
+
+	assert.Empty(t, msg)
+
+	assert.Equal(t, 200, code)
+
+	assert.Equal(t, e.SimulatorsConfigFolder, a.SimulatorsConfigFolder)
+}
+
+func getConfigsSimPathFailRead(t *testing.T) {
+	t.Helper()
+
+	var ok, msg, code, a = configs.GetConfigsSimPath(translation.Translation{L: translation.PtPt})
+
+	assert.False(t, ok)
+
+	assert.Equal(t, translation.Translation{L: translation.PtPt}.Get(text.ConfigsErrorRead), msg)
+
+	assert.Equal(t, 500, code)
+
+	assert.Nil(t, a)
+}
+
+func updateConfigsSimPath(t *testing.T) {
+	t.Helper()
+
+	var fl = flags.Flags{
+		ForceUpdate: true,
+		HostAddr:    "",
+		ConnTimeout: -1,
+		CSAddr:      "",
+		CSPort:      "",
+		GCFolder:    "",
+		SCFolder:    simulatorFolder,
+	}
+
+	configs.Configs(&fl)
+
+	var e = configs.SimPathModel{
+		SimulatorsConfigFolder: "/test",
+	}
+
+	var ok, msg, code, a = configs.UpdateConfigsSimPath(&e, translation.Translation{L: translation.PtPt})
+
+	assert.True(t, ok)
+
+	assert.Empty(t, msg)
+
+	assert.Equal(t, 200, code)
+
+	assert.Equal(t, e.SimulatorsConfigFolder, a.SimulatorsConfigFolder)
+
+	ok, msg, code, a = configs.GetConfigsSimPath(translation.Translation{L: translation.PtPt})
+
+	assert.True(t, ok)
+
+	assert.Empty(t, msg)
+
+	assert.Equal(t, 200, code)
+
+	assert.Equal(t, e.SimulatorsConfigFolder, a.SimulatorsConfigFolder)
+}
+
+func updateConfigsSimPathFailRead(t *testing.T) {
+	t.Helper()
+
+	var e = configs.SimPathModel{
+		SimulatorsConfigFolder: "/test",
+	}
+
+	var ok, msg, code, a = configs.UpdateConfigsSimPath(&e, translation.Translation{L: translation.PtPt})
+
+	assert.False(t, ok)
+
+	assert.Equal(t, translation.Translation{L: translation.PtPt}.Get(text.ConfigsErrorRead), msg)
+
+	assert.Equal(t, 500, code)
+
+	assert.Nil(t, a)
 }
