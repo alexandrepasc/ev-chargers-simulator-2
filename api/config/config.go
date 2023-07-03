@@ -5,6 +5,7 @@ import (
 
 	"github.com/alexandrepasc/ev-chargers-simulator-2/api/errors"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/common"
+	"github.com/alexandrepasc/ev-chargers-simulator-2/settings/configs"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/settings/general"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/translation"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/translation/text"
@@ -25,7 +26,8 @@ func (cfg *Configs) Configs(r *gin.Engine) {
 	r.GET(generalEp, cfg.getGeneral)
 	r.PUT(generalEp, cfg.putGeneral)
 
-	r.GET(simulatorsEp, getSimulators)
+	r.GET(simulatorsEp, cfg.getSimulators)
+	r.PUT(simulatorsEp, cfg.putSimulators)
 }
 
 /*
@@ -101,6 +103,65 @@ Sets the get simulators endpoint controller
 
 c	-	request  context (*gin.context)
 */
-func getSimulators(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "OK"})
+func (cfg *Configs) getSimulators(c *gin.Context) {
+	var ok, msg, code, r = configs.GetConfigsSimPath(cfg.Lang)
+
+	if !ok {
+		common.Log("getSimulators").Error(msg)
+
+		var e = errors.ErroMsg{
+			Message: msg,
+		}
+
+		if errors.StructValidate(e, c, cfg.Lang) {
+			c.IndentedJSON(code, e)
+		}
+
+		return
+	}
+
+	c.IndentedJSON(code, r)
+}
+
+/*
+Set the  put simulators endpoint controller.
+
+c	-	request  context (*gin.context)
+*/
+func (cfg *Configs) putSimulators(c *gin.Context) {
+	var req = configs.SimPathModel{}
+
+	var err = c.BindJSON(&req)
+
+	if err != nil {
+		common.Log("putSimulators").Error(err)
+
+		var e = errors.ErroMsg{
+			Message: cfg.Lang.Get(text.RequestBodyDoesntMatch),
+		}
+
+		if errors.StructValidate(e, c, cfg.Lang) {
+			c.IndentedJSON(http.StatusBadRequest, e)
+		}
+
+		return
+	}
+
+	var ok, msg, code, r = configs.UpdateConfigsSimPath(&req, cfg.Lang)
+
+	if !ok {
+		common.Log("putSimulators").Error(msg)
+
+		var e = errors.ErroMsg{
+			Message: msg,
+		}
+
+		if errors.StructValidate(e, c, cfg.Lang) {
+			c.IndentedJSON(code, e)
+		}
+
+		return
+	}
+
+	c.IndentedJSON(code, r)
 }
