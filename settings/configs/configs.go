@@ -2,7 +2,6 @@ package configs
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/fs"
 	"net/http"
 	"os"
@@ -30,8 +29,6 @@ func Configs(fl *flags.Flags) Model {
 		if fl.ForceUpdate {
 			conf = updateConfigsFile(fl, conf, fp)
 		}
-
-		fmt.Println(conf)
 	} else {
 		createConfigsFile(fp)
 
@@ -68,11 +65,11 @@ func GetConfigsSimPath(t translation.Translation) (ok bool, msg string, code int
 		return false, t.Get(text.ConfigsErrorRead), http.StatusInternalServerError, nil
 	}
 
-	var rs = SimPathModel{
+	s = &SimPathModel{
 		SimulatorsConfigFolder: m.SimulatorsConfigFolder,
 	}
 
-	return true, "", http.StatusOK, &rs
+	return true, "", http.StatusOK, s
 }
 
 /*
@@ -101,7 +98,7 @@ func UpdateConfigsSimPath(ns *SimPathModel, t translation.Translation) (ok bool,
 
 	if rErr != nil {
 		common.Log("UpdateConfigsSimPath").Error(rErr)
-		return false, t.Get(text.ConfigsErrorUpdate), http.StatusInternalServerError, nil
+		return false, t.Get(text.ConfigsErrorRead), http.StatusInternalServerError, nil
 	}
 
 	var m Model
@@ -110,7 +107,7 @@ func UpdateConfigsSimPath(ns *SimPathModel, t translation.Translation) (ok bool,
 
 	if mErr != nil {
 		common.Log("UpdateConfigsSimPath").Error(mErr)
-		return false, t.Get(text.ConfigsErrorUpdate), http.StatusInternalServerError, nil
+		return false, t.Get(text.ConfigsErrorRead), http.StatusInternalServerError, nil
 	}
 
 	m.SimulatorsConfigFolder = ns.SimulatorsConfigFolder
@@ -130,7 +127,9 @@ func UpdateConfigsSimPath(ns *SimPathModel, t translation.Translation) (ok bool,
 		return false, t.Get(text.ConfigsErrorUpdate), http.StatusInternalServerError, nil
 	}
 
-	s.SimulatorsConfigFolder = m.SimulatorsConfigFolder
+	s = &SimPathModel{
+		SimulatorsConfigFolder: m.SimulatorsConfigFolder,
+	}
 
 	return true, "", http.StatusOK, s
 }
