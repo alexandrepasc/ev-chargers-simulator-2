@@ -4,6 +4,10 @@ package text
 PtPT maps the keys defined with the message for the language/location en-GB
 */
 var PtPT = map[Key]string{
+	ConfigsErrorRead:              "Ocorreu um erro ao ler a configuração.",
+	ConfigsErrorUpdate:            "Ocorreu um erro ao atualizar a configuração.",
+	GeneralErrorRead:              "Ocorreu um erro ao ler a configuração.",
+	GeneralErrorUpdate:            "Ocorreu um erro ao atualizar a configuração.",
 	RouteNotFound:                 "Rota não encontrada.",
 	MethodNotAllowed:              "Método não permitido.",
 	GetSimsConfsFiles:             "Obter os arquivos de configuração dos simuladores.",

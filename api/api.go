@@ -21,11 +21,12 @@ import (
 API structure to store the settings to the package.
 */
 type API struct {
-	Lang    translation.Translation // Translation language setting
-	General general.Model           // General configurations model
-	Sim     simulator.Simulator     // Simulator package
-	Mod     model.Model             // Model package
-	Hand    handler.Handler
+	Lang        translation.Translation // Translation language setting
+	General     general.Model           // General configurations model
+	GeneralPath string                  // The general configuration location
+	Sim         simulator.Simulator     // Simulator package
+	Mod         model.Model             // Model package
+	Hand        handler.Handler
 }
 
 /*
@@ -37,7 +38,12 @@ func (a *API) New() (r *gin.Engine) {
 	r = a.buildRouter()
 
 	health.Health(r)
-	config.Configs(r)
+
+	c := config.Configs{
+		Lang: a.Lang,
+		Path: a.GeneralPath,
+	}
+	c.Configs(r)
 
 	s := simulators.Simulators{
 		Sim:  a.Sim,  // Simulator package
