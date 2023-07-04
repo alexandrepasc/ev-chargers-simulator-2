@@ -110,6 +110,10 @@ func UpdateConfigsSimPath(ns *SimPathModel, t translation.Translation) (ok bool,
 		return false, t.Get(text.ConfigsErrorRead), http.StatusInternalServerError, nil
 	}
 
+	if string(ns.SimulatorsConfigFolder[len(ns.SimulatorsConfigFolder)-1]) == "/" {
+		ns.SimulatorsConfigFolder = ns.SimulatorsConfigFolder[0 : len(ns.SimulatorsConfigFolder)-1]
+	}
+
 	m.SimulatorsConfigFolder = ns.SimulatorsConfigFolder
 
 	var wb, miErr = json.MarshalIndent(m, "", " ")

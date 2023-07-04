@@ -71,6 +71,10 @@ func TestConfigs(t *testing.T) {
 
 	os.Remove(common.GetThePath(file))
 
+	updateConfigsSimPathWithEndSlash(t)
+
+	os.Remove(common.GetThePath(file))
+
 	updateConfigsSimPathFailRead(t)
 }
 
@@ -242,6 +246,48 @@ func updateConfigsSimPath(t *testing.T) {
 	assert.Equal(t, 200, code)
 
 	assert.Equal(t, e.SimulatorsConfigFolder, a.SimulatorsConfigFolder)
+}
+
+func updateConfigsSimPathWithEndSlash(t *testing.T) {
+	t.Helper()
+
+	var fl = flags.Flags{
+		ForceUpdate: true,
+		HostAddr:    "",
+		ConnTimeout: -1,
+		CSAddr:      "",
+		CSPort:      "",
+		GCFolder:    "",
+		SCFolder:    simulatorFolder,
+	}
+
+	configs.Configs(&fl)
+
+	var rb = configs.SimPathModel{
+		SimulatorsConfigFolder: "/test/",
+	}
+
+	const e = "/test"
+
+	var ok, msg, code, a = configs.UpdateConfigsSimPath(&rb, translation.Translation{L: translation.PtPt})
+
+	assert.True(t, ok)
+
+	assert.Empty(t, msg)
+
+	assert.Equal(t, 200, code)
+
+	assert.Equal(t, e, a.SimulatorsConfigFolder)
+
+	ok, msg, code, a = configs.GetConfigsSimPath(translation.Translation{L: translation.PtPt})
+
+	assert.True(t, ok)
+
+	assert.Empty(t, msg)
+
+	assert.Equal(t, 200, code)
+
+	assert.Equal(t, e, a.SimulatorsConfigFolder)
 }
 
 func updateConfigsSimPathFailRead(t *testing.T) {
