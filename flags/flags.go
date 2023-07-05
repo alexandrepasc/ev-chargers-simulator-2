@@ -56,7 +56,7 @@ func SetFlags() Flags {
 
 	flag.StringVar(&ai, "ai", common.DefAPIAddr, "Address used to serve the api http server")
 
-	flag.StringVar(&ap, "ap", common.DefAPIPort, "")
+	flag.StringVar(&ap, "ap", common.DefAPIPort, "Port used to serve the api http server")
 
 	flag.BoolVar(&v, "v", false, "Return the current application version")
 
@@ -88,10 +88,18 @@ func SetFlags() Flags {
 	}
 
 	if isFlagPassed("gs") {
+		if string(gs[len(gs)-1]) == "/" {
+			gs = gs[0 : len(gs)-1]
+		}
+
 		f.GCFolder = gs
 	}
 
 	if isFlagPassed("ss") {
+		if string(ss[len(ss)-1]) == "/" {
+			ss = ss[0 : len(ss)-1]
+		}
+
 		f.SCFolder = ss
 	}
 
