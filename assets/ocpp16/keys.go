@@ -15,6 +15,10 @@ var config = map[string]core.ConfigurationKey{
 		Key:      "ConnectionTimeOut",
 		Readonly: false,
 	},
+	"HeartbeatInterval": {
+		Key:      "HeartbeatInterval",
+		Readonly: false,
+	},
 	"MeterValuesSampledData": {
 		Key:      "MeterValuesSampledData",
 		Readonly: false,

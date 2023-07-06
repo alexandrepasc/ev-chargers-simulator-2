@@ -31,6 +31,12 @@ func (o *Ocpp16) setStartUpConfigurations() {
 
 	o.Conf["ConnectionTimeOut"] = cto
 
+	var hb = o.Conf["HeartbeatInterval"]
+
+	hb.Value = assets.GetStringPointer(strconv.FormatInt(assets.DefHeartbeatInterval, 10))
+
+	o.Conf["HeartbeatInterval"] = hb
+
 	var mvi = "20"
 
 	var mvsi = o.Conf["MeterValueSampleInterval"]
@@ -65,7 +71,7 @@ func (o *Ocpp16) setStartUpConfigurations() {
 }
 
 /*
-Sends the boot notification to the central system.
+Sends the boot notification to the central system, using the model to get the information.
 */
 func (o *Ocpp16) sendBootNotification() {
 	var lm = map[string]string{
@@ -804,6 +810,35 @@ func (o *Ocpp16) authorize(id string) bool {
 	o.logger.log(lm, res.(*core.AuthorizeConfirmation), assets.Info)
 
 	return res.(*core.AuthorizeConfirmation).IdTagInfo.Status == types.AuthorizationStatusAccepted
+}
+
+/*
+Send the heartbeat request to the CS.
+*/
+func (o *Ocpp16) heartbeat() {
+	var lm = map[string]string{
+		"protocol":  string(o.Asset.Protocol),
+		"function":  "heartbeat",
+		"feature":   core.HeartbeatFeatureName,
+		"simulator": o.Asset.Name,
+		"sender":    assets.CP,
+		"type":      assets.Request,
+	}
+
+	var req = core.HeartbeatRequest{}
+
+	o.logger.log(lm, req, assets.Info)
+
+	res, err := o.s.SendRequest(req)
+
+	lm["sender"] = assets.CS
+	lm["type"] = assets.Response
+
+	if err != nil {
+		o.logger.log(lm, err, assets.Error)
+	}
+
+	o.logger.log(lm, res.(*core.HeartbeatConfirmation), assets.Info)
 }
 
 /*
