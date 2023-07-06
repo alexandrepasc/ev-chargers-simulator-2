@@ -3,6 +3,7 @@ package ocpp16
 import (
 	"github.com/alexandrepasc/ev-chargers-simulator-2/assets"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/firmware"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/localauth"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/remotetrigger"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
@@ -328,6 +329,7 @@ func (o *Ocpp16) OnSendLocalList(req *localauth.SendLocalListRequest) (res *loca
 	return res, nil
 }
 
+/**/
 func (o *Ocpp16) OnTriggerMessage(req *remotetrigger.TriggerMessageRequest) (res *remotetrigger.TriggerMessageConfirmation, err error) {
 	var lm = map[string]string{
 		"protocol":  string(o.Asset.Protocol),
@@ -340,7 +342,33 @@ func (o *Ocpp16) OnTriggerMessage(req *remotetrigger.TriggerMessageRequest) (res
 
 	o.logger.log(lm, req, assets.Info)
 
-	res = &remotetrigger.TriggerMessageConfirmation{Status: remotetrigger.TriggerMessageStatusNotImplemented}
+	switch req.RequestedMessage {
+	case core.BootNotificationFeatureName:
+		res = &remotetrigger.TriggerMessageConfirmation{Status: remotetrigger.TriggerMessageStatusNotImplemented}
+
+	case firmware.DiagnosticsStatusNotificationFeatureName:
+		res = &remotetrigger.TriggerMessageConfirmation{Status: remotetrigger.TriggerMessageStatusNotImplemented}
+
+	case firmware.FirmwareStatusNotificationFeatureName:
+		res = &remotetrigger.TriggerMessageConfirmation{Status: remotetrigger.TriggerMessageStatusNotImplemented}
+
+	case core.HeartbeatFeatureName:
+		res = &remotetrigger.TriggerMessageConfirmation{Status: remotetrigger.TriggerMessageStatusNotImplemented}
+
+	case core.MeterValuesFeatureName:
+		res = &remotetrigger.TriggerMessageConfirmation{Status: remotetrigger.TriggerMessageStatusNotImplemented}
+
+	case core.StatusNotificationFeatureName:
+		res = &remotetrigger.TriggerMessageConfirmation{Status: remotetrigger.TriggerMessageStatusNotImplemented}
+
+	default:
+		res = &remotetrigger.TriggerMessageConfirmation{Status: remotetrigger.TriggerMessageStatusRejected}
+	}
+
+	lm["sender"] = assets.CP
+	lm["type"] = assets.Response
+
+	o.logger.log(lm, res, assets.Info)
 
 	return res, nil
 }

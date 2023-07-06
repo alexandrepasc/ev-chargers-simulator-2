@@ -100,6 +100,7 @@ func setupServer(id string, t int64, h *Ocpp16) (s ocpp16.ChargePoint) {
 
 	s.SetCoreHandler(h)
 	s.SetLocalAuthListHandler(h)
+	s.SetRemoteTriggerHandler(h)
 
 	return s
 }
