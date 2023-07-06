@@ -329,7 +329,11 @@ func (o *Ocpp16) OnSendLocalList(req *localauth.SendLocalListRequest) (res *loca
 	return res, nil
 }
 
-/**/
+/*
+Receives the trigger message from the CS, filter the message and trigger the message the was
+requested. In case the request is not handled will respond rejected and if the request is handled
+but not supported the response is not implemented.
+*/
 func (o *Ocpp16) OnTriggerMessage(req *remotetrigger.TriggerMessageRequest) (res *remotetrigger.TriggerMessageConfirmation, err error) {
 	var lm = map[string]string{
 		"protocol":  string(o.Asset.Protocol),
@@ -344,7 +348,9 @@ func (o *Ocpp16) OnTriggerMessage(req *remotetrigger.TriggerMessageRequest) (res
 
 	switch req.RequestedMessage {
 	case core.BootNotificationFeatureName:
-		res = &remotetrigger.TriggerMessageConfirmation{Status: remotetrigger.TriggerMessageStatusNotImplemented}
+		go o.sendBootNotification()
+
+		res = &remotetrigger.TriggerMessageConfirmation{Status: remotetrigger.TriggerMessageStatusAccepted}
 
 	case firmware.DiagnosticsStatusNotificationFeatureName:
 		res = &remotetrigger.TriggerMessageConfirmation{Status: remotetrigger.TriggerMessageStatusNotImplemented}
@@ -353,7 +359,9 @@ func (o *Ocpp16) OnTriggerMessage(req *remotetrigger.TriggerMessageRequest) (res
 		res = &remotetrigger.TriggerMessageConfirmation{Status: remotetrigger.TriggerMessageStatusNotImplemented}
 
 	case core.HeartbeatFeatureName:
-		res = &remotetrigger.TriggerMessageConfirmation{Status: remotetrigger.TriggerMessageStatusNotImplemented}
+		go o.heartbeat()
+
+		res = &remotetrigger.TriggerMessageConfirmation{Status: remotetrigger.TriggerMessageStatusAccepted}
 
 	case core.MeterValuesFeatureName:
 		res = &remotetrigger.TriggerMessageConfirmation{Status: remotetrigger.TriggerMessageStatusNotImplemented}
