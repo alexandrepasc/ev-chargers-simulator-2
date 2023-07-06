@@ -88,6 +88,11 @@ func (o *Ocpp16) Start(c chan common.Channel, q chan bool) {
 			go o.meterValuesSampledData()
 		}
 
+		var hbi, _ = strconv.ParseInt(*o.Conf["HeartbeatInterval"].Value, 10, 64)
+		if o.t%hbi == 0 {
+			go o.heartbeat()
+		}
+
 		o.handleTick()
 
 		time.Sleep(1 * time.Second)
