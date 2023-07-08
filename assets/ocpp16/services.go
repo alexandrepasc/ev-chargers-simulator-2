@@ -31,6 +31,12 @@ func (o *Ocpp16) setStartUpConfigurations() {
 
 	o.Conf["ConnectionTimeOut"] = cto
 
+	var hb = o.Conf["HeartbeatInterval"]
+
+	hb.Value = assets.GetStringPointer(strconv.FormatInt(assets.DefHeartbeatInterval, 10))
+
+	o.Conf["HeartbeatInterval"] = hb
+
 	var mvi = "20"
 
 	var mvsi = o.Conf["MeterValueSampleInterval"]
@@ -65,11 +71,19 @@ func (o *Ocpp16) setStartUpConfigurations() {
 }
 
 /*
-Sends the boot notification to the central system.
+Sends the boot notification to the central system, using the model to get the information.
 */
-// TODO: change the logging to have all the properties as the rest
 func (o *Ocpp16) sendBootNotification() {
-	var bn = core.BootNotificationRequest{
+	var lm = map[string]string{
+		"protocol":  string(o.Asset.Protocol),
+		"function":  "sendBootNotification",
+		"feature":   core.BootNotificationFeatureName,
+		"simulator": o.Asset.Name,
+		"sender":    assets.CP,
+		"type":      assets.Request,
+	}
+
+	var req = core.BootNotificationRequest{
 		ChargePointSerialNumber: o.Mod.Ocpp.SerialNumb,
 		ChargePointModel:        o.Mod.Ocpp.Model,
 		ChargePointVendor:       o.Mod.Ocpp.Vendor,
@@ -79,17 +93,18 @@ func (o *Ocpp16) sendBootNotification() {
 		Imsi:                    o.Mod.Ocpp.Modem.Imsi,
 	}
 
-	o.logger.log(map[string]string{"protocol": "ocpp1.6", "function": "sendBootNotification", "model": o.Asset.Name}, bn, assets.Info)
+	o.logger.log(lm, req, assets.Info)
 
-	resp, err := o.s.SendRequest(bn)
+	var res, err = o.s.SendRequest(req)
+
+	lm["sender"] = assets.CS
+	lm["type"] = assets.Response
 
 	if err != nil {
-		o.logger.log(map[string]string{"protocol": "ocpp1.6", "function": "sendBootNotification", "model": o.Asset.Name}, err, assets.Error)
-
-		return
+		o.logger.log(lm, err, assets.Error)
 	}
 
-	o.logger.log(map[string]string{"protocol": "ocpp1.6", "function": "sendBootNotification", "model": o.Asset.Name}, resp, assets.Info)
+	o.logger.log(lm, res.(*core.BootNotificationConfirmation), assets.Info)
 
 	o.st = time.Now()
 }
@@ -795,6 +810,35 @@ func (o *Ocpp16) authorize(id string) bool {
 	o.logger.log(lm, res.(*core.AuthorizeConfirmation), assets.Info)
 
 	return res.(*core.AuthorizeConfirmation).IdTagInfo.Status == types.AuthorizationStatusAccepted
+}
+
+/*
+Send the heartbeat request to the CS.
+*/
+func (o *Ocpp16) heartbeat() {
+	var lm = map[string]string{
+		"protocol":  string(o.Asset.Protocol),
+		"function":  "heartbeat",
+		"feature":   core.HeartbeatFeatureName,
+		"simulator": o.Asset.Name,
+		"sender":    assets.CP,
+		"type":      assets.Request,
+	}
+
+	var req = core.HeartbeatRequest{}
+
+	o.logger.log(lm, req, assets.Info)
+
+	res, err := o.s.SendRequest(req)
+
+	lm["sender"] = assets.CS
+	lm["type"] = assets.Response
+
+	if err != nil {
+		o.logger.log(lm, err, assets.Error)
+	}
+
+	o.logger.log(lm, res.(*core.HeartbeatConfirmation), assets.Info)
 }
 
 /*
