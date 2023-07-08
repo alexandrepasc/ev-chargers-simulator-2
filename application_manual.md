@@ -6,6 +6,13 @@
 		- [First Run Default Configurations](#first-run-default-configurations)
 		- [First Run Define Configurations](#first-run-define-configurations)
 		- [First Run](#first-run)
+	- [Use the Application](#use-the-application)
+		- [Change Configurations](#change-configurations)
+			- [By Flags](#by-flags)
+			- [By Restful API](#by-restful-api)
+		- [Setup Simulators](#setup-simulators)
+			- [Add Models](#add-models)
+			- [Add Simulators](#add-simulators)
 	- [Appendix](#appendix)
 		- [Flags](#flags)
 
@@ -38,6 +45,15 @@ If only part of the *flags* are set in the 1st run the application will set the 
 ### First Run
 After the user start the first time the application it will have the same behaviour as the rest of the executions. It will start the *Restful API Server*, load the configurations, look for the the *models* and *simulators* configuration files and load them, and will wait for the user commands using the *API*.
 
+## Use the Application
+
+### Change Configurations
+#### By Flags
+#### By Restful API
+
+### Setup Simulators
+#### Add Models
+#### Add Simulators
 
 using the endpoint /configs the configurations will be saved but the changes will only be set in place after the application is restarted
 
@@ -46,8 +62,8 @@ to update any configuation using the API the full body needs to be sent in the r
 ## Appendix
 
 ### Flags
- -h
- -ai string
+```
+  -ai string
     	Address used to serve the api http server (default "localhost")
   -ap string
     	Port used to serve the api http server (default "8000")
@@ -67,3 +83,4 @@ to update any configuation using the API the full body needs to be sent in the r
   -t int
     	Connection timeout (seconds) (default 70)
   -v	Return the current application version
+```
