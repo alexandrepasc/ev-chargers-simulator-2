@@ -334,6 +334,7 @@ Receives the trigger message from the CS, filter the message and trigger the mes
 requested. In case the request is not handled will respond rejected and if the request is handled
 but not supported the response is not implemented.
 */
+// TODO: the trigger messages related with the firmware are not implemented
 func (o *Ocpp16) OnTriggerMessage(req *remotetrigger.TriggerMessageRequest) (res *remotetrigger.TriggerMessageConfirmation, err error) {
 	var lm = map[string]string{
 		"protocol":  string(o.Asset.Protocol),
@@ -364,10 +365,17 @@ func (o *Ocpp16) OnTriggerMessage(req *remotetrigger.TriggerMessageRequest) (res
 		res = &remotetrigger.TriggerMessageConfirmation{Status: remotetrigger.TriggerMessageStatusAccepted}
 
 	case core.MeterValuesFeatureName:
-		res = &remotetrigger.TriggerMessageConfirmation{Status: remotetrigger.TriggerMessageStatusNotImplemented}
+		go o.meterValuesSampledData()
+
+		res = &remotetrigger.TriggerMessageConfirmation{Status: remotetrigger.TriggerMessageStatusAccepted}
 
 	case core.StatusNotificationFeatureName:
-		res = &remotetrigger.TriggerMessageConfirmation{Status: remotetrigger.TriggerMessageStatusNotImplemented}
+		// the ocpp 1.6 only supports 1 evse so this is coded to only use the 0 index
+		for i := range o.Asset.Evses[0].Connectors {
+			go o.statusNotification(&o.Asset.Evses[0].Connectors[i])
+		}
+
+		res = &remotetrigger.TriggerMessageConfirmation{Status: remotetrigger.TriggerMessageStatusAccepted}
 
 	default:
 		res = &remotetrigger.TriggerMessageConfirmation{Status: remotetrigger.TriggerMessageStatusRejected}
