@@ -88,3 +88,7 @@ func IsChanClosed(ch <-chan bool) bool {
 
 	return false
 }
+
+func GetStringPointer(s string) *string {
+	return &s
+}

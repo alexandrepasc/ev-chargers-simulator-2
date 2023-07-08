@@ -3,6 +3,7 @@ package ocpp16
 import (
 	"github.com/alexandrepasc/ev-chargers-simulator-2/assets"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/firmware"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/localauth"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/remotetrigger"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
@@ -328,6 +329,12 @@ func (o *Ocpp16) OnSendLocalList(req *localauth.SendLocalListRequest) (res *loca
 	return res, nil
 }
 
+/*
+Receives the trigger message from the CS, filter the message and trigger the message the was
+requested. In case the request is not handled will respond rejected and if the request is handled
+but not supported the response is not implemented.
+*/
+// TODO: the trigger messages related with the firmware are not implemented
 func (o *Ocpp16) OnTriggerMessage(req *remotetrigger.TriggerMessageRequest) (res *remotetrigger.TriggerMessageConfirmation, err error) {
 	var lm = map[string]string{
 		"protocol":  string(o.Asset.Protocol),
@@ -340,7 +347,44 @@ func (o *Ocpp16) OnTriggerMessage(req *remotetrigger.TriggerMessageRequest) (res
 
 	o.logger.log(lm, req, assets.Info)
 
-	res = &remotetrigger.TriggerMessageConfirmation{Status: remotetrigger.TriggerMessageStatusNotImplemented}
+	switch req.RequestedMessage {
+	case core.BootNotificationFeatureName:
+		go o.sendBootNotification()
+
+		res = &remotetrigger.TriggerMessageConfirmation{Status: remotetrigger.TriggerMessageStatusAccepted}
+
+	case firmware.DiagnosticsStatusNotificationFeatureName:
+		res = &remotetrigger.TriggerMessageConfirmation{Status: remotetrigger.TriggerMessageStatusNotImplemented}
+
+	case firmware.FirmwareStatusNotificationFeatureName:
+		res = &remotetrigger.TriggerMessageConfirmation{Status: remotetrigger.TriggerMessageStatusNotImplemented}
+
+	case core.HeartbeatFeatureName:
+		go o.heartbeat()
+
+		res = &remotetrigger.TriggerMessageConfirmation{Status: remotetrigger.TriggerMessageStatusAccepted}
+
+	case core.MeterValuesFeatureName:
+		go o.meterValuesSampledData()
+
+		res = &remotetrigger.TriggerMessageConfirmation{Status: remotetrigger.TriggerMessageStatusAccepted}
+
+	case core.StatusNotificationFeatureName:
+		// the ocpp 1.6 only supports 1 evse so this is coded to only use the 0 index
+		for i := range o.Asset.Evses[0].Connectors {
+			go o.statusNotification(&o.Asset.Evses[0].Connectors[i])
+		}
+
+		res = &remotetrigger.TriggerMessageConfirmation{Status: remotetrigger.TriggerMessageStatusAccepted}
+
+	default:
+		res = &remotetrigger.TriggerMessageConfirmation{Status: remotetrigger.TriggerMessageStatusRejected}
+	}
+
+	lm["sender"] = assets.CP
+	lm["type"] = assets.Response
+
+	o.logger.log(lm, res, assets.Info)
 
 	return res, nil
 }

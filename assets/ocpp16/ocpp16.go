@@ -88,6 +88,11 @@ func (o *Ocpp16) Start(c chan common.Channel, q chan bool) {
 			go o.meterValuesSampledData()
 		}
 
+		var hbi, _ = strconv.ParseInt(*o.Conf["HeartbeatInterval"].Value, 10, 64)
+		if o.t%hbi == 0 {
+			go o.heartbeat()
+		}
+
 		o.handleTick()
 
 		time.Sleep(1 * time.Second)
@@ -100,6 +105,7 @@ func setupServer(id string, t int64, h *Ocpp16) (s ocpp16.ChargePoint) {
 
 	s.SetCoreHandler(h)
 	s.SetLocalAuthListHandler(h)
+	s.SetRemoteTriggerHandler(h)
 
 	return s
 }
