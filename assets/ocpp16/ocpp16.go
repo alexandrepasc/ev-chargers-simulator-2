@@ -10,6 +10,7 @@ import (
 	"github.com/alexandrepasc/ev-chargers-simulator-2/simulator"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/simulator/model"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/translation"
+	"github.com/google/uuid"
 	ocpp16 "github.com/lorenzodonini/ocpp-go/ocpp1.6"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/localauth"
@@ -93,6 +94,8 @@ func (o *Ocpp16) Start(c chan common.Channel, q chan bool) {
 			go o.heartbeat()
 		}
 
+		channelComm(c, o.Asset.Evses, o.st, o.Asset.Name, o.Asset.SimID)
+
 		o.handleTick()
 
 		time.Sleep(1 * time.Second)
@@ -124,4 +127,29 @@ func getWsClient(t int64) (wsc *ws.Client) {
 	wsc.SetTimeoutConfig(cfg)
 
 	return wsc
+}
+
+/*
+Sends the selected simulator metrics to the channel, to do this the calculations are done on the
+fly.
+
+c	-	Communication channel (chan common.Channel)
+
+e	-	Simulator evses list ([]simulator.Evse)
+
+st	-	The start simulator timestamp (time.Time)
+
+n	-	The simulator name (string)
+
+i	-	Simulator identifier (uuid.UUID)
+*/
+func channelComm(c chan common.Channel, e []simulator.Evse, st time.Time, n string, i uuid.UUID) {
+	var tp = assets.CalculateCPPower(e)
+
+	c <- common.Channel{
+		Name:   n,
+		UUID:   i,
+		Power:  tp,
+		Energy: assets.CalculateCPEnergy(tp, st),
+	}
 }
