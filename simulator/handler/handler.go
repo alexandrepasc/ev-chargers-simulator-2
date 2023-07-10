@@ -3,6 +3,7 @@ package handler
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/alexandrepasc/ev-chargers-simulator-2/assets/ocpp16"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/common"
@@ -12,8 +13,6 @@ import (
 	"github.com/google/uuid"
 )
 
-const buf = 10
-
 type Handler struct {
 	L       translation.Translation // Translation language settings
 	Al      []*simulator.Asset      // Assets list
@@ -21,7 +20,8 @@ type Handler struct {
 	Addr    string                  // Central system ip address
 	Port    string                  // Central system port
 	Tout    int64                   // Timeout configuration
-	Channel chan common.Channel     // Channel that will enable the communication between the sims
+	Channel []chan common.Channel   // Channel that will enable the communication between the sims
+	Info    []info                  // Running assets information
 	Quit    []chan bool             // Channel that is used to stop the routines
 }
 
@@ -32,10 +32,12 @@ Build the channels, the simulators routines, and start the routines.
 It returns an array of boolean channels ([]chan bool), one for each simulator running.
 */
 func (h *Handler) Start() []chan bool {
-	h.Channel = make(chan common.Channel, len(h.Al)+buf)
+	h.Channel = make([]chan common.Channel, len(h.Al))
+	h.Info = make([]info, len(h.Al))
 	h.Quit = make([]chan bool, len(h.Al))
 
 	for i, a := range h.Al {
+		h.Channel[i] = make(chan common.Channel, cBuf)
 		h.Quit[i] = make(chan bool, 1)
 
 		var m = getModel(a.Model, a.Protocol, h.Ml)
@@ -57,14 +59,14 @@ func (h *Handler) Start() []chan bool {
 				}
 			}
 
-			go s.Start(h.Channel, h.Quit[i])
+			go s.Start(h.Channel[i], h.Quit[i])
 		case simulator.Ocpp201:
 
 		case simulator.Modbus:
 		}
 	}
 
-	go receiverName(h.Channel)
+	go h.receiver(h.Channel, h.Quit)
 
 	return h.Quit
 }
@@ -78,31 +80,67 @@ func (h *Handler) Stop() {
 	}
 }
 
-/*
-Mock a simulator routine to test the channel communication.
-*/
-// func runSimulator(s sim, c chan common.Channel, q chan bool) {
-// 	for i := 0; i < 20; i++ {
-// 		time.Sleep(1 * time.Second)
+func (h *Handler) GetStatus() Status {
+	var resp Status
 
-// 		select {
-// 		case <-q:
-// 			return
-// 		default:
-// 			c <- common.Channel{
-// 				Name: s.asset.Name,
-// 				Uuid: s.asset.SimID,
-// 			}
-// 		}
-// 	}
-// }
+	var a = make([]Assets, len(h.Al))
+
+	resp.Total = int64(len(h.Al))
+
+	for i := range h.Al {
+		var aux = Assets{
+			ID:     h.Info[i].UUID,
+			Name:   h.Info[i].Name,
+			State:  string(h.Info[i].Status),
+			Power:  h.Info[i].Power,
+			Energy: h.Info[i].Energy,
+		}
+
+		a[i] = aux
+	}
+
+	resp.Assets = a
+
+	return resp
+}
 
 /*
 Mock a receiver to test the channel communication.
 */
-func receiverName(c chan common.Channel) {
-	for msg := range c {
-		fmt.Println(msg)
+func (h *Handler) receiver(cl []chan common.Channel, ql []chan bool) {
+	var keepOn = true
+
+	for keepOn {
+		for i := range cl {
+			select {
+			case <-ql[i]:
+				keepOn = false
+			case <-cl[i]:
+				msg := <-cl[i]
+				h.Info[i] = info{
+					UUID:   msg.UUID,
+					Name:   msg.Name,
+					Status: active,
+					Power:  msg.Power,
+					Energy: msg.Energy,
+				}
+
+				fmt.Println(msg)
+			default:
+				continue
+			}
+		}
+
+		time.Sleep(1 * time.Second)
+	}
+
+	for i := range cl {
+		close(ql[i])
+		close(cl[i])
+
+		h.Info[i].Status = inactive
+		h.Info[i].Power = 0
+		h.Info[i].Energy = 0
 	}
 }
 
