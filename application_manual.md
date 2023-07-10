@@ -11,8 +11,9 @@
 			- [By Flags](#by-flags)
 			- [By Restful API](#by-restful-api)
 		- [Setup Simulators](#setup-simulators)
-			- [Add Models](#add-models)
-			- [Add Simulators](#add-simulators)
+			- [Manage Models](#manage-models)
+			- [Manage Simulator](#manage-simulator)
+			- [Run The Simulators](#run-the-simulators)
 	- [Appendix](#appendix)
 		- [Flags](#flags)
 
@@ -50,10 +51,20 @@ After the user start the first time the application it will have the same behavi
 ### Change Configurations
 #### By Flags
 #### By Restful API
+/configs/general
+/configs/simulators
 
 ### Setup Simulators
-#### Add Models
-#### Add Simulators
+#### Manage Models
+/simulators/models
+/simulators/models/:id
+#### Manage Simulator
+/simulators
+/simulators/:id
+#### Run The Simulators
+/run
+/stop
+/simulators/status
 
 using the endpoint /configs the configurations will be saved but the changes will only be set in place after the application is restarted
 
