@@ -38,8 +38,9 @@ func (s *Simulators) Simulators(r *gin.Engine) {
 	r.PUT(simModelsIDEp, s.putModels)
 	r.DELETE(simModelsIDEp, s.deleteModels)
 
-	r.POST(simulatorsEp+"/run", s.postRun)
-	r.POST(simulatorsEp+"/stop", s.postStop)
+	r.POST(runEp, s.postRun)
+	r.POST(stopEp, s.postStop)
+	r.GET(simStatusEp, s.getStatus)
 }
 
 /*
@@ -400,4 +401,10 @@ func (s *Simulators) postStop(c *gin.Context) {
 	s.H.Stop()
 
 	c.IndentedJSON(http.StatusNoContent, http.NoBody)
+}
+
+func (s *Simulators) getStatus(c *gin.Context) {
+	var resp = s.H.GetStatus()
+
+	c.IndentedJSON(http.StatusOK, resp)
 }
