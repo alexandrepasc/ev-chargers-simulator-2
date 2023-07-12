@@ -47,9 +47,27 @@ If only part of the *flags* are set in the 1st run the application will set the 
 After the user start the first time the application it will have the same behaviour as the rest of the executions. It will start the *Restful API Server*, load the configurations, look for the the *models* and *simulators* configuration files and load them, and will wait for the user commands using the *API*.
 
 ## Use the Application
+There are a couple of informations that we need to know to be able to be able to use this application to it's full potential, as how to change the configurations, create/edit/remove models and simulators, what is a model, etc... In this section we will dive into explaining how to use it, and the interfaces that are available to the user.
 
 ### Change Configurations
+There are multiple configurations some of them are not changeable but others are, and the user has two ways to change them.
+
 #### By Flags
+As described in the [Installation](#installation) there are some *command line* arguments that can be used to define the configurations in the first execution, the full list of arguments can be found in the [Appendix Flags](#flags) section.
+
+After the *installation* process we can still use the *flags* to change the configurations, but to do it we need to use an extra one `-i`. This is the argument that triggers the application to save the new information.
+
+With this we can run the application and at the same time change the configurations and save them for the next execution. The next examples are the same the were written previously but with the `-i` *flag*, so the configurations are changed and saved.
+
+Change the **General configurations folder**:
+- `./ev-chargers-simulator-linux-amd64 -i -gs /full/path/to/the/location`
+
+Change the **Rest API http server port**:
+- `./ev-chargers-simulator-linux-amd64 -i -ap 3333`
+
+Change the **General and Simulators folder**:
+- `./ev-chargers-simulator-linux-amd64 -i -gs /full/path/to/the/location -ss /full/path`
+
 #### By Restful API
 /configs/general
 /configs/simulators
