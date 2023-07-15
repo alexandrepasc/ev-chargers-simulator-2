@@ -18,10 +18,10 @@ var config = map[string]core.ConfigurationKey{
 	// 	Readonly: false,
 	// },
 	// required and can be readonly boolean
-	// "AuthorizeRemoteTxRequests": {
-	// 	Key:      "AuthorizeRemoteTxRequests",
-	// 	Readonly: false,
-	// },
+	"AuthorizeRemoteTxRequests": {
+		Key:      "AuthorizeRemoteTxRequests",
+		Readonly: false,
+	},
 	// optional integer
 	// "BlinkRepeat": {
 	// 	Key:      "BlinkRepeat",

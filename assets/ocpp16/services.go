@@ -23,6 +23,12 @@ func (o *Ocpp16) setStartUpConfigurations() {
 
 	o.logger.log(map[string]string{"protocol": "ocpp1.6", "function": "setConfigurations", "simulator": o.Asset.Name}, "Set startup configurations", assets.Info)
 
+	var artr = o.Conf["AuthorizeRemoteTxRequests"]
+
+	artr.Value = assets.GetStringPointer(strconv.FormatBool(o.Asset.AuthorizeRemote))
+
+	o.Conf["AuthorizeRemoteTxRequests"] = artr
+
 	var t = strconv.FormatInt(o.Timeout, 10)
 
 	var cto = o.Conf["ConnectionTimeOut"]
@@ -128,7 +134,19 @@ func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionReq
 		"type":      assets.Request,
 	}
 
-	if !o.Asset.AuthorizeRemote {
+	var auth, err = strconv.ParseBool(*o.Conf["AuthorizeRemoteTxRequests"].Value)
+
+	if err != nil {
+		var lm2 = map[string]string{
+			"protocol":  string(o.Asset.Protocol),
+			"function":  "processRemoteStartTransaction",
+			"simulator": o.Asset.Name,
+		}
+
+		o.logger.log(lm2, err, assets.Fatal)
+	}
+
+	if !auth {
 		// TODO: the store of the charging profile should not be set at this point, since the validations if the session can be started are not done yet
 		o.chargeProfile = r.ChargingProfile
 
