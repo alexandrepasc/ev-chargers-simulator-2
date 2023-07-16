@@ -29,6 +29,12 @@ func (o *Ocpp16) setStartUpConfigurations() {
 
 	o.Conf["AuthorizeRemoteTxRequests"] = artr
 
+	var cadi = o.Conf["ClockAlignedDataInterval"]
+
+	cadi.Value = assets.GetStringPointer(strconv.FormatInt(assets.DefClockAlignedDataInterval, 10))
+
+	o.Conf["ClockAlignedDataInterval"] = cadi
+
 	var t = strconv.FormatInt(o.Timeout, 10)
 
 	var cto = o.Conf["ConnectionTimeOut"]
@@ -653,6 +659,31 @@ func (o *Ocpp16) meterValuesSampledData() {
 		}
 
 		o.logger.log(lm, resp, assets.Info)
+	}
+}
+
+/*
+Process the interval and in case it's time to send the data it will send it.
+*/
+func (o *Ocpp16) processClockAlignedData() {
+	var i = time.Now().UTC().Sub(time.Date(time.Now().UTC().Year(), time.Now().UTC().Month(), time.Now().UTC().Day(), 0, 0, 0, 0, time.UTC)).Seconds()
+
+	var c, err = strconv.ParseFloat(*o.Conf["ClockAlignedDataInterval"].Value, 32)
+
+	if err != nil {
+		var lm2 = map[string]string{
+			"protocol":  string(o.Asset.Protocol),
+			"function":  "processClockAlignedData",
+			"simulator": o.Asset.Name,
+		}
+
+		o.logger.log(lm2, err, assets.Fatal)
+
+		return
+	}
+
+	if int64(i)%int64(c) != 0 {
+		return
 	}
 }
 

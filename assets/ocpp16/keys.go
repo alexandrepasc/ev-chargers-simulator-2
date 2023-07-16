@@ -17,7 +17,7 @@ var config = map[string]core.ConfigurationKey{
 	// 	Key:      "AuthorizationCacheEnabled",
 	// 	Readonly: false,
 	// },
-	// required and can be readonly boolean
+	// TODO: required and can be readonly boolean, evaluate if we should create a config to set if is read or read and write
 	"AuthorizeRemoteTxRequests": {
 		Key:      "AuthorizeRemoteTxRequests",
 		Readonly: false,
@@ -28,10 +28,10 @@ var config = map[string]core.ConfigurationKey{
 	// 	Readonly: false,
 	// },
 	// required integer
-	// "ClockAlignedDataInterval": {
-	// 	Key:      "ClockAlignedDataInterval",
-	// 	Readonly: false,
-	// },
+	"ClockAlignedDataInterval": {
+		Key:      "ClockAlignedDataInterval",
+		Readonly: false,
+	},
 	// required integer this will be hard or impossible to implement since the time out is set on the start of the ocpp server
 	"ConnectionTimeOut": {
 		Key:      "ConnectionTimeOut",

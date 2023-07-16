@@ -28,7 +28,8 @@ const (
 	Inoperative Availability = "Inoperative"
 	Operative   Availability = "Operative"
 
-	DefHeartbeatInterval int64 = 30
+	DefClockAlignedDataInterval int64 = 900
+	DefHeartbeatInterval        int64 = 30
 )
 
 var (
