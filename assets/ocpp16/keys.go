@@ -73,10 +73,11 @@ var config = map[string]core.ConfigurationKey{
 	// 	Readonly: false,
 	// },
 	// CSl
-	// "MeterValuesAlignedData": {
-	// 	Key:      "MeterValuesAlignedData",
-	// 	Readonly: false,
-	// },
+	"MeterValuesAlignedData": {
+		Key:      "MeterValuesAlignedData",
+		Readonly: false,
+		Value:    &assets.EnergyActiveImportRegister,
+	},
 	"MeterValuesSampledData": {
 		Key:      "MeterValuesSampledData",
 		Readonly: false,

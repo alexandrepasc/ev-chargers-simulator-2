@@ -682,9 +682,94 @@ func (o *Ocpp16) processClockAlignedData() {
 		return
 	}
 
+	if c == 0 {
+		return
+	}
+
 	if int64(i)%int64(c) != 0 {
 		return
 	}
+
+	go o.meterValuesAlignedData()
+}
+
+/*
+Send meter values aligned data to the CS with the information set in the simulator conf variable.
+Will return the total data of the charge point.
+*/
+// TODO: some more information needs to be gathered about this feature
+func (o *Ocpp16) meterValuesAlignedData() {
+	var confL = strings.Split(*o.Conf["MeterValuesAlignedData"].Value, ",")
+
+	var spl = []types.SampledValue{}
+
+	var tp = assets.CalculateCPPower(o.Asset.Evses)
+
+	for _, conf := range confL {
+		var sp types.SampledValue
+
+		switch conf {
+		case assets.EnergyActiveImportRegister:
+			sp = types.SampledValue{
+				Value:     strconv.FormatFloat(assets.CalculateCPEnergy(tp, o.st), 'f', 4, 64),
+				Unit:      types.UnitOfMeasureWh,
+				Format:    types.ValueFormatRaw,
+				Measurand: types.Measurand(assets.EnergyActiveImportRegister),
+			}
+
+		case assets.EnergyReactiveImportRegister:
+			sp = types.SampledValue{
+				Value:     "0",
+				Unit:      types.UnitOfMeasureVarh,
+				Format:    types.ValueFormatRaw,
+				Measurand: types.Measurand(assets.EnergyReactiveImportRegister),
+			}
+
+		case assets.PowerActiveImport:
+			sp = types.SampledValue{
+				Value:     strconv.FormatFloat(tp, 'f', 4, 64),
+				Unit:      types.UnitOfMeasureW,
+				Format:    types.ValueFormatRaw,
+				Measurand: types.Measurand(assets.PowerActiveImport),
+			}
+		}
+
+		spl = append(spl, sp)
+	}
+
+	var mvl = []types.MeterValue{
+		{
+			Timestamp:    types.NewDateTime(time.Now()),
+			SampledValue: spl,
+		},
+	}
+
+	var req = core.MeterValuesRequest{
+		MeterValue: mvl,
+	}
+
+	var lm = map[string]string{
+		"protocol":  string(o.Asset.Protocol),
+		"function":  "meterValuesAlignedData",
+		"feature":   req.GetFeatureName(),
+		"simulator": o.Asset.Name,
+		"sender":    assets.CP,
+		"type":      assets.Request,
+	}
+
+	o.logger.log(lm, req, assets.Info)
+
+	// TODO: change the send request to async
+	resp, err := o.s.SendRequest(req)
+
+	lm["sender"] = assets.CS
+	lm["type"] = assets.Response
+
+	if err != nil {
+		o.logger.log(lm, err, assets.Error)
+	}
+
+	o.logger.log(lm, resp, assets.Info)
 }
 
 /*

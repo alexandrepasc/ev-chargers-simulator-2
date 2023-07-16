@@ -88,6 +88,8 @@ func (o *Ocpp16) Start(c chan common.Channel, q chan bool) {
 
 		channelComm(c, o.Asset.Evses, o.st, o.Asset.Name, o.Asset.SimID)
 
+		o.processClockAlignedData()
+
 		o.handleTick()
 
 		time.Sleep(1 * time.Second)
