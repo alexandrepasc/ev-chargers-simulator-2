@@ -18,6 +18,7 @@ import (
 /*
 Set the starting configurations for the asset.
 */
+// TODO: need to review the way the conf default values are being set
 func (o *Ocpp16) setStartUpConfigurations() {
 	o.Conf = config
 
@@ -34,6 +35,12 @@ func (o *Ocpp16) setStartUpConfigurations() {
 	cadi.Value = assets.GetStringPointer(strconv.FormatInt(assets.DefClockAlignedDataInterval, 10))
 
 	o.Conf["ClockAlignedDataInterval"] = cadi
+
+	var noc = o.Conf["NumberOfConnectors"]
+
+	noc.Value = assets.GetStringPointer(strconv.Itoa(len(o.Asset.Evses[0].Connectors)))
+
+	o.Conf["NumberOfConnectors"] = noc
 
 	var t = strconv.FormatInt(o.Timeout, 10)
 

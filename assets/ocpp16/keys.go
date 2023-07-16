@@ -88,10 +88,10 @@ var config = map[string]core.ConfigurationKey{
 		Readonly: false,
 	},
 	// integer
-	// "NumberOfConnectors": {
-	// 	Key:      "NumberOfConnectors",
-	// 	Readonly: true,
-	// },
+	"NumberOfConnectors": {
+		Key:      "NumberOfConnectors",
+		Readonly: true,
+	},
 	// integer
 	// "ResetRetries": {
 	// 	Key:      "ResetRetries",
