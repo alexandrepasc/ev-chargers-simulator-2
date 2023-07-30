@@ -28,8 +28,10 @@ const (
 	Inoperative Availability = "Inoperative"
 	Operative   Availability = "Operative"
 
-	DefClockAlignedDataInterval int64 = 900
-	DefHeartbeatInterval        int64 = 30
+	DefClockAlignedDataInterval          int64 = 900
+	DefHeartbeatInterval                 int64 = 30
+	DefResetRetries                      int64 = 0
+	DefStopTransactionOnEvSideDisconnect bool  = false
 )
 
 var (

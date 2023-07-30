@@ -42,6 +42,18 @@ func (o *Ocpp16) setStartUpConfigurations() {
 
 	o.Conf["NumberOfConnectors"] = noc
 
+	var rr = o.Conf["ResetRetries"]
+
+	rr.Value = assets.GetStringPointer(strconv.FormatInt(assets.DefResetRetries, 10))
+
+	o.Conf["ResetRetries"] = rr
+
+	var stoesd = o.Conf["StopTransactionOnEVSideDisconnect"]
+
+	stoesd.Value = assets.GetStringPointer(strconv.FormatBool(assets.DefStopTransactionOnEvSideDisconnect))
+
+	o.Conf["StopTransactionOnEVSideDisconnect"] = stoesd
+
 	var t = strconv.FormatInt(o.Timeout, 10)
 
 	var cto = o.Conf["ConnectionTimeOut"]

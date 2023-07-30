@@ -87,21 +87,20 @@ var config = map[string]core.ConfigurationKey{
 		Key:      "MeterValueSampleInterval",
 		Readonly: false,
 	},
-	// integer
 	"NumberOfConnectors": {
 		Key:      "NumberOfConnectors",
 		Readonly: true,
 	},
-	// integer
-	// "ResetRetries": {
-	// 	Key:      "ResetRetries",
-	// 	Readonly: false,
-	// },
-	// boolean
-	// "StopTransactionOnEVSideDisconnect": {
-	// 	Key:      "StopTransactionOnEVSideDisconnect",
-	// 	Readonly: false,
-	// },
+	// TODO: this value is static hand does not have any logic
+	"ResetRetries": {
+		Key:      "ResetRetries",
+		Readonly: false,
+	},
+	// TODO: this value is static hand does not have any logic
+	"StopTransactionOnEVSideDisconnect": {
+		Key:      "StopTransactionOnEVSideDisconnect",
+		Readonly: false,
+	},
 	// boolean
 	// "StopTransactionOnInvalidId": {
 	// 	Key:      "StopTransactionOnInvalidId",
