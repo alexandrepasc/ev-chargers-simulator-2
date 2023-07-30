@@ -574,9 +574,11 @@ func (o *Ocpp16) meterValuesSampledData() {
 
 		for i := 0; i < int(o.Asset.Phases); i++ {
 			for _, conf := range confL {
+				var confT = strings.TrimSpace(conf)
+
 				var sp types.SampledValue
 
-				switch conf {
+				switch confT {
 				case assets.EnergyActiveImportRegister:
 					sp = types.SampledValue{
 						Value:     strconv.FormatFloat(c.Energy, 'f', 4, 64),
@@ -618,6 +620,7 @@ func (o *Ocpp16) meterValuesSampledData() {
 						Measurand: types.Measurand(assets.CurrentImport),
 						Phase:     types.Phase(assets.Phases[i]),
 					}
+
 				case assets.PowerActiveImport:
 					sp = types.SampledValue{
 						Value:     strconv.FormatFloat(float64(c.Data[c.DP.Position].Power), 'f', 4, 64),
@@ -713,9 +716,11 @@ func (o *Ocpp16) meterValuesAlignedData() {
 	var tp = assets.CalculateCPPower(o.Asset.Evses)
 
 	for _, conf := range confL {
+		var confT = strings.TrimSpace(conf)
+
 		var sp types.SampledValue
 
-		switch conf {
+		switch confT {
 		case assets.EnergyActiveImportRegister:
 			sp = types.SampledValue{
 				Value:     strconv.FormatFloat(assets.CalculateCPEnergy(tp, o.st), 'f', 4, 64),
