@@ -101,11 +101,10 @@ var config = map[string]core.ConfigurationKey{
 		Key:      "StopTransactionOnEVSideDisconnect",
 		Readonly: false,
 	},
-	// boolean
-	// "StopTransactionOnInvalidId": {
-	// 	Key:      "StopTransactionOnInvalidId",
-	// 	Readonly: false,
-	// },
+	"StopTransactionOnInvalidId": {
+		Key:      "StopTransactionOnInvalidId",
+		Readonly: false,
+	},
 	// CSL
 	// "StopTxnAlignedData": {
 	// 	Key:      "StopTxnAlignedData",

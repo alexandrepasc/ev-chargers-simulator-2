@@ -54,6 +54,12 @@ func (o *Ocpp16) setStartUpConfigurations() {
 
 	o.Conf["StopTransactionOnEVSideDisconnect"] = stoesd
 
+	var stoii = o.Conf["StopTransactionOnInvalidId"]
+
+	stoii.Value = assets.GetStringPointer(strconv.FormatBool(assets.DefStopTransactionOnInvalidID))
+
+	o.Conf["StopTransactionOnInvalidId"] = stoii
+
 	var t = strconv.FormatInt(o.Timeout, 10)
 
 	var cto = o.Conf["ConnectionTimeOut"]
@@ -311,6 +317,18 @@ func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionReq
 	o.Asset.Evses[0].CIDTag = r.IdTag
 
 	var resp = o.startTransaction(o.Asset.Evses[0].CIDTag, c)
+
+	var stoii, errB = strconv.ParseBool(*o.Conf["StopTransactionOnInvalidId"].Value)
+
+	if errB != nil {
+		o.logger.log(lm, errB, assets.Error)
+		return
+	}
+
+	if !stoii {
+		return
+	}
+
 	if resp.IdTagInfo.Status != types.AuthorizationStatusAccepted {
 		o.Asset.Evses[0].Connectors[i].DP.Position = 0
 		o.Asset.Evses[0].Connectors[i].Enabled = false
@@ -535,18 +553,36 @@ func (o *Ocpp16) updateData() {
 						if c.Data[o.Asset.Evses[x].Connectors[y].DP.Position].ChargingState == int64(assets.Charging) {
 							// TODO: need to review the id tag
 							var resp = o.startTransaction("QWEASDZXC", &o.Asset.Evses[x].Connectors[y])
-							if resp.IdTagInfo.Status != types.AuthorizationStatusAccepted {
-								// TODO: At the moment it will only log as error this, but this should be reviewed
-								var lm = map[string]string{
-									"protocol":  string(o.Asset.Protocol),
-									"function":  "updateData",
-									"feature":   resp.GetFeatureName(),
-									"simulator": o.Asset.Name,
-									"sender":    assets.CS,
-									"type":      assets.Response,
-								}
 
-								o.logger.log(lm, resp, assets.Error)
+							var lm = map[string]string{
+								"protocol":  string(o.Asset.Protocol),
+								"function":  "updateData",
+								"feature":   resp.GetFeatureName(),
+								"simulator": o.Asset.Name,
+								"sender":    assets.CS,
+								"type":      assets.Response,
+							}
+
+							var stoii, errB = strconv.ParseBool(*o.Conf["StopTransactionOnInvalidId"].Value)
+
+							if errB != nil {
+								o.logger.log(lm, errB, assets.Error)
+								return
+							}
+
+							if stoii {
+								if resp.IdTagInfo.Status != types.AuthorizationStatusAccepted {
+									o.logger.log(lm, resp, assets.Info)
+
+									for i := c.DP.Position; i < int64(len(c.Data)); i++ {
+										if c.Data[i].ChargingState == int64(assets.Finishing) {
+											o.Asset.Evses[x].Connectors[y].DP.Position = i
+											o.Asset.Evses[x].Connectors[y].DP.Ticker = 0
+
+											break
+										}
+									}
+								}
 							}
 						}
 					}

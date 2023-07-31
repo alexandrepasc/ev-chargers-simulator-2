@@ -32,6 +32,7 @@ const (
 	DefHeartbeatInterval                 int64 = 30
 	DefResetRetries                      int64 = 0
 	DefStopTransactionOnEvSideDisconnect bool  = false
+	DefStopTransactionOnInvalidID        bool  = true
 )
 
 var (
