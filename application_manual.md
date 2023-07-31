@@ -77,6 +77,7 @@ Change the **General and Simulators folder**:
 /simulators/models
 /simulators/models/:id
 #### Manage Simulator
+NOTE: the simulator data needs to have the Available state in the 1st item and Finishing in the last item
 /simulators
 /simulators/:id
 #### Run The Simulators
