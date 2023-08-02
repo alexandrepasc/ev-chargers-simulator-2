@@ -18,10 +18,47 @@ import (
 /*
 Set the starting configurations for the asset.
 */
+// TODO: need to review the way the conf default values are being set
 func (o *Ocpp16) setStartUpConfigurations() {
 	o.Conf = config
 
 	o.logger.log(map[string]string{"protocol": "ocpp1.6", "function": "setConfigurations", "simulator": o.Asset.Name}, "Set startup configurations", assets.Info)
+
+	var artr = o.Conf["AuthorizeRemoteTxRequests"]
+
+	artr.Value = assets.GetStringPointer(strconv.FormatBool(o.Asset.AuthorizeRemote))
+
+	o.Conf["AuthorizeRemoteTxRequests"] = artr
+
+	var cadi = o.Conf["ClockAlignedDataInterval"]
+
+	cadi.Value = assets.GetStringPointer(strconv.FormatInt(assets.DefClockAlignedDataInterval, 10))
+
+	o.Conf["ClockAlignedDataInterval"] = cadi
+
+	var noc = o.Conf["NumberOfConnectors"]
+
+	noc.Value = assets.GetStringPointer(strconv.Itoa(len(o.Asset.Evses[0].Connectors)))
+
+	o.Conf["NumberOfConnectors"] = noc
+
+	var rr = o.Conf["ResetRetries"]
+
+	rr.Value = assets.GetStringPointer(strconv.FormatInt(assets.DefResetRetries, 10))
+
+	o.Conf["ResetRetries"] = rr
+
+	var stoesd = o.Conf["StopTransactionOnEVSideDisconnect"]
+
+	stoesd.Value = assets.GetStringPointer(strconv.FormatBool(assets.DefStopTransactionOnEvSideDisconnect))
+
+	o.Conf["StopTransactionOnEVSideDisconnect"] = stoesd
+
+	var stoii = o.Conf["StopTransactionOnInvalidId"]
+
+	stoii.Value = assets.GetStringPointer(strconv.FormatBool(assets.DefStopTransactionOnInvalidID))
+
+	o.Conf["StopTransactionOnInvalidId"] = stoii
 
 	var t = strconv.FormatInt(o.Timeout, 10)
 
@@ -128,7 +165,19 @@ func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionReq
 		"type":      assets.Request,
 	}
 
-	if !o.Asset.AuthorizeRemote {
+	var auth, err = strconv.ParseBool(*o.Conf["AuthorizeRemoteTxRequests"].Value)
+
+	if err != nil {
+		var lm2 = map[string]string{
+			"protocol":  string(o.Asset.Protocol),
+			"function":  "processRemoteStartTransaction",
+			"simulator": o.Asset.Name,
+		}
+
+		o.logger.log(lm2, err, assets.Fatal)
+	}
+
+	if !auth {
 		// TODO: the store of the charging profile should not be set at this point, since the validations if the session can be started are not done yet
 		o.chargeProfile = r.ChargingProfile
 
@@ -268,6 +317,18 @@ func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionReq
 	o.Asset.Evses[0].CIDTag = r.IdTag
 
 	var resp = o.startTransaction(o.Asset.Evses[0].CIDTag, c)
+
+	var stoii, errB = strconv.ParseBool(*o.Conf["StopTransactionOnInvalidId"].Value)
+
+	if errB != nil {
+		o.logger.log(lm, errB, assets.Error)
+		return
+	}
+
+	if !stoii {
+		return
+	}
+
 	if resp.IdTagInfo.Status != types.AuthorizationStatusAccepted {
 		o.Asset.Evses[0].Connectors[i].DP.Position = 0
 		o.Asset.Evses[0].Connectors[i].Enabled = false
@@ -492,18 +553,36 @@ func (o *Ocpp16) updateData() {
 						if c.Data[o.Asset.Evses[x].Connectors[y].DP.Position].ChargingState == int64(assets.Charging) {
 							// TODO: need to review the id tag
 							var resp = o.startTransaction("QWEASDZXC", &o.Asset.Evses[x].Connectors[y])
-							if resp.IdTagInfo.Status != types.AuthorizationStatusAccepted {
-								// TODO: At the moment it will only log as error this, but this should be reviewed
-								var lm = map[string]string{
-									"protocol":  string(o.Asset.Protocol),
-									"function":  "updateData",
-									"feature":   resp.GetFeatureName(),
-									"simulator": o.Asset.Name,
-									"sender":    assets.CS,
-									"type":      assets.Response,
-								}
 
-								o.logger.log(lm, resp, assets.Error)
+							var lm = map[string]string{
+								"protocol":  string(o.Asset.Protocol),
+								"function":  "updateData",
+								"feature":   resp.GetFeatureName(),
+								"simulator": o.Asset.Name,
+								"sender":    assets.CS,
+								"type":      assets.Response,
+							}
+
+							var stoii, errB = strconv.ParseBool(*o.Conf["StopTransactionOnInvalidId"].Value)
+
+							if errB != nil {
+								o.logger.log(lm, errB, assets.Error)
+								return
+							}
+
+							if stoii {
+								if resp.IdTagInfo.Status != types.AuthorizationStatusAccepted {
+									o.logger.log(lm, resp, assets.Info)
+
+									for i := c.DP.Position; i < int64(len(c.Data)); i++ {
+										if c.Data[i].ChargingState == int64(assets.Finishing) {
+											o.Asset.Evses[x].Connectors[y].DP.Position = i
+											o.Asset.Evses[x].Connectors[y].DP.Ticker = 0
+
+											break
+										}
+									}
+								}
 							}
 						}
 					}
@@ -543,9 +622,11 @@ func (o *Ocpp16) meterValuesSampledData() {
 
 		for i := 0; i < int(o.Asset.Phases); i++ {
 			for _, conf := range confL {
+				var confT = strings.TrimSpace(conf)
+
 				var sp types.SampledValue
 
-				switch conf {
+				switch confT {
 				case assets.EnergyActiveImportRegister:
 					sp = types.SampledValue{
 						Value:     strconv.FormatFloat(c.Energy, 'f', 4, 64),
@@ -587,6 +668,7 @@ func (o *Ocpp16) meterValuesSampledData() {
 						Measurand: types.Measurand(assets.CurrentImport),
 						Phase:     types.Phase(assets.Phases[i]),
 					}
+
 				case assets.PowerActiveImport:
 					sp = types.SampledValue{
 						Value:     strconv.FormatFloat(float64(c.Data[c.DP.Position].Power), 'f', 4, 64),
@@ -636,6 +718,118 @@ func (o *Ocpp16) meterValuesSampledData() {
 
 		o.logger.log(lm, resp, assets.Info)
 	}
+}
+
+/*
+Process the interval and in case it's time to send the data it will send it.
+*/
+func (o *Ocpp16) processClockAlignedData() {
+	var i = time.Now().UTC().Sub(time.Date(time.Now().UTC().Year(), time.Now().UTC().Month(), time.Now().UTC().Day(), 0, 0, 0, 0, time.UTC)).Seconds()
+
+	var c, err = strconv.ParseFloat(*o.Conf["ClockAlignedDataInterval"].Value, 32)
+
+	if err != nil {
+		var lm2 = map[string]string{
+			"protocol":  string(o.Asset.Protocol),
+			"function":  "processClockAlignedData",
+			"simulator": o.Asset.Name,
+		}
+
+		o.logger.log(lm2, err, assets.Fatal)
+
+		return
+	}
+
+	if c == 0 {
+		return
+	}
+
+	if int64(i)%int64(c) != 0 {
+		return
+	}
+
+	go o.meterValuesAlignedData()
+}
+
+/*
+Send meter values aligned data to the CS with the information set in the simulator conf variable.
+Will return the total data of the charge point.
+*/
+// TODO: some more information needs to be gathered about this feature
+func (o *Ocpp16) meterValuesAlignedData() {
+	var confL = strings.Split(*o.Conf["MeterValuesAlignedData"].Value, ",")
+
+	var spl = []types.SampledValue{}
+
+	var tp = assets.CalculateCPPower(o.Asset.Evses)
+
+	for _, conf := range confL {
+		var confT = strings.TrimSpace(conf)
+
+		var sp types.SampledValue
+
+		switch confT {
+		case assets.EnergyActiveImportRegister:
+			sp = types.SampledValue{
+				Value:     strconv.FormatFloat(assets.CalculateCPEnergy(tp, o.st), 'f', 4, 64),
+				Unit:      types.UnitOfMeasureWh,
+				Format:    types.ValueFormatRaw,
+				Measurand: types.Measurand(assets.EnergyActiveImportRegister),
+			}
+
+		case assets.EnergyReactiveImportRegister:
+			sp = types.SampledValue{
+				Value:     "0",
+				Unit:      types.UnitOfMeasureVarh,
+				Format:    types.ValueFormatRaw,
+				Measurand: types.Measurand(assets.EnergyReactiveImportRegister),
+			}
+
+		case assets.PowerActiveImport:
+			sp = types.SampledValue{
+				Value:     strconv.FormatFloat(tp, 'f', 4, 64),
+				Unit:      types.UnitOfMeasureW,
+				Format:    types.ValueFormatRaw,
+				Measurand: types.Measurand(assets.PowerActiveImport),
+			}
+		}
+
+		spl = append(spl, sp)
+	}
+
+	var mvl = []types.MeterValue{
+		{
+			Timestamp:    types.NewDateTime(time.Now()),
+			SampledValue: spl,
+		},
+	}
+
+	var req = core.MeterValuesRequest{
+		MeterValue: mvl,
+	}
+
+	var lm = map[string]string{
+		"protocol":  string(o.Asset.Protocol),
+		"function":  "meterValuesAlignedData",
+		"feature":   req.GetFeatureName(),
+		"simulator": o.Asset.Name,
+		"sender":    assets.CP,
+		"type":      assets.Request,
+	}
+
+	o.logger.log(lm, req, assets.Info)
+
+	// TODO: change the send request to async
+	resp, err := o.s.SendRequest(req)
+
+	lm["sender"] = assets.CS
+	lm["type"] = assets.Response
+
+	if err != nil {
+		o.logger.log(lm, err, assets.Error)
+	}
+
+	o.logger.log(lm, resp, assets.Info)
 }
 
 /*
