@@ -74,12 +74,11 @@ func (o *Ocpp16) setStartUpConfigurations() {
 
 	o.Conf["HeartbeatInterval"] = hb
 
-	var mvi = "20"
-
-	var mvsi = o.Conf["MeterValueSampleInterval"]
-
-	mvsi.Value = &mvi
-	o.Conf["MeterValueSampleInterval"] = mvsi
+	o.Conf["MeterValueSampleInterval"] = core.ConfigurationKey{
+		Key:      o.Conf["MeterValueSampleInterval"].Key,
+		Readonly: o.Conf["MeterValueSampleInterval"].Readonly,
+		Value:    assets.GetStringPointer(strconv.FormatInt(assets.DefMeterValueSampleInterval, 10)),
+	}
 
 	var mvsdc = assets.EnergyActiveImportRegister + "," + assets.PowerActiveImport
 
@@ -602,6 +601,31 @@ func (o *Ocpp16) updateData() {
 				o.st,
 			)
 		}
+	}
+}
+
+/**/
+func (o *Ocpp16) processSampledData() {
+	v, errI := strconv.ParseInt(*o.Conf["MeterValueSampleInterval"].Value, 10, 64)
+
+	if errI != nil {
+		var lm2 = map[string]string{
+			"protocol":  string(o.Asset.Protocol),
+			"function":  "processSampledData",
+			"simulator": o.Asset.Name,
+		}
+
+		o.logger.log(lm2, errI, assets.Fatal)
+
+		return
+	}
+
+	if v == 0 {
+		return
+	}
+
+	if o.t%v != 0 {
+		return
 	}
 }
 
