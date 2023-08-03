@@ -604,7 +604,9 @@ func (o *Ocpp16) updateData() {
 	}
 }
 
-/**/
+/*
+Process the logic to trigger the sampled data meter values. Evaluate the interval
+*/
 func (o *Ocpp16) processSampledData() {
 	v, errI := strconv.ParseInt(*o.Conf["MeterValueSampleInterval"].Value, 10, 64)
 
@@ -626,6 +628,16 @@ func (o *Ocpp16) processSampledData() {
 
 	if o.t%v != 0 {
 		return
+	}
+
+	for ie, e := range o.Asset.Evses {
+		for ic, c := range e.Connectors {
+			if c.Enabled {
+				var sd = o.meterValuesSampledData2(ie, ic)
+
+				o.meterValues(c.ID, sd)
+			}
+		}
 	}
 }
 
@@ -742,6 +754,94 @@ func (o *Ocpp16) meterValuesSampledData() {
 
 		o.logger.log(lm, resp, assets.Info)
 	}
+}
+
+/*
+Builds the meter value list with the configuration values for the connector. It will
+return the list with the data for each phase.
+
+ie	-	Evse array index (int)
+
+ic	-	Connector array index (int)
+*/
+func (o *Ocpp16) meterValuesSampledData2(ie, ic int) []types.MeterValue {
+	var confL = strings.Split(*o.Conf["MeterValuesSampledData"].Value, ",")
+
+	var spl []types.SampledValue
+
+	for _, conf := range confL {
+		var confT = strings.TrimSpace(conf)
+
+		for i := 0; i < int(o.Asset.Phases); i++ {
+			var sp types.SampledValue
+
+			var cdp = o.Asset.Evses[ie].Connectors[ic].DP.Position
+
+			switch confT {
+			case assets.EnergyActiveImportRegister:
+				sp = types.SampledValue{
+					Value:     strconv.FormatFloat(o.Asset.Evses[ie].Connectors[ic].Energy, 'f', 4, 64),
+					Unit:      types.UnitOfMeasureWh,
+					Format:    types.ValueFormatRaw,
+					Measurand: types.Measurand(assets.EnergyActiveImportRegister),
+					Phase:     types.Phase(assets.Phases[i]),
+				}
+
+			// TODO: this is not being calculated and the value is set to 0
+			case assets.EnergyReactiveImportRegister:
+				sp = types.SampledValue{
+					Value:     "0",
+					Unit:      types.UnitOfMeasureVarh,
+					Format:    types.ValueFormatRaw,
+					Measurand: types.Measurand(assets.EnergyReactiveImportRegister),
+					Phase:     types.Phase(assets.Phases[i]),
+				}
+
+			case assets.Voltage:
+				sp = types.SampledValue{
+					Value:     strconv.FormatInt(o.Asset.Evses[ie].Connectors[ic].Data[cdp].Voltage[i], 10),
+					Unit:      types.UnitOfMeasureV,
+					Format:    types.ValueFormatRaw,
+					Measurand: types.Measurand(assets.Voltage),
+					Phase:     types.Phase(assets.Phases[i]),
+				}
+
+			case assets.CurrentImport:
+				sp = types.SampledValue{
+					Value: strconv.FormatFloat(assets.CalculateCurrent(
+						o.Asset.Evses[ie].Connectors[ic].Data[cdp].Power,
+						o.Asset.Evses[ie].Connectors[ic].Data[cdp].PowerFactor,
+						o.Asset.Evses[ie].Connectors[ic].Data[cdp].Voltage[i],
+						int64(o.Asset.Phases),
+					), 'f', 4, 64),
+					Unit:      types.UnitOfMeasureA,
+					Format:    types.ValueFormatRaw,
+					Measurand: types.Measurand(assets.CurrentImport),
+					Phase:     types.Phase(assets.Phases[i]),
+				}
+
+			case assets.PowerActiveImport:
+				sp = types.SampledValue{
+					Value:     strconv.FormatFloat(float64(o.Asset.Evses[ie].Connectors[ic].Data[cdp].Power), 'f', 4, 64),
+					Unit:      types.UnitOfMeasureW,
+					Format:    types.ValueFormatRaw,
+					Measurand: types.Measurand(assets.PowerActiveImport),
+					Phase:     types.Phase(assets.Phases[i]),
+				}
+			}
+
+			spl = append(spl, sp)
+		}
+	}
+
+	var mvl = []types.MeterValue{
+		{
+			Timestamp:    types.NewDateTime(time.Now()),
+			SampledValue: spl,
+		},
+	}
+
+	return mvl
 }
 
 /*
@@ -1057,6 +1157,42 @@ func (o *Ocpp16) heartbeat() {
 	}
 
 	o.logger.log(lm, res.(*core.HeartbeatConfirmation), assets.Info)
+}
+
+/*
+id	-	Connector identifier (int64)
+
+mvl	-	List of meter values to sent ([]types.MeterValue)
+*/
+func (o *Ocpp16) meterValues(id int64, mvl []types.MeterValue) {
+	var lm = map[string]string{
+		"protocol":  string(o.Asset.Protocol),
+		"function":  "meterValues",
+		"feature":   "",
+		"simulator": o.Asset.Name,
+		"sender":    assets.CP,
+		"type":      assets.Request,
+	}
+
+	var req = core.MeterValuesRequest{
+		ConnectorId: int(id),
+		MeterValue:  mvl,
+	}
+
+	lm["feature"] = req.GetFeatureName()
+
+	o.logger.log(lm, req, assets.Info)
+
+	resp, err := o.s.SendRequest(req)
+
+	lm["sender"] = assets.CS
+	lm["type"] = assets.Response
+
+	if err != nil {
+		o.logger.log(lm, err, assets.Error)
+	}
+
+	o.logger.log(lm, resp, assets.Info)
 }
 
 /*
