@@ -500,6 +500,28 @@ func (o *Ocpp16) processSendLocalList(r *localauth.SendLocalListRequest) *locala
 }
 
 /*
+Handles the logic to send the sampled data message to the CS when triggered by the
+trigger message request. Will loop by the connectors if a connector id match build the meter
+values message and send it to the CS.
+
+id	-	Connector identifier sent by the CS request
+*/
+func (o *Ocpp16) processTriggerSampledData(id *int) {
+	// There is no way to identify the evse so ir will be set as 0 the array index
+	for ic, c := range o.Asset.Evses[0].Connectors {
+		if c.ID != int64(*id) {
+			continue
+		}
+
+		var sd = o.meterValuesSampledData2(0, ic)
+
+		o.meterValues(c.ID, sd)
+
+		break
+	}
+}
+
+/*
 Updates the connectors data position and ticker, it filters if the simulator has the start charging
 at true (automatic) or false (passive) to do these logic.
 
@@ -764,6 +786,7 @@ ie	-	Evse array index (int)
 
 ic	-	Connector array index (int)
 */
+// TODO: the configuration should be passed as argument so this func could handle the stop transaction configurations
 func (o *Ocpp16) meterValuesSampledData2(ie, ic int) []types.MeterValue {
 	var confL = strings.Split(*o.Conf["MeterValuesSampledData"].Value, ",")
 
