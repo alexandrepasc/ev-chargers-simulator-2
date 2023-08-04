@@ -500,10 +500,13 @@ func (o *Ocpp16) processSendLocalList(r *localauth.SendLocalListRequest) *locala
 }
 
 /*
-Process the logic to trigger the sampled data meter values. Evaluate the interval
+Process the logic to trigger the sampled data meter values. Get the configured interval, check
+if it is 0, check if it is time to send the message, gets the configuration data, and evaluate
+if any of the connectors is active to send the request. If a connector is active get the
+information and call the send function.
 */
 func (o *Ocpp16) processSampledData() {
-	v, errI := strconv.ParseInt(*o.Conf["MeterValueSampleInterval"].Value, 10, 64)
+	var v, errI = strconv.ParseInt(*o.Conf["MeterValueSampleInterval"].Value, 10, 64)
 
 	if errI != nil {
 		var lm2 = map[string]string{
@@ -525,10 +528,12 @@ func (o *Ocpp16) processSampledData() {
 		return
 	}
 
+	var conf = strings.Split(*o.Conf["MeterValuesSampledData"].Value, ",")
+
 	for ie, e := range o.Asset.Evses {
 		for ic, c := range e.Connectors {
 			if c.Enabled {
-				var sd = o.meterValuesSampledData(ie, ic)
+				var sd = o.meterValuesSampledData(ie, ic, conf)
 
 				o.meterValues(c.ID, sd)
 			}
@@ -550,7 +555,9 @@ func (o *Ocpp16) processTriggerSampledData(id *int) {
 			continue
 		}
 
-		var sd = o.meterValuesSampledData(0, ic)
+		var conf = strings.Split(*o.Conf["MeterValuesSampledData"].Value, ",")
+
+		var sd = o.meterValuesSampledData(0, ic, conf)
 
 		o.meterValues(c.ID, sd)
 
@@ -563,14 +570,13 @@ Builds the meter value sampled data list with the configuration values for the c
 return the list with the data for each phase. The supported information keys that can be used in
 this request are specified in the constants file.
 
-ie	-	Evse array index (int)
+ie		-	Evse array index (int)
 
-ic	-	Connector array index (int)
+ic		-	Connector array index (int)
+
+confL	-	Configuration list with the data needed to the request ([]string)
 */
-// TODO: the configuration should be passed as argument so this func could handle the stop transaction configurations
-func (o *Ocpp16) meterValuesSampledData(ie, ic int) []types.MeterValue {
-	var confL = strings.Split(*o.Conf["MeterValuesSampledData"].Value, ",")
-
+func (o *Ocpp16) meterValuesSampledData(ie, ic int, confL []string) []types.MeterValue {
 	var spl []types.SampledValue
 
 	for _, conf := range confL {
