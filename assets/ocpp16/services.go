@@ -567,8 +567,8 @@ func (o *Ocpp16) processTriggerSampledData(id *int) {
 
 /*
 Builds the meter value sampled data list with the configuration values for the connector. It will
-return the list with the data for each phase. The supported information keys that can be used in
-this request are specified in the constants file.
+return the list with the data for each phase ([]types.MeterValue). The supported information keys
+that can be used in this request are specified in the constants file.
 
 ie		-	Evse array index (int)
 
@@ -642,6 +642,101 @@ func (o *Ocpp16) meterValuesSampledData(ie, ic int, confL []string) []types.Mete
 
 			spl = append(spl, sp)
 		}
+	}
+
+	var mvl = []types.MeterValue{
+		{
+			Timestamp:    types.NewDateTime(time.Now()),
+			SampledValue: spl,
+		},
+	}
+
+	return mvl
+}
+
+/*
+Process the logic to trigger the sampled data meter values. Get the configured interval, check
+if it is 0, check if it is time to send the message, gets the configuration data, and call the send
+function.
+*/
+func (o *Ocpp16) processAlignedData() {
+	var i = time.Now().UTC().Sub(time.Date(time.Now().UTC().Year(), time.Now().UTC().Month(), time.Now().UTC().Day(), 0, 0, 0, 0, time.UTC)).Seconds()
+
+	var v, errV = strconv.ParseFloat(*o.Conf["ClockAlignedDataInterval"].Value, 32)
+
+	if errV != nil {
+		var lm2 = map[string]string{
+			"protocol":  string(o.Asset.Protocol),
+			"function":  "processAlignedData",
+			"simulator": o.Asset.Name,
+		}
+
+		o.logger.log(lm2, errV, assets.Fatal)
+
+		return
+	}
+
+	if v == 0 {
+		return
+	}
+
+	if int64(i)%int64(v) != 0 {
+		return
+	}
+
+	var conf = strings.Split(*o.Conf["MeterValuesAlignedData"].Value, ",")
+
+	var sd = o.meterValuesAlignedData(conf)
+
+	// TODO: review the connector id, at this moment is returning the total of the asset so the id is 0
+	o.meterValues(0, sd)
+}
+
+/*
+Builds the meter value aligned data list with the configuration values for the asset. It will
+return the list with the data ([]types.MeterValue). The supported information keys that can be used
+in this request are specified in the constants file.
+
+confL	-	Configuration list with the data needed to the request ([]string)
+*/
+// TODO: some more research is needed to this functionality
+func (o *Ocpp16) meterValuesAlignedData(confL []string) []types.MeterValue {
+	var spl = []types.SampledValue{}
+
+	var tp = assets.CalculateCPPower(o.Asset.Evses)
+
+	for _, conf := range confL {
+		var confT = strings.TrimSpace(conf)
+
+		var sp types.SampledValue
+
+		switch confT {
+		case assets.EnergyActiveImportRegister:
+			sp = types.SampledValue{
+				Value:     strconv.FormatFloat(assets.CalculateCPEnergy(tp, o.st), 'f', 4, 64),
+				Unit:      types.UnitOfMeasureWh,
+				Format:    types.ValueFormatRaw,
+				Measurand: types.Measurand(assets.EnergyActiveImportRegister),
+			}
+
+		case assets.EnergyReactiveImportRegister:
+			sp = types.SampledValue{
+				Value:     "0",
+				Unit:      types.UnitOfMeasureVarh,
+				Format:    types.ValueFormatRaw,
+				Measurand: types.Measurand(assets.EnergyReactiveImportRegister),
+			}
+
+		case assets.PowerActiveImport:
+			sp = types.SampledValue{
+				Value:     strconv.FormatFloat(tp, 'f', 4, 64),
+				Unit:      types.UnitOfMeasureW,
+				Format:    types.ValueFormatRaw,
+				Measurand: types.Measurand(assets.PowerActiveImport),
+			}
+		}
+
+		spl = append(spl, sp)
 	}
 
 	var mvl = []types.MeterValue{
@@ -757,118 +852,6 @@ func (o *Ocpp16) updateData() {
 			)
 		}
 	}
-}
-
-/*
-Process the interval and in case it's time to send the data it will send it.
-*/
-func (o *Ocpp16) processClockAlignedData() {
-	var i = time.Now().UTC().Sub(time.Date(time.Now().UTC().Year(), time.Now().UTC().Month(), time.Now().UTC().Day(), 0, 0, 0, 0, time.UTC)).Seconds()
-
-	var c, err = strconv.ParseFloat(*o.Conf["ClockAlignedDataInterval"].Value, 32)
-
-	if err != nil {
-		var lm2 = map[string]string{
-			"protocol":  string(o.Asset.Protocol),
-			"function":  "processClockAlignedData",
-			"simulator": o.Asset.Name,
-		}
-
-		o.logger.log(lm2, err, assets.Fatal)
-
-		return
-	}
-
-	if c == 0 {
-		return
-	}
-
-	if int64(i)%int64(c) != 0 {
-		return
-	}
-
-	go o.meterValuesAlignedData()
-}
-
-/*
-Send meter values aligned data to the CS with the information set in the simulator conf variable.
-Will return the total data of the charge point.
-*/
-// TODO: some more information needs to be gathered about this feature
-func (o *Ocpp16) meterValuesAlignedData() {
-	var confL = strings.Split(*o.Conf["MeterValuesAlignedData"].Value, ",")
-
-	var spl = []types.SampledValue{}
-
-	var tp = assets.CalculateCPPower(o.Asset.Evses)
-
-	for _, conf := range confL {
-		var confT = strings.TrimSpace(conf)
-
-		var sp types.SampledValue
-
-		switch confT {
-		case assets.EnergyActiveImportRegister:
-			sp = types.SampledValue{
-				Value:     strconv.FormatFloat(assets.CalculateCPEnergy(tp, o.st), 'f', 4, 64),
-				Unit:      types.UnitOfMeasureWh,
-				Format:    types.ValueFormatRaw,
-				Measurand: types.Measurand(assets.EnergyActiveImportRegister),
-			}
-
-		case assets.EnergyReactiveImportRegister:
-			sp = types.SampledValue{
-				Value:     "0",
-				Unit:      types.UnitOfMeasureVarh,
-				Format:    types.ValueFormatRaw,
-				Measurand: types.Measurand(assets.EnergyReactiveImportRegister),
-			}
-
-		case assets.PowerActiveImport:
-			sp = types.SampledValue{
-				Value:     strconv.FormatFloat(tp, 'f', 4, 64),
-				Unit:      types.UnitOfMeasureW,
-				Format:    types.ValueFormatRaw,
-				Measurand: types.Measurand(assets.PowerActiveImport),
-			}
-		}
-
-		spl = append(spl, sp)
-	}
-
-	var mvl = []types.MeterValue{
-		{
-			Timestamp:    types.NewDateTime(time.Now()),
-			SampledValue: spl,
-		},
-	}
-
-	var req = core.MeterValuesRequest{
-		MeterValue: mvl,
-	}
-
-	var lm = map[string]string{
-		"protocol":  string(o.Asset.Protocol),
-		"function":  "meterValuesAlignedData",
-		"feature":   req.GetFeatureName(),
-		"simulator": o.Asset.Name,
-		"sender":    assets.CP,
-		"type":      assets.Request,
-	}
-
-	o.logger.log(lm, req, assets.Info)
-
-	// TODO: change the send request to async
-	resp, err := o.s.SendRequest(req)
-
-	lm["sender"] = assets.CS
-	lm["type"] = assets.Response
-
-	if err != nil {
-		o.logger.log(lm, err, assets.Error)
-	}
-
-	o.logger.log(lm, resp, assets.Info)
 }
 
 /*
