@@ -105,11 +105,10 @@ var config = map[string]core.ConfigurationKey{
 		Key:      "StopTransactionOnInvalidId",
 		Readonly: false,
 	},
-	// CSL
-	// "StopTxnAlignedData": {
-	// 	Key:      "StopTxnAlignedData",
-	// 	Readonly: true,
-	// },
+	"StopTxnAlignedData": {
+		Key:      "StopTxnAlignedData",
+		Readonly: false,
+	},
 	// CSL
 	// "StopTxnSampledData": {
 	// 	Key:      "StopTxnSampledData",

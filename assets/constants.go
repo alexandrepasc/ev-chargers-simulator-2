@@ -32,6 +32,7 @@ const (
 	DefMeterValuesSampledData            string = "Energy.Active.Import.Register,Power.Active.Import"
 	DefClockAlignedDataInterval          int64  = 900
 	DefMeterValuesAlignedData            string = "Energy.Active.Import.Register,Power.Active.Import"
+	DefStopTxnAlignedData                string = "Energy.Active.Import.Register,Power.Active.Import"
 	DefHeartbeatInterval                 int64  = 30
 	DefResetRetries                      int64  = 0
 	DefStopTransactionOnEvSideDisconnect bool   = false
