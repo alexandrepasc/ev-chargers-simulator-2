@@ -500,6 +500,43 @@ func (o *Ocpp16) processSendLocalList(r *localauth.SendLocalListRequest) *locala
 }
 
 /*
+Process the logic to trigger the sampled data meter values. Evaluate the interval
+*/
+func (o *Ocpp16) processSampledData() {
+	v, errI := strconv.ParseInt(*o.Conf["MeterValueSampleInterval"].Value, 10, 64)
+
+	if errI != nil {
+		var lm2 = map[string]string{
+			"protocol":  string(o.Asset.Protocol),
+			"function":  "processSampledData",
+			"simulator": o.Asset.Name,
+		}
+
+		o.logger.log(lm2, errI, assets.Fatal)
+
+		return
+	}
+
+	if v == 0 {
+		return
+	}
+
+	if o.t%v != 0 {
+		return
+	}
+
+	for ie, e := range o.Asset.Evses {
+		for ic, c := range e.Connectors {
+			if c.Enabled {
+				var sd = o.meterValuesSampledData(ie, ic)
+
+				o.meterValues(c.ID, sd)
+			}
+		}
+	}
+}
+
+/*
 Handles the logic to send the sampled data message to the CS when triggered by the
 trigger message request. Will loop by the connectors if a connector id match build the meter
 values message and send it to the CS.
@@ -513,12 +550,102 @@ func (o *Ocpp16) processTriggerSampledData(id *int) {
 			continue
 		}
 
-		var sd = o.meterValuesSampledData2(0, ic)
+		var sd = o.meterValuesSampledData(0, ic)
 
 		o.meterValues(c.ID, sd)
 
 		break
 	}
+}
+
+/*
+Builds the meter value sampled data list with the configuration values for the connector. It will
+return the list with the data for each phase. The supported information keys that can be used in
+this request are specified in the constants file.
+
+ie	-	Evse array index (int)
+
+ic	-	Connector array index (int)
+*/
+// TODO: the configuration should be passed as argument so this func could handle the stop transaction configurations
+func (o *Ocpp16) meterValuesSampledData(ie, ic int) []types.MeterValue {
+	var confL = strings.Split(*o.Conf["MeterValuesSampledData"].Value, ",")
+
+	var spl []types.SampledValue
+
+	for _, conf := range confL {
+		var confT = strings.TrimSpace(conf)
+
+		for i := 0; i < int(o.Asset.Phases); i++ {
+			var sp types.SampledValue
+
+			var cdp = o.Asset.Evses[ie].Connectors[ic].DP.Position
+
+			switch confT {
+			case assets.EnergyActiveImportRegister:
+				sp = types.SampledValue{
+					Value:     strconv.FormatFloat(o.Asset.Evses[ie].Connectors[ic].Energy, 'f', 4, 64),
+					Unit:      types.UnitOfMeasureWh,
+					Format:    types.ValueFormatRaw,
+					Measurand: types.Measurand(assets.EnergyActiveImportRegister),
+					Phase:     types.Phase(assets.Phases[i]),
+				}
+
+			// TODO: this is not being calculated and the value is set to 0
+			case assets.EnergyReactiveImportRegister:
+				sp = types.SampledValue{
+					Value:     "0",
+					Unit:      types.UnitOfMeasureVarh,
+					Format:    types.ValueFormatRaw,
+					Measurand: types.Measurand(assets.EnergyReactiveImportRegister),
+					Phase:     types.Phase(assets.Phases[i]),
+				}
+
+			case assets.Voltage:
+				sp = types.SampledValue{
+					Value:     strconv.FormatInt(o.Asset.Evses[ie].Connectors[ic].Data[cdp].Voltage[i], 10),
+					Unit:      types.UnitOfMeasureV,
+					Format:    types.ValueFormatRaw,
+					Measurand: types.Measurand(assets.Voltage),
+					Phase:     types.Phase(assets.Phases[i]),
+				}
+
+			case assets.CurrentImport:
+				sp = types.SampledValue{
+					Value: strconv.FormatFloat(assets.CalculateCurrent(
+						o.Asset.Evses[ie].Connectors[ic].Data[cdp].Power,
+						o.Asset.Evses[ie].Connectors[ic].Data[cdp].PowerFactor,
+						o.Asset.Evses[ie].Connectors[ic].Data[cdp].Voltage[i],
+						int64(o.Asset.Phases),
+					), 'f', 4, 64),
+					Unit:      types.UnitOfMeasureA,
+					Format:    types.ValueFormatRaw,
+					Measurand: types.Measurand(assets.CurrentImport),
+					Phase:     types.Phase(assets.Phases[i]),
+				}
+
+			case assets.PowerActiveImport:
+				sp = types.SampledValue{
+					Value:     strconv.FormatFloat(float64(o.Asset.Evses[ie].Connectors[ic].Data[cdp].Power), 'f', 4, 64),
+					Unit:      types.UnitOfMeasureW,
+					Format:    types.ValueFormatRaw,
+					Measurand: types.Measurand(assets.PowerActiveImport),
+					Phase:     types.Phase(assets.Phases[i]),
+				}
+			}
+
+			spl = append(spl, sp)
+		}
+	}
+
+	var mvl = []types.MeterValue{
+		{
+			Timestamp:    types.NewDateTime(time.Now()),
+			SampledValue: spl,
+		},
+	}
+
+	return mvl
 }
 
 /*
@@ -624,247 +751,6 @@ func (o *Ocpp16) updateData() {
 			)
 		}
 	}
-}
-
-/*
-Process the logic to trigger the sampled data meter values. Evaluate the interval
-*/
-func (o *Ocpp16) processSampledData() {
-	v, errI := strconv.ParseInt(*o.Conf["MeterValueSampleInterval"].Value, 10, 64)
-
-	if errI != nil {
-		var lm2 = map[string]string{
-			"protocol":  string(o.Asset.Protocol),
-			"function":  "processSampledData",
-			"simulator": o.Asset.Name,
-		}
-
-		o.logger.log(lm2, errI, assets.Fatal)
-
-		return
-	}
-
-	if v == 0 {
-		return
-	}
-
-	if o.t%v != 0 {
-		return
-	}
-
-	for ie, e := range o.Asset.Evses {
-		for ic, c := range e.Connectors {
-			if c.Enabled {
-				var sd = o.meterValuesSampledData2(ie, ic)
-
-				o.meterValues(c.ID, sd)
-			}
-		}
-	}
-}
-
-/*
-Sends the meter values sampled data request to the CS with the information set in the conf
-simulator variable. It will send a request with all the fases data for each of the evse connectors.
-
-The supported information keys that can be used in this request are specified in the constants
-file.
-*/
-func (o *Ocpp16) meterValuesSampledData() {
-	for _, c := range o.Asset.Evses[0].Connectors {
-		var mvl []types.MeterValue
-
-		var spl []types.SampledValue
-
-		var confL = strings.Split(*o.Conf["MeterValuesSampledData"].Value, ",")
-
-		for i := 0; i < int(o.Asset.Phases); i++ {
-			for _, conf := range confL {
-				var confT = strings.TrimSpace(conf)
-
-				var sp types.SampledValue
-
-				switch confT {
-				case assets.EnergyActiveImportRegister:
-					sp = types.SampledValue{
-						Value:     strconv.FormatFloat(c.Energy, 'f', 4, 64),
-						Unit:      types.UnitOfMeasureWh,
-						Format:    types.ValueFormatRaw,
-						Measurand: types.Measurand(assets.EnergyActiveImportRegister),
-						Phase:     types.Phase(assets.Phases[i]),
-					}
-
-				// TODO: this is not being calculated and the value is set to 0
-				case assets.EnergyReactiveImportRegister:
-					sp = types.SampledValue{
-						Value:     "0",
-						Unit:      types.UnitOfMeasureVarh,
-						Format:    types.ValueFormatRaw,
-						Measurand: types.Measurand(assets.EnergyReactiveImportRegister),
-						Phase:     types.Phase(assets.Phases[i]),
-					}
-
-				case assets.Voltage:
-					sp = types.SampledValue{
-						Value:     strconv.FormatInt(c.Data[c.DP.Position].Voltage[i], 10),
-						Unit:      types.UnitOfMeasureV,
-						Format:    types.ValueFormatRaw,
-						Measurand: types.Measurand(assets.Voltage),
-						Phase:     types.Phase(assets.Phases[i]),
-					}
-
-				case assets.CurrentImport:
-					sp = types.SampledValue{
-						Value: strconv.FormatFloat(assets.CalculateCurrent(
-							c.Data[c.DP.Position].Power,
-							c.Data[c.DP.Position].PowerFactor,
-							c.Data[c.DP.Position].Voltage[i],
-							int64(o.Asset.Phases),
-						), 'f', 4, 64),
-						Unit:      types.UnitOfMeasureA,
-						Format:    types.ValueFormatRaw,
-						Measurand: types.Measurand(assets.CurrentImport),
-						Phase:     types.Phase(assets.Phases[i]),
-					}
-
-				case assets.PowerActiveImport:
-					sp = types.SampledValue{
-						Value:     strconv.FormatFloat(float64(c.Data[c.DP.Position].Power), 'f', 4, 64),
-						Unit:      types.UnitOfMeasureW,
-						Format:    types.ValueFormatRaw,
-						Measurand: types.Measurand(assets.PowerActiveImport),
-						Phase:     types.Phase(assets.Phases[i]),
-					}
-				}
-
-				spl = append(spl, sp)
-			}
-		}
-
-		mvl = []types.MeterValue{
-			{
-				Timestamp:    types.NewDateTime(time.Now()),
-				SampledValue: spl,
-			},
-		}
-
-		var req = core.MeterValuesRequest{
-			ConnectorId: int(c.ID),
-			MeterValue:  mvl,
-		}
-
-		var lm = map[string]string{
-			"protocol":  string(o.Asset.Protocol),
-			"function":  "meterValuesSampledData",
-			"feature":   req.GetFeatureName(),
-			"simulator": o.Asset.Name,
-			"sender":    assets.CP,
-			"type":      assets.Request,
-		}
-
-		o.logger.log(lm, req, assets.Info)
-
-		// TODO: change the send request to async
-		resp, err := o.s.SendRequest(req)
-
-		lm["sender"] = assets.CS
-		lm["type"] = assets.Response
-
-		if err != nil {
-			o.logger.log(lm, err, assets.Error)
-		}
-
-		o.logger.log(lm, resp, assets.Info)
-	}
-}
-
-/*
-Builds the meter value list with the configuration values for the connector. It will
-return the list with the data for each phase.
-
-ie	-	Evse array index (int)
-
-ic	-	Connector array index (int)
-*/
-// TODO: the configuration should be passed as argument so this func could handle the stop transaction configurations
-func (o *Ocpp16) meterValuesSampledData2(ie, ic int) []types.MeterValue {
-	var confL = strings.Split(*o.Conf["MeterValuesSampledData"].Value, ",")
-
-	var spl []types.SampledValue
-
-	for _, conf := range confL {
-		var confT = strings.TrimSpace(conf)
-
-		for i := 0; i < int(o.Asset.Phases); i++ {
-			var sp types.SampledValue
-
-			var cdp = o.Asset.Evses[ie].Connectors[ic].DP.Position
-
-			switch confT {
-			case assets.EnergyActiveImportRegister:
-				sp = types.SampledValue{
-					Value:     strconv.FormatFloat(o.Asset.Evses[ie].Connectors[ic].Energy, 'f', 4, 64),
-					Unit:      types.UnitOfMeasureWh,
-					Format:    types.ValueFormatRaw,
-					Measurand: types.Measurand(assets.EnergyActiveImportRegister),
-					Phase:     types.Phase(assets.Phases[i]),
-				}
-
-			// TODO: this is not being calculated and the value is set to 0
-			case assets.EnergyReactiveImportRegister:
-				sp = types.SampledValue{
-					Value:     "0",
-					Unit:      types.UnitOfMeasureVarh,
-					Format:    types.ValueFormatRaw,
-					Measurand: types.Measurand(assets.EnergyReactiveImportRegister),
-					Phase:     types.Phase(assets.Phases[i]),
-				}
-
-			case assets.Voltage:
-				sp = types.SampledValue{
-					Value:     strconv.FormatInt(o.Asset.Evses[ie].Connectors[ic].Data[cdp].Voltage[i], 10),
-					Unit:      types.UnitOfMeasureV,
-					Format:    types.ValueFormatRaw,
-					Measurand: types.Measurand(assets.Voltage),
-					Phase:     types.Phase(assets.Phases[i]),
-				}
-
-			case assets.CurrentImport:
-				sp = types.SampledValue{
-					Value: strconv.FormatFloat(assets.CalculateCurrent(
-						o.Asset.Evses[ie].Connectors[ic].Data[cdp].Power,
-						o.Asset.Evses[ie].Connectors[ic].Data[cdp].PowerFactor,
-						o.Asset.Evses[ie].Connectors[ic].Data[cdp].Voltage[i],
-						int64(o.Asset.Phases),
-					), 'f', 4, 64),
-					Unit:      types.UnitOfMeasureA,
-					Format:    types.ValueFormatRaw,
-					Measurand: types.Measurand(assets.CurrentImport),
-					Phase:     types.Phase(assets.Phases[i]),
-				}
-
-			case assets.PowerActiveImport:
-				sp = types.SampledValue{
-					Value:     strconv.FormatFloat(float64(o.Asset.Evses[ie].Connectors[ic].Data[cdp].Power), 'f', 4, 64),
-					Unit:      types.UnitOfMeasureW,
-					Format:    types.ValueFormatRaw,
-					Measurand: types.Measurand(assets.PowerActiveImport),
-					Phase:     types.Phase(assets.Phases[i]),
-				}
-			}
-
-			spl = append(spl, sp)
-		}
-	}
-
-	var mvl = []types.MeterValue{
-		{
-			Timestamp:    types.NewDateTime(time.Now()),
-			SampledValue: spl,
-		},
-	}
-
-	return mvl
 }
 
 /*
