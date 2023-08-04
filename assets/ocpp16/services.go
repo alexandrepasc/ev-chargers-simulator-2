@@ -30,12 +30,6 @@ func (o *Ocpp16) setStartUpConfigurations() {
 
 	o.Conf["AuthorizeRemoteTxRequests"] = artr
 
-	var cadi = o.Conf["ClockAlignedDataInterval"]
-
-	cadi.Value = assets.GetStringPointer(strconv.FormatInt(assets.DefClockAlignedDataInterval, 10))
-
-	o.Conf["ClockAlignedDataInterval"] = cadi
-
 	var noc = o.Conf["NumberOfConnectors"]
 
 	noc.Value = assets.GetStringPointer(strconv.Itoa(len(o.Asset.Evses[0].Connectors)))
@@ -80,12 +74,23 @@ func (o *Ocpp16) setStartUpConfigurations() {
 		Value:    assets.GetStringPointer(strconv.FormatInt(assets.DefMeterValueSampleInterval, 10)),
 	}
 
-	var mvsdc = assets.EnergyActiveImportRegister + "," + assets.PowerActiveImport
+	o.Conf["MeterValuesSampledData"] = core.ConfigurationKey{
+		Key:      o.Conf["MeterValuesSampledData"].Key,
+		Readonly: o.Conf["MeterValuesSampledData"].Readonly,
+		Value:    assets.GetStringPointer(assets.DefMeterValuesSampledData),
+	}
 
-	var mvsd = o.Conf["MeterValuesSampledData"]
+	o.Conf["ClockAlignedDataInterval"] = core.ConfigurationKey{
+		Key:      o.Conf["ClockAlignedDataInterval"].Key,
+		Readonly: o.Conf["ClockAlignedDataInterval"].Readonly,
+		Value:    assets.GetStringPointer(strconv.FormatInt(assets.DefClockAlignedDataInterval, 10)),
+	}
 
-	mvsd.Value = &mvsdc
-	o.Conf["MeterValuesSampledData"] = mvsd
+	o.Conf["MeterValuesAlignedData"] = core.ConfigurationKey{
+		Key:      o.Conf["MeterValuesAlignedData"].Key,
+		Readonly: o.Conf["MeterValuesAlignedData"].Readonly,
+		Value:    assets.GetStringPointer(assets.DefMeterValuesAlignedData),
+	}
 
 	o.t = 0
 
