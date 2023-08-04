@@ -76,10 +76,7 @@ func (o *Ocpp16) Start(c chan common.Channel, q chan bool) {
 
 		o.updateData()
 
-		mvi, _ := strconv.ParseInt(*o.Conf["MeterValueSampleInterval"].Value, 10, 64)
-		if o.t%mvi == 0 {
-			go o.meterValuesSampledData()
-		}
+		go o.processSampledData()
 
 		var hbi, _ = strconv.ParseInt(*o.Conf["HeartbeatInterval"].Value, 10, 64)
 		if o.t%hbi == 0 {
@@ -88,7 +85,7 @@ func (o *Ocpp16) Start(c chan common.Channel, q chan bool) {
 
 		channelComm(c, o.Asset.Evses, o.st, o.Asset.Name, o.Asset.SimID)
 
-		o.processClockAlignedData()
+		o.processAlignedData()
 
 		o.handleTick()
 

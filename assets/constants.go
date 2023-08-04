@@ -28,11 +28,14 @@ const (
 	Inoperative Availability = "Inoperative"
 	Operative   Availability = "Operative"
 
-	DefClockAlignedDataInterval          int64 = 900
-	DefHeartbeatInterval                 int64 = 30
-	DefResetRetries                      int64 = 0
-	DefStopTransactionOnEvSideDisconnect bool  = false
-	DefStopTransactionOnInvalidID        bool  = true
+	DefMeterValueSampleInterval          int64  = 20
+	DefMeterValuesSampledData            string = "Energy.Active.Import.Register,Power.Active.Import"
+	DefClockAlignedDataInterval          int64  = 900
+	DefMeterValuesAlignedData            string = "Energy.Active.Import.Register,Power.Active.Import"
+	DefHeartbeatInterval                 int64  = 30
+	DefResetRetries                      int64  = 0
+	DefStopTransactionOnEvSideDisconnect bool   = false
+	DefStopTransactionOnInvalidID        bool   = true
 )
 
 var (
