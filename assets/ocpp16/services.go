@@ -104,6 +104,12 @@ func (o *Ocpp16) setStartUpConfigurations() {
 		Value:    assets.GetStringPointer(assets.DefStopTxnSampledData),
 	}
 
+	o.Conf["TransactionMessageAttempts"] = core.ConfigurationKey{
+		Key:      o.Conf["TransactionMessageAttempts"].Key,
+		Readonly: o.Conf["TransactionMessageAttempts"].Readonly,
+		Value:    assets.GetStringPointer(strconv.FormatInt(assets.DefTransactionMessageAttempts, 10)),
+	}
+
 	o.t = 0
 
 	for x, e := range o.Asset.Evses {

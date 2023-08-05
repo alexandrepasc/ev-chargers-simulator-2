@@ -119,10 +119,10 @@ var config = map[string]core.ConfigurationKey{
 		Value:    assets.GetStringPointer(assets.DefSupportedFeatureProfiles),
 	},
 	// integer
-	// "TransactionMessageAttempts": {
-	// 	Key:      "TransactionMessageAttempts",
-	// 	Readonly: false,
-	// },
+	"TransactionMessageAttempts": {
+		Key:      "TransactionMessageAttempts",
+		Readonly: false,
+	},
 	// integer
 	// "TransactionMessageRetryInterval": {
 	// 	Key:      "TransactionMessageRetryInterval",
