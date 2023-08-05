@@ -33,9 +33,10 @@ type Ocpp16 struct {
 		version int64                         // Version identifier
 		list    []localauth.AuthorizationData // List with the authorization information
 	}
-	chargeProfile *types.ChargingProfile // Charging profile set by the CS
-	t             int64
-	st            time.Time
+	chargeProfile  *types.ChargingProfile // Charging profile set by the CS
+	txnAlignedData []types.MeterValue     // Store the transaction aligned data
+	t              int64
+	st             time.Time
 }
 
 /**/
