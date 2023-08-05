@@ -995,12 +995,15 @@ func (o *Ocpp16) stopTransaction(id string, c *simulator.Connector) {
 		"type":      assets.Request,
 	}
 
+	var td = o.txnAlignedData
+
 	// TODO: the id tag needs to be created and stored and not hard coded
 	var req = core.StopTransactionRequest{
-		IdTag:         id,
-		MeterStop:     int(c.Energy),
-		Timestamp:     types.NewDateTime(time.Now()),
-		TransactionId: o.chargeProfile.TransactionId,
+		IdTag:           id,
+		MeterStop:       int(c.Energy),
+		Timestamp:       types.NewDateTime(time.Now()),
+		TransactionId:   o.chargeProfile.TransactionId,
+		TransactionData: td,
 	}
 
 	lm["feature"] = req.GetFeatureName()
