@@ -349,6 +349,7 @@ func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionReq
 		o.Asset.Evses[0].Connectors[i].DP.Position = 0
 		o.Asset.Evses[0].Connectors[i].Enabled = false
 		o.txnAlignedData = []types.MeterValue{}
+		o.txnSampledData = []types.MeterValue{}
 		o.statusNotification(&o.Asset.Evses[0].Connectors[i])
 	}
 }
@@ -404,6 +405,7 @@ func (o *Ocpp16) processReset(r *core.ResetRequest) *core.ResetConfirmation {
 				o.Asset.Evses[x].Connectors[y].DP.Position = 0
 				o.Asset.Evses[x].Connectors[y].DP.Ticker = 0
 				o.txnAlignedData = []types.MeterValue{}
+				o.txnSampledData = []types.MeterValue{}
 
 				go o.stopTransaction(o.Asset.Evses[x].CIDTag, &o.Asset.Evses[x].Connectors[y])
 			}
@@ -551,11 +553,25 @@ func (o *Ocpp16) processSampledData() {
 
 	for ie, e := range o.Asset.Evses {
 		for ic, c := range e.Connectors {
-			if c.Enabled {
-				var sd = o.meterValuesSampledData(ie, ic, conf)
-
-				o.meterValues(c.ID, sd)
+			if !c.Enabled {
+				continue
 			}
+
+			if c.Data[c.DP.Position].ChargingState != int64(assets.Charging) {
+				continue
+			}
+
+			var sd = o.meterValuesSampledData(ie, ic, conf)
+
+			var cl = strings.Split(*o.Conf["StopTxnSampledData"].Value, ",")
+
+			if len(cl) != 0 || cl[0] != "" {
+				var tsd = o.meterValuesSampledData(ie, ic, cl)
+
+				o.txnSampledData = append(o.txnSampledData, tsd...)
+			}
+
+			o.meterValues(c.ID, sd)
 		}
 	}
 }
@@ -841,6 +857,7 @@ func (o *Ocpp16) updateData() {
 						if c.Data[o.Asset.Evses[x].Connectors[y].DP.Position].ChargingState == int64(assets.Finishing) {
 							o.stopTransaction(o.Asset.Evses[x].CIDTag, &o.Asset.Evses[x].Connectors[y])
 							o.txnAlignedData = []types.MeterValue{}
+							o.txnSampledData = []types.MeterValue{}
 						}
 
 						// If the connector starts charging send the start transaction request
@@ -1002,6 +1019,7 @@ func (o *Ocpp16) stopTransaction(id string, c *simulator.Connector) {
 	}
 
 	var td = o.txnAlignedData
+	td = append(td, o.txnSampledData...)
 
 	// TODO: the id tag needs to be created and stored and not hard coded
 	var req = core.StopTransactionRequest{
@@ -1258,6 +1276,7 @@ func (o *Ocpp16) notAutoChargePoint(c *simulator.Connector, x, y int) {
 				o.Asset.Evses[x].Connectors[y].DP.Position = 0
 				o.Asset.Evses[x].Connectors[y].Enabled = false
 				o.txnAlignedData = []types.MeterValue{}
+				o.txnSampledData = []types.MeterValue{}
 
 				var aux = o.Asset.Evses[x].Connectors[y]
 
@@ -1305,6 +1324,7 @@ func (o *Ocpp16) notAutoChargePoint(c *simulator.Connector, x, y int) {
 		o.Asset.Evses[x].Connectors[y].DP.Ticker = 0
 		o.Asset.Evses[x].Connectors[y].Enabled = false
 		o.txnAlignedData = []types.MeterValue{}
+		o.txnSampledData = []types.MeterValue{}
 	}
 }
 

@@ -35,6 +35,7 @@ type Ocpp16 struct {
 	}
 	chargeProfile  *types.ChargingProfile // Charging profile set by the CS
 	txnAlignedData []types.MeterValue     // Store the transaction aligned data
+	txnSampledData []types.MeterValue     // store the transaction sampled data
 	t              int64
 	st             time.Time
 }
