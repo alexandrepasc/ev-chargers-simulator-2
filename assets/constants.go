@@ -34,6 +34,7 @@ const (
 	DefClockAlignedDataInterval          int64  = 900
 	DefMeterValuesAlignedData            string = "Energy.Active.Import.Register,Power.Active.Import"
 	DefStopTxnAlignedData                string = "Power.Active.Import"
+	DefSupportedFeatureProfiles          string = "Core,LocalAuthListManagement,RemoteTrigger"
 	DefHeartbeatInterval                 int64  = 30
 	DefResetRetries                      int64  = 0
 	DefStopTransactionOnEvSideDisconnect bool   = false

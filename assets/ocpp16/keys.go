@@ -113,11 +113,11 @@ var config = map[string]core.ConfigurationKey{
 		Key:      "StopTxnSampledData",
 		Readonly: false,
 	},
-	// CSL
-	// "SupportedFeatureProfiles": {
-	// 	Key:      "SupportedFeatureProfiles",
-	// 	Readonly: true,
-	// },
+	"SupportedFeatureProfiles": {
+		Key:      "SupportedFeatureProfiles",
+		Readonly: true,
+		Value:    assets.GetStringPointer(assets.DefSupportedFeatureProfiles),
+	},
 	// integer
 	// "TransactionMessageAttempts": {
 	// 	Key:      "TransactionMessageAttempts",
