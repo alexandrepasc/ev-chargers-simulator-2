@@ -109,11 +109,10 @@ var config = map[string]core.ConfigurationKey{
 		Key:      "StopTxnAlignedData",
 		Readonly: false,
 	},
-	// CSL
-	// "StopTxnSampledData": {
-	// 	Key:      "StopTxnSampledData",
-	// 	Readonly: false,
-	// },
+	"StopTxnSampledData": {
+		Key:      "StopTxnSampledData",
+		Readonly: false,
+	},
 	// CSL
 	// "SupportedFeatureProfiles": {
 	// 	Key:      "SupportedFeatureProfiles",

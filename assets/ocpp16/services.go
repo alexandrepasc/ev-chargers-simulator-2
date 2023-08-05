@@ -98,6 +98,12 @@ func (o *Ocpp16) setStartUpConfigurations() {
 		Value:    assets.GetStringPointer(assets.DefStopTxnAlignedData),
 	}
 
+	o.Conf["StopTxnSampledData"] = core.ConfigurationKey{
+		Key:      o.Conf["StopTxnSampledData"].Key,
+		Readonly: o.Conf["StopTxnSampledData"].Readonly,
+		Value:    assets.GetStringPointer(assets.DefStopTxnSampledData),
+	}
+
 	o.t = 0
 
 	for x, e := range o.Asset.Evses {
