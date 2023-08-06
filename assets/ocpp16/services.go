@@ -1156,16 +1156,39 @@ func (o *Ocpp16) meterValues(id int64, mvl []types.MeterValue) {
 
 	o.logger.log(lm, req, assets.Info)
 
-	resp, err := o.s.SendRequest(req)
+	var res, err = o.s.SendRequest(req)
 
 	lm["sender"] = assets.CS
 	lm["type"] = assets.Response
 
+	// TODO: the transaction message attempts was not tested some investigation needs to be done
 	if err != nil {
 		o.logger.log(lm, err, assets.Error)
+
+		var tma, errTma = strconv.ParseInt(*o.Conf["TransactionMessageAttempts"].Value, 10, 64)
+
+		if errTma != nil {
+			o.logger.log(lm, errTma, assets.Fatal)
+		}
+
+		var tmai, errTmai = strconv.ParseInt(*o.Conf["TransactionMessageRetryInterval"].Value, 10, 64)
+
+		if errTmai != nil {
+			o.logger.log(lm, errTmai, assets.Fatal)
+		}
+
+		for i := 0; i < int(tma); i++ {
+			time.Sleep(time.Duration(tmai))
+
+			res, err = o.s.SendRequest(req)
+
+			if err == nil {
+				break
+			}
+		}
 	}
 
-	o.logger.log(lm, resp, assets.Info)
+	o.logger.log(lm, res, assets.Info)
 }
 
 /*
