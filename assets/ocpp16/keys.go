@@ -124,10 +124,10 @@ var config = map[string]core.ConfigurationKey{
 		Readonly: false,
 	},
 	// integer
-	// "TransactionMessageRetryInterval": {
-	// 	Key:      "TransactionMessageRetryInterval",
-	// 	Readonly: false,
-	// },
+	"TransactionMessageRetryInterval": {
+		Key:      "TransactionMessageRetryInterval",
+		Readonly: false,
+	},
 	// boolean
 	// "UnlockConnectorOnEVSideDisconnect": {
 	// 	Key:      "UnlockConnectorOnEVSideDisconnect",

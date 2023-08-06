@@ -110,6 +110,12 @@ func (o *Ocpp16) setStartUpConfigurations() {
 		Value:    assets.GetStringPointer(strconv.FormatInt(assets.DefTransactionMessageAttempts, 10)),
 	}
 
+	o.Conf["TransactionMessageRetryInterval"] = core.ConfigurationKey{
+		Key:      o.Conf["TransactionMessageRetryInterval"].Key,
+		Readonly: o.Conf["TransactionMessageRetryInterval"].Readonly,
+		Value:    assets.GetStringPointer(strconv.FormatInt(assets.DefTransactionMessageRetryInterval, 10)),
+	}
+
 	o.t = 0
 
 	for x, e := range o.Asset.Evses {
