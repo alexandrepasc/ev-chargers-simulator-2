@@ -126,11 +126,11 @@ var config = map[string]core.ConfigurationKey{
 		Key:      "TransactionMessageRetryInterval",
 		Readonly: false,
 	},
-	// boolean
-	// "UnlockConnectorOnEVSideDisconnect": {
-	// 	Key:      "UnlockConnectorOnEVSideDisconnect",
-	// 	Readonly: false,
-	// },
+	// no logic added to this configuration
+	"UnlockConnectorOnEVSideDisconnect": {
+		Key:      "UnlockConnectorOnEVSideDisconnect",
+		Readonly: false,
+	},
 	// SMART CHARGING PROFILE
 	"ChargingScheduleAllowedChargingRateUnit": {
 		Key:      "ChargingScheduleAllowedChargingRateUnit",

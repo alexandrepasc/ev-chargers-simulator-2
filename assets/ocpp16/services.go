@@ -116,6 +116,12 @@ func (o *Ocpp16) setStartUpConfigurations() {
 		Value:    assets.GetStringPointer(strconv.FormatInt(assets.DefTransactionMessageRetryInterval, 10)),
 	}
 
+	o.Conf["UnlockConnectorOnEVSideDisconnect"] = core.ConfigurationKey{
+		Key:      o.Conf["UnlockConnectorOnEVSideDisconnect"].Key,
+		Readonly: o.Conf["UnlockConnectorOnEVSideDisconnect"].Readonly,
+		Value:    assets.GetStringPointer(strconv.FormatBool(assets.DefUnlockConnectorOnEVSideDisconnect)),
+	}
+
 	o.t = 0
 
 	for x, e := range o.Asset.Evses {
