@@ -237,36 +237,7 @@ func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionReq
 
 					fmt.Println(o.Asset.Evses[0].Connectors[i].DP)
 
-					var req = core.StartTransactionRequest{
-						ConnectorId: int(c.ID),
-						IdTag:       r.IdTag,
-						MeterStart:  int(c.Energy),
-						Timestamp:   types.NewDateTime(time.Now()),
-					}
-
-					lm["feature"] = req.GetFeatureName()
-
-					o.logger.log(lm, req, assets.Error)
-
-					cb := func(res ocpp.Response, err error) {
-						var lm2 = map[string]string{
-							"protocol":  string(o.Asset.Protocol),
-							"function":  "processRemoteStartTransaction",
-							"feature":   res.GetFeatureName(),
-							"simulator": o.Asset.Name,
-							"sender":    assets.CS,
-							"type":      assets.Response,
-						}
-
-						o.logger.log(lm2, res, assets.Info)
-					}
-					err := o.s.SendRequestAsync(req, cb)
-
-					lm["type"] = assets.Response
-
-					if err != nil {
-						o.logger.log(lm, err, assets.Error)
-					}
+					o.startTransaction(r.IdTag, &o.Asset.Evses[0].Connectors[i])
 
 					o.statusNotification(&o.Asset.Evses[0].Connectors[i])
 
@@ -287,13 +258,7 @@ func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionReq
 
 				o.Asset.Evses[0].Connectors[i].DP.Position = 2
 
-				var req = core.StartTransactionRequest{
-					ConnectorId: int(c.ID),
-					IdTag:       r.IdTag,
-					Timestamp:   types.NewDateTime(time.Now()),
-				}
-
-				go o.s.SendRequest(req) //nolint:errcheck // because at the moment can not handle the error since it is in a routine
+				o.startTransaction(strconv.FormatInt(c.ID, 10), &o.Asset.Evses[0].Connectors[i])
 
 				return
 			}
@@ -1004,8 +969,31 @@ func (o *Ocpp16) startTransaction(id string, c *simulator.Connector) *core.Start
 	lm["sender"] = assets.CS
 	lm["type"] = assets.Response
 
+	// TODO: the transaction message attempts was not tested some investigation needs to be done
 	if err != nil {
 		o.logger.log(lm, err, assets.Error)
+
+		var tma, errTma = strconv.ParseInt(*o.Conf["TransactionMessageAttempts"].Value, 10, 64)
+
+		if errTma != nil {
+			o.logger.log(lm, errTma, assets.Fatal)
+		}
+
+		var tmai, errTmai = strconv.ParseInt(*o.Conf["TransactionMessageRetryInterval"].Value, 10, 64)
+
+		if errTmai != nil {
+			o.logger.log(lm, errTmai, assets.Fatal)
+		}
+
+		for i := 0; i < int(tma); i++ {
+			time.Sleep(time.Duration(tmai))
+
+			res, err = o.s.SendRequest(req)
+
+			if err == nil {
+				break
+			}
+		}
 	}
 
 	o.logger.log(lm, res.(*core.StartTransactionConfirmation), assets.Info)

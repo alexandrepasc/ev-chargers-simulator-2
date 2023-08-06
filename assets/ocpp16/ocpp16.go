@@ -76,7 +76,7 @@ func (o *Ocpp16) Start(c chan common.Channel, q chan bool) {
 			break
 		}
 
-		o.updateData()
+		go o.updateData()
 
 		go o.processSampledData()
 
