@@ -12,7 +12,7 @@ type Asset struct {
 	CPId            string        `json:"cPId,omitempty"`                                           // Charge point id to identify the unit (used in the ocpp protocol)
 	StartCharging   bool          `json:"startCharging" validate:"boolean"`                         // Set the asset to start charging behaviour by itself
 	Phases          Phases        `json:"phases" validate:"required,oneof=1 3"`                     // Phases number
-	PhaseRotation   PhaseRotation `json:"phaseRotation" validate:"required"`                        // The asset phase rotation, if the asset is DC the value should be NotApplicable
+	PhaseRotation   PhaseRotation `json:"phaseRotation" validate:"required"`                        // The asset phase rotation
 	CurrentType     CurrentType   `json:"curentType" validate:"required,oneof=ac dc"`               // Type of current of the asset (AC or DC)
 	AuthorizeRemote bool          `json:"authorizeRemote" validate:"required,boolean"`              // Configurataion AuthorizeRemoteTxRequests
 	AuthList        bool          `json:"authList" validate:"required,boolean"`                     // Enable or disable authorization local list
