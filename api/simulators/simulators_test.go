@@ -143,6 +143,7 @@ func TestPostSimulators(t *testing.T) {
 		Protocol:        simulator.Modbus,
 		StartCharging:   true,
 		Phases:          simulator.One,
+		PhaseRotation:   simulator.NotApplicable,
 		CurrentType:     simulator.Ac,
 		AuthorizeRemote: true,
 		AuthList:        true,
@@ -184,6 +185,8 @@ func TestPostSimulators(t *testing.T) {
 	assert.Equal(t, body.Protocol, a.Protocol)
 
 	assert.Equal(t, body.Phases, a.Phases)
+
+	assert.Equal(t, body.PhaseRotation, a.PhaseRotation)
 
 	assert.Equal(t, body.CurrentType, a.CurrentType)
 
@@ -342,6 +345,7 @@ func TestNotAblePostSimulatorsSameName(t *testing.T) {
 		Protocol:        simulator.Modbus,
 		StartCharging:   true,
 		Phases:          simulator.One,
+		PhaseRotation:   simulator.NotApplicable,
 		CurrentType:     simulator.Ac,
 		AuthorizeRemote: true,
 		AuthList:        true,
@@ -387,6 +391,7 @@ func TestPutSimulators(t *testing.T) {
 			Protocol:      simulator.Ocpp201,
 			StartCharging: true,
 			Phases:        simulator.One,
+			PhaseRotation: simulator.NotApplicable,
 			CurrentType:   simulator.Dc,
 			Evses:         []simulator.Evse{},
 		},
@@ -407,6 +412,7 @@ func TestPutSimulators(t *testing.T) {
 		Protocol:        simulator.Ocpp16,
 		StartCharging:   false,
 		Phases:          simulator.Three,
+		PhaseRotation:   simulator.RST,
 		CurrentType:     simulator.Ac,
 		AuthorizeRemote: true,
 		AuthList:        true,
@@ -440,6 +446,8 @@ func TestPutSimulators(t *testing.T) {
 	assert.Equal(t, e.StartCharging, a.StartCharging)
 
 	assert.Equal(t, e.Phases, a.Phases)
+
+	assert.Equal(t, e.PhaseRotation, a.PhaseRotation)
 
 	assert.Equal(t, e.CurrentType, a.CurrentType)
 }
@@ -563,6 +571,7 @@ func TestPutSimulatorsChangeNameID(t *testing.T) {
 			Protocol:      simulator.Ocpp201,
 			StartCharging: true,
 			Phases:        simulator.One,
+			PhaseRotation: simulator.NotApplicable,
 			CurrentType:   simulator.Dc,
 			Evses:         []simulator.Evse{},
 		},
@@ -586,6 +595,7 @@ func TestPutSimulatorsChangeNameID(t *testing.T) {
 		Protocol:        simulator.Ocpp16,
 		StartCharging:   false,
 		Phases:          simulator.Three,
+		PhaseRotation:   simulator.RST,
 		CurrentType:     simulator.Ac,
 		AuthorizeRemote: true,
 		AuthList:        true,
@@ -619,6 +629,8 @@ func TestPutSimulatorsChangeNameID(t *testing.T) {
 	assert.Equal(t, e.StartCharging, a.StartCharging)
 
 	assert.Equal(t, e.Phases, a.Phases)
+
+	assert.Equal(t, e.PhaseRotation, a.PhaseRotation)
 
 	assert.Equal(t, e.CurrentType, a.CurrentType)
 }
