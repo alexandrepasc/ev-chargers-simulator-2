@@ -38,6 +38,7 @@ const (
 	DefTransactionMessageAttempts        int64  = 1
 	DefTransactionMessageRetryInterval   int64  = 10
 	DefUnlockConnectorOnEVSideDisconnect bool   = true
+	DefGetConfigurationMaxKeys           int64  = 10
 	DefHeartbeatInterval                 int64  = 30
 	DefResetRetries                      int64  = 0
 	DefStopTransactionOnEvSideDisconnect bool   = false

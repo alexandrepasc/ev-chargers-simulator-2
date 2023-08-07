@@ -47,11 +47,10 @@ var config = map[string]core.ConfigurationKey{
 	// 	Key:      "ConnectorPhaseRotationMaxLength",
 	// 	Readonly: true,
 	// },
-	// required integer
-	// "GetConfigurationMaxKeys": {
-	// 	Key:      "GetConfigurationMaxKeys",
-	// 	Readonly: true,
-	// },
+	"GetConfigurationMaxKeys": {
+		Key:      "GetConfigurationMaxKeys",
+		Readonly: true,
+	},
 	// required integer
 	"HeartbeatInterval": {
 		Key:      "HeartbeatInterval",

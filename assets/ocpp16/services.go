@@ -128,6 +128,12 @@ func (o *Ocpp16) setStartUpConfigurations() {
 		Value:    (*string)(&o.Asset.PhaseRotation),
 	}
 
+	o.Conf["GetConfigurationMaxKeys"] = core.ConfigurationKey{
+		Key:      o.Conf["GetConfigurationMaxKeys"].Key,
+		Readonly: o.Conf["GetConfigurationMaxKeys"].Readonly,
+		Value:    assets.GetStringPointer(strconv.FormatInt(assets.DefGetConfigurationMaxKeys, 10)),
+	}
+
 	o.t = 0
 
 	for x, e := range o.Asset.Evses {
