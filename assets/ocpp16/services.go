@@ -134,6 +134,12 @@ func (o *Ocpp16) setStartUpConfigurations() {
 		Value:    assets.GetStringPointer(strconv.FormatInt(assets.DefGetConfigurationMaxKeys, 10)),
 	}
 
+	o.Conf["LocalAuthorizeOffline"] = core.ConfigurationKey{
+		Key:      o.Conf["LocalAuthorizeOffline"].Key,
+		Readonly: o.Conf["LocalAuthorizeOffline"].Readonly,
+		Value:    assets.GetStringPointer(strconv.FormatBool(assets.DefLocalAuthorizeOffline)),
+	}
+
 	o.t = 0
 
 	for x, e := range o.Asset.Evses {

@@ -61,11 +61,11 @@ var config = map[string]core.ConfigurationKey{
 	// 	Key:      "LightIntensity",
 	// 	Readonly: false,
 	// },
-	// required boolean
-	// "LocalAuthorizeOffline": {
-	// 	Key:      "LocalAuthorizeOffline",
-	// 	Readonly: false,
-	// },
+	// this key doesn't has any logic associated, since the ideia of this project is to be used with a cs
+	"LocalAuthorizeOffline": {
+		Key:      "LocalAuthorizeOffline",
+		Readonly: false,
+	},
 	// required boolean
 	// "LocalPreAuthorize": {
 	// 	Key:      "LocalPreAuthorize",
