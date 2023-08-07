@@ -122,6 +122,12 @@ func (o *Ocpp16) setStartUpConfigurations() {
 		Value:    assets.GetStringPointer(strconv.FormatBool(assets.DefUnlockConnectorOnEVSideDisconnect)),
 	}
 
+	o.Conf["ConnectorPhaseRotation"] = core.ConfigurationKey{
+		Key:      o.Conf["ConnectorPhaseRotation"].Key,
+		Readonly: o.Conf["ConnectorPhaseRotation"].Readonly,
+		Value:    (*string)(&o.Asset.PhaseRotation),
+	}
+
 	o.t = 0
 
 	for x, e := range o.Asset.Evses {

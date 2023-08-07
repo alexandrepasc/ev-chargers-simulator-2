@@ -37,11 +37,11 @@ var config = map[string]core.ConfigurationKey{
 		Key:      "ConnectionTimeOut",
 		Readonly: false,
 	},
-	// required CSL not sure how to do the logic for this
-	// "ConnectorPhaseRotation": {
-	// 	Key:      "ConnectorPhaseRotation",
-	// 	Readonly: false,
-	// },
+	// no logic added to this configuration
+	"ConnectorPhaseRotation": {
+		Key:      "ConnectorPhaseRotation",
+		Readonly: false,
+	},
 	// optional integer
 	// "ConnectorPhaseRotationMaxLength": {
 	// 	Key:      "ConnectorPhaseRotationMaxLength",
