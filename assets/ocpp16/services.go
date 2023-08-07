@@ -1229,7 +1229,25 @@ func (o *Ocpp16) getConfigurationKeys(k []string) (c []core.ConfigurationKey, u 
 		return c, u
 	}
 
+	var m, err = strconv.ParseInt(*o.Conf["GetConfigurationMaxKeys"].Value, 10, 64)
+
+	if err != nil {
+		var lm2 = map[string]string{
+			"protocol":  string(o.Asset.Protocol),
+			"function":  "getConfigurationKeys",
+			"simulator": o.Asset.Name,
+		}
+
+		o.logger.log(lm2, err, assets.Fatal)
+
+		return nil, nil
+	}
+
 	for i := range k {
+		if i == int(m) {
+			break
+		}
+
 		_, ok := o.Conf[k[i]]
 
 		if ok {
