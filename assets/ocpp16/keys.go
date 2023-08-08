@@ -66,11 +66,11 @@ var config = map[string]core.ConfigurationKey{
 		Key:      "LocalAuthorizeOffline",
 		Readonly: false,
 	},
-	// required boolean
-	// "LocalPreAuthorize": {
-	// 	Key:      "LocalPreAuthorize",
-	// 	Readonly: false,
-	// },
+	// TODO: the logic to this configuration needs to be reviewed
+	"LocalPreAuthorize": {
+		Key:      "LocalPreAuthorize",
+		Readonly: false,
+	},
 	// CSl
 	"MeterValuesAlignedData": {
 		Key:      "MeterValuesAlignedData",

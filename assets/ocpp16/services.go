@@ -140,6 +140,12 @@ func (o *Ocpp16) setStartUpConfigurations() {
 		Value:    assets.GetStringPointer(strconv.FormatBool(assets.DefLocalAuthorizeOffline)),
 	}
 
+	o.Conf["LocalPreAuthorize"] = core.ConfigurationKey{
+		Key:      o.Conf["LocalPreAuthorize"].Key,
+		Readonly: o.Conf["LocalPreAuthorize"].Readonly,
+		Value:    assets.GetStringPointer(strconv.FormatBool(assets.DefLocalPreAuthorize)),
+	}
+
 	o.t = 0
 
 	for x, e := range o.Asset.Evses {
