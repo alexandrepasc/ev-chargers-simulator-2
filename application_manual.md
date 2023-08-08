@@ -10,6 +10,8 @@
 		- [Change Configurations](#change-configurations)
 			- [By Flags](#by-flags)
 			- [By Restful API](#by-restful-api)
+				- [/configs/general](#configsgeneral)
+				- [/configs/simulators](#configssimulators)
 		- [Setup Simulators](#setup-simulators)
 			- [Manage Models](#manage-models)
 			- [Manage Simulator](#manage-simulator)
@@ -69,8 +71,55 @@ Change the **General and Simulators folder**:
 - `./ev-chargers-simulator-linux-amd64 -i -gs /full/path/to/the/location -ss /full/path`
 
 #### By Restful API
-/configs/general
-/configs/simulators
+Executing the application it will start an *HTTP* service that will enable changing the configurations. There are two endpoints that can be used to change the application configurations, the `/configs/general` and `/configs/simulators`.
+
+##### /configs/general
+With this endpoint we can get the current configuration as change them. The list of all the configurations that can be changed are listed down.
+- `hostIp`: The IP address of the conputer that is running the application
+- `connTimeout`: Connection timeout for all the simulators
+- `cSAddr`: OCPP central system IP address
+- `cSPort`: OCPP central system port that is leastning for the charge points
+- `lang`: Language
+- `apiAddr`: IP address that the *HTTP* service will run on
+- `apiPort`: IP port that the *HTTP* service will be listening on
+
+To list the current configurations values execute the request:
+```
+GET http://{apiAddr}:{apiPort}/configs/general
+```
+
+The response will return all the configurations listed previously in a *JSON* format.
+
+The same format returned by the list request should be used to execute the update configurations request.
+```
+PUT http://{apiAddr}:{apiPort}/configs/general
+{
+    "hostIp": "0.0.0.0",
+    "connTimeout": 70,
+    "cSAddr": "localhost",
+    "cSPort": "1234",
+    "lang": "pt-PT",
+    "apiAddr": "localhost",
+    "apiPort": "8001"
+}
+```
+**WARNING:** The update of any of the configurations and the update of the other endpoints needs to have the full body, could not be a partial udate. If only one field needs to be changed the full body needs to be sent.
+
+##### /configs/simulators
+In this endpoint we can change the path were the configuration files of the simulators will be located.
+
+To get the current path we can use the:
+```
+GET http://{apiAddr}:{apiPort}/configs/simulators
+```
+
+To update as in the previous endpoint we can use the *JSON* response structure.
+```
+PUT http://{apiAddr}:{apiPort}/configs/simulators
+{
+    "simFolder": "/full/path/to/folder/"
+}
+```
 
 ### Setup Simulators
 #### Manage Models
