@@ -315,21 +315,23 @@ func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionReq
 
 	var na = true
 
-	if o.localAuth.version > 0 {
-		for _, a := range o.localAuth.list {
-			if a.IdTag == r.IdTag && a.IdTagInfo.Status == types.AuthorizationStatusAccepted {
-				na = false
+	if assets.GetBoolFromString(*o.Conf["LocalPreAuthorize"].Value) {
+		if o.localAuth.version > 0 {
+			for _, a := range o.localAuth.list {
+				if a.IdTag == r.IdTag && a.IdTagInfo.Status == types.AuthorizationStatusAccepted {
+					na = false
+				}
 			}
 		}
-	}
 
-	if na {
-		if !o.authorize(r.IdTag) {
-			o.Asset.Evses[0].Connectors[i].DP.Position = 0
+		if na {
+			if !o.authorize(r.IdTag) {
+				o.Asset.Evses[0].Connectors[i].DP.Position = 0
 
-			o.statusNotification(&o.Asset.Evses[0].Connectors[i])
+				o.statusNotification(&o.Asset.Evses[0].Connectors[i])
 
-			return
+				return
+			}
 		}
 	}
 

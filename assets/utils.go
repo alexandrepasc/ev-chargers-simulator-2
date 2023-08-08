@@ -2,6 +2,7 @@ package assets
 
 import (
 	"math"
+	"strconv"
 	"time"
 
 	"github.com/alexandrepasc/ev-chargers-simulator-2/common"
@@ -122,4 +123,14 @@ func IsChanClosed(ch <-chan bool) bool {
 
 func GetStringPointer(s string) *string {
 	return &s
+}
+
+func GetBoolFromString(v string) bool {
+	var b, err = strconv.ParseBool(v)
+
+	if err != nil {
+		common.Log("GetBoolFromString").Fatal(err)
+	}
+
+	return b
 }
