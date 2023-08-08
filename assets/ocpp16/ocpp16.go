@@ -33,9 +33,11 @@ type Ocpp16 struct {
 		version int64                         // Version identifier
 		list    []localauth.AuthorizationData // List with the authorization information
 	}
-	chargeProfile *types.ChargingProfile // Charging profile set by the CS
-	t             int64
-	st            time.Time
+	chargeProfile  *types.ChargingProfile // Charging profile set by the CS
+	txnAlignedData []types.MeterValue     // Store the transaction aligned data
+	txnSampledData []types.MeterValue     // store the transaction sampled data
+	t              int64
+	st             time.Time
 }
 
 /**/
@@ -74,12 +76,9 @@ func (o *Ocpp16) Start(c chan common.Channel, q chan bool) {
 			break
 		}
 
-		o.updateData()
+		go o.updateData()
 
-		mvi, _ := strconv.ParseInt(*o.Conf["MeterValueSampleInterval"].Value, 10, 64)
-		if o.t%mvi == 0 {
-			go o.meterValuesSampledData()
-		}
+		go o.processSampledData()
 
 		var hbi, _ = strconv.ParseInt(*o.Conf["HeartbeatInterval"].Value, 10, 64)
 		if o.t%hbi == 0 {
@@ -87,6 +86,8 @@ func (o *Ocpp16) Start(c chan common.Channel, q chan bool) {
 		}
 
 		channelComm(c, o.Asset.Evses, o.st, o.Asset.Name, o.Asset.SimID)
+
+		o.processAlignedData()
 
 		o.handleTick()
 

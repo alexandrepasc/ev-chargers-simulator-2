@@ -61,6 +61,7 @@ func TestCreateSimulator(t *testing.T) {
 		Model:           mID,
 		StartCharging:   true,
 		Phases:          simulator.One,
+		PhaseRotation:   simulator.NotApplicable,
 		CurrentType:     simulator.Ac,
 		AuthorizeRemote: true,
 		AuthList:        true,
@@ -312,6 +313,7 @@ func TestUpdateSimulator(t *testing.T) {
 		Type:            simulator.Pm,
 		Protocol:        simulator.Ocpp16,
 		Phases:          simulator.Three,
+		PhaseRotation:   simulator.RST,
 		CurrentType:     simulator.Dc,
 		AuthorizeRemote: true,
 		AuthList:        true,
@@ -334,6 +336,8 @@ func TestUpdateSimulator(t *testing.T) {
 
 	assert.Equal(t, simulator.Three, aa.Phases)
 
+	assert.Equal(t, simulator.RST, aa.PhaseRotation)
+
 	p := tmp + defSCFolder + "/sim0.json"
 
 	af := readFile(p)
@@ -347,6 +351,8 @@ func TestUpdateSimulator(t *testing.T) {
 	assert.Equal(t, simulator.Ocpp16, af.Protocol)
 
 	assert.Equal(t, simulator.Three, af.Phases)
+
+	assert.Equal(t, simulator.RST, af.PhaseRotation)
 }
 
 func TestUpdateSimulatorWithWrongId(t *testing.T) {
@@ -447,6 +453,7 @@ func TestUpdateSimulatorChangeName(t *testing.T) {
 		Type:            simulator.Pm,
 		Protocol:        simulator.Ocpp16,
 		Phases:          simulator.Three,
+		PhaseRotation:   simulator.NotApplicable,
 		CurrentType:     simulator.Dc,
 		AuthorizeRemote: true,
 		AuthList:        true,
@@ -471,6 +478,8 @@ func TestUpdateSimulatorChangeName(t *testing.T) {
 
 	assert.Equal(t, simulator.Three, aa.Phases)
 
+	assert.Equal(t, simulator.NotApplicable, aa.PhaseRotation)
+
 	p := tmp + defSCFolder + "/sim0.json"
 
 	af := readFile(p)
@@ -486,6 +495,8 @@ func TestUpdateSimulatorChangeName(t *testing.T) {
 	assert.Equal(t, simulator.Ocpp16, af.Protocol)
 
 	assert.Equal(t, simulator.Three, af.Phases)
+
+	assert.Equal(t, simulator.NotApplicable, af.PhaseRotation)
 }
 
 func TestDeleteSimulator(t *testing.T) {

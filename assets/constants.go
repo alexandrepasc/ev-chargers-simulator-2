@@ -28,7 +28,23 @@ const (
 	Inoperative Availability = "Inoperative"
 	Operative   Availability = "Operative"
 
-	DefHeartbeatInterval int64 = 30
+	DefMeterValueSampleInterval          int64  = 20
+	DefMeterValuesSampledData            string = "Energy.Active.Import.Register,Power.Active.Import"
+	DefStopTxnSampledData                string = "Current.Import"
+	DefClockAlignedDataInterval          int64  = 900
+	DefMeterValuesAlignedData            string = "Energy.Active.Import.Register,Power.Active.Import"
+	DefStopTxnAlignedData                string = "Power.Active.Import"
+	DefSupportedFeatureProfiles          string = "Core,LocalAuthListManagement,RemoteTrigger"
+	DefTransactionMessageAttempts        int64  = 1
+	DefTransactionMessageRetryInterval   int64  = 10
+	DefUnlockConnectorOnEVSideDisconnect bool   = true
+	DefGetConfigurationMaxKeys           int64  = 10
+	DefLocalAuthorizeOffline             bool   = true
+	DefLocalPreAuthorize                 bool   = false
+	DefHeartbeatInterval                 int64  = 30
+	DefResetRetries                      int64  = 0
+	DefStopTransactionOnEvSideDisconnect bool   = false
+	DefStopTransactionOnInvalidID        bool   = true
 )
 
 var (

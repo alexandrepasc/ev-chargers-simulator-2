@@ -365,7 +365,14 @@ func (o *Ocpp16) OnTriggerMessage(req *remotetrigger.TriggerMessageRequest) (res
 		res = &remotetrigger.TriggerMessageConfirmation{Status: remotetrigger.TriggerMessageStatusAccepted}
 
 	case core.MeterValuesFeatureName:
-		go o.meterValuesSampledData()
+		var c, _ = o.getConnectorAndIndex(req.ConnectorId)
+
+		if c == nil {
+			res = &remotetrigger.TriggerMessageConfirmation{Status: remotetrigger.TriggerMessageStatusRejected}
+			break
+		}
+
+		go o.processTriggerSampledData(req.ConnectorId)
 
 		res = &remotetrigger.TriggerMessageConfirmation{Status: remotetrigger.TriggerMessageStatusAccepted}
 
