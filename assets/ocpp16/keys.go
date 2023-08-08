@@ -37,21 +37,20 @@ var config = map[string]core.ConfigurationKey{
 		Key:      "ConnectionTimeOut",
 		Readonly: false,
 	},
-	// required CSL not sure how to do the logic for this
-	// "ConnectorPhaseRotation": {
-	// 	Key:      "ConnectorPhaseRotation",
-	// 	Readonly: false,
-	// },
+	// no logic added to this configuration
+	"ConnectorPhaseRotation": {
+		Key:      "ConnectorPhaseRotation",
+		Readonly: false,
+	},
 	// optional integer
 	// "ConnectorPhaseRotationMaxLength": {
 	// 	Key:      "ConnectorPhaseRotationMaxLength",
 	// 	Readonly: true,
 	// },
-	// required integer
-	// "GetConfigurationMaxKeys": {
-	// 	Key:      "GetConfigurationMaxKeys",
-	// 	Readonly: true,
-	// },
+	"GetConfigurationMaxKeys": {
+		Key:      "GetConfigurationMaxKeys",
+		Readonly: true,
+	},
 	// required integer
 	"HeartbeatInterval": {
 		Key:      "HeartbeatInterval",
@@ -62,16 +61,16 @@ var config = map[string]core.ConfigurationKey{
 	// 	Key:      "LightIntensity",
 	// 	Readonly: false,
 	// },
-	// required boolean
-	// "LocalAuthorizeOffline": {
-	// 	Key:      "LocalAuthorizeOffline",
-	// 	Readonly: false,
-	// },
-	// required boolean
-	// "LocalPreAuthorize": {
-	// 	Key:      "LocalPreAuthorize",
-	// 	Readonly: false,
-	// },
+	// this key doesn't has any logic associated, since the ideia of this project is to be used with a cs
+	"LocalAuthorizeOffline": {
+		Key:      "LocalAuthorizeOffline",
+		Readonly: false,
+	},
+	// TODO: the logic to this configuration needs to be reviewed
+	"LocalPreAuthorize": {
+		Key:      "LocalPreAuthorize",
+		Readonly: false,
+	},
 	// CSl
 	"MeterValuesAlignedData": {
 		Key:      "MeterValuesAlignedData",
@@ -105,36 +104,32 @@ var config = map[string]core.ConfigurationKey{
 		Key:      "StopTransactionOnInvalidId",
 		Readonly: false,
 	},
-	// CSL
-	// "StopTxnAlignedData": {
-	// 	Key:      "StopTxnAlignedData",
-	// 	Readonly: true,
-	// },
-	// CSL
-	// "StopTxnSampledData": {
-	// 	Key:      "StopTxnSampledData",
-	// 	Readonly: false,
-	// },
-	// CSL
-	// "SupportedFeatureProfiles": {
-	// 	Key:      "SupportedFeatureProfiles",
-	// 	Readonly: true,
-	// },
-	// integer
-	// "TransactionMessageAttempts": {
-	// 	Key:      "TransactionMessageAttempts",
-	// 	Readonly: false,
-	// },
-	// integer
-	// "TransactionMessageRetryInterval": {
-	// 	Key:      "TransactionMessageRetryInterval",
-	// 	Readonly: false,
-	// },
-	// boolean
-	// "UnlockConnectorOnEVSideDisconnect": {
-	// 	Key:      "UnlockConnectorOnEVSideDisconnect",
-	// 	Readonly: false,
-	// },
+	"StopTxnAlignedData": {
+		Key:      "StopTxnAlignedData",
+		Readonly: false,
+	},
+	"StopTxnSampledData": {
+		Key:      "StopTxnSampledData",
+		Readonly: false,
+	},
+	"SupportedFeatureProfiles": {
+		Key:      "SupportedFeatureProfiles",
+		Readonly: true,
+		Value:    assets.GetStringPointer(assets.DefSupportedFeatureProfiles),
+	},
+	"TransactionMessageAttempts": {
+		Key:      "TransactionMessageAttempts",
+		Readonly: false,
+	},
+	"TransactionMessageRetryInterval": {
+		Key:      "TransactionMessageRetryInterval",
+		Readonly: false,
+	},
+	// no logic added to this configuration
+	"UnlockConnectorOnEVSideDisconnect": {
+		Key:      "UnlockConnectorOnEVSideDisconnect",
+		Readonly: false,
+	},
 	// SMART CHARGING PROFILE
 	"ChargingScheduleAllowedChargingRateUnit": {
 		Key:      "ChargingScheduleAllowedChargingRateUnit",

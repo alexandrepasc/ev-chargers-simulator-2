@@ -92,6 +92,60 @@ func (o *Ocpp16) setStartUpConfigurations() {
 		Value:    assets.GetStringPointer(assets.DefMeterValuesAlignedData),
 	}
 
+	o.Conf["StopTxnAlignedData"] = core.ConfigurationKey{
+		Key:      o.Conf["StopTxnAlignedData"].Key,
+		Readonly: o.Conf["StopTxnAlignedData"].Readonly,
+		Value:    assets.GetStringPointer(assets.DefStopTxnAlignedData),
+	}
+
+	o.Conf["StopTxnSampledData"] = core.ConfigurationKey{
+		Key:      o.Conf["StopTxnSampledData"].Key,
+		Readonly: o.Conf["StopTxnSampledData"].Readonly,
+		Value:    assets.GetStringPointer(assets.DefStopTxnSampledData),
+	}
+
+	o.Conf["TransactionMessageAttempts"] = core.ConfigurationKey{
+		Key:      o.Conf["TransactionMessageAttempts"].Key,
+		Readonly: o.Conf["TransactionMessageAttempts"].Readonly,
+		Value:    assets.GetStringPointer(strconv.FormatInt(assets.DefTransactionMessageAttempts, 10)),
+	}
+
+	o.Conf["TransactionMessageRetryInterval"] = core.ConfigurationKey{
+		Key:      o.Conf["TransactionMessageRetryInterval"].Key,
+		Readonly: o.Conf["TransactionMessageRetryInterval"].Readonly,
+		Value:    assets.GetStringPointer(strconv.FormatInt(assets.DefTransactionMessageRetryInterval, 10)),
+	}
+
+	o.Conf["UnlockConnectorOnEVSideDisconnect"] = core.ConfigurationKey{
+		Key:      o.Conf["UnlockConnectorOnEVSideDisconnect"].Key,
+		Readonly: o.Conf["UnlockConnectorOnEVSideDisconnect"].Readonly,
+		Value:    assets.GetStringPointer(strconv.FormatBool(assets.DefUnlockConnectorOnEVSideDisconnect)),
+	}
+
+	o.Conf["ConnectorPhaseRotation"] = core.ConfigurationKey{
+		Key:      o.Conf["ConnectorPhaseRotation"].Key,
+		Readonly: o.Conf["ConnectorPhaseRotation"].Readonly,
+		Value:    (*string)(&o.Asset.PhaseRotation),
+	}
+
+	o.Conf["GetConfigurationMaxKeys"] = core.ConfigurationKey{
+		Key:      o.Conf["GetConfigurationMaxKeys"].Key,
+		Readonly: o.Conf["GetConfigurationMaxKeys"].Readonly,
+		Value:    assets.GetStringPointer(strconv.FormatInt(assets.DefGetConfigurationMaxKeys, 10)),
+	}
+
+	o.Conf["LocalAuthorizeOffline"] = core.ConfigurationKey{
+		Key:      o.Conf["LocalAuthorizeOffline"].Key,
+		Readonly: o.Conf["LocalAuthorizeOffline"].Readonly,
+		Value:    assets.GetStringPointer(strconv.FormatBool(assets.DefLocalAuthorizeOffline)),
+	}
+
+	o.Conf["LocalPreAuthorize"] = core.ConfigurationKey{
+		Key:      o.Conf["LocalPreAuthorize"].Key,
+		Readonly: o.Conf["LocalPreAuthorize"].Readonly,
+		Value:    assets.GetStringPointer(strconv.FormatBool(assets.DefLocalPreAuthorize)),
+	}
+
 	o.t = 0
 
 	for x, e := range o.Asset.Evses {
@@ -213,36 +267,7 @@ func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionReq
 
 					fmt.Println(o.Asset.Evses[0].Connectors[i].DP)
 
-					var req = core.StartTransactionRequest{
-						ConnectorId: int(c.ID),
-						IdTag:       r.IdTag,
-						MeterStart:  int(c.Energy),
-						Timestamp:   types.NewDateTime(time.Now()),
-					}
-
-					lm["feature"] = req.GetFeatureName()
-
-					o.logger.log(lm, req, assets.Error)
-
-					cb := func(res ocpp.Response, err error) {
-						var lm2 = map[string]string{
-							"protocol":  string(o.Asset.Protocol),
-							"function":  "processRemoteStartTransaction",
-							"feature":   res.GetFeatureName(),
-							"simulator": o.Asset.Name,
-							"sender":    assets.CS,
-							"type":      assets.Response,
-						}
-
-						o.logger.log(lm2, res, assets.Info)
-					}
-					err := o.s.SendRequestAsync(req, cb)
-
-					lm["type"] = assets.Response
-
-					if err != nil {
-						o.logger.log(lm, err, assets.Error)
-					}
+					o.startTransaction(r.IdTag, &o.Asset.Evses[0].Connectors[i])
 
 					o.statusNotification(&o.Asset.Evses[0].Connectors[i])
 
@@ -263,13 +288,7 @@ func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionReq
 
 				o.Asset.Evses[0].Connectors[i].DP.Position = 2
 
-				var req = core.StartTransactionRequest{
-					ConnectorId: int(c.ID),
-					IdTag:       r.IdTag,
-					Timestamp:   types.NewDateTime(time.Now()),
-				}
-
-				go o.s.SendRequest(req) //nolint:errcheck // because at the moment can not handle the error since it is in a routine
+				o.startTransaction(strconv.FormatInt(c.ID, 10), &o.Asset.Evses[0].Connectors[i])
 
 				return
 			}
@@ -296,21 +315,23 @@ func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionReq
 
 	var na = true
 
-	if o.localAuth.version > 0 {
-		for _, a := range o.localAuth.list {
-			if a.IdTag == r.IdTag && a.IdTagInfo.Status == types.AuthorizationStatusAccepted {
-				na = false
+	if assets.GetBoolFromString(*o.Conf["LocalPreAuthorize"].Value) {
+		if o.localAuth.version > 0 {
+			for _, a := range o.localAuth.list {
+				if a.IdTag == r.IdTag && a.IdTagInfo.Status == types.AuthorizationStatusAccepted {
+					na = false
+				}
 			}
 		}
-	}
 
-	if na {
-		if !o.authorize(r.IdTag) {
-			o.Asset.Evses[0].Connectors[i].DP.Position = 0
+		if na {
+			if !o.authorize(r.IdTag) {
+				o.Asset.Evses[0].Connectors[i].DP.Position = 0
 
-			o.statusNotification(&o.Asset.Evses[0].Connectors[i])
+				o.statusNotification(&o.Asset.Evses[0].Connectors[i])
 
-			return
+				return
+			}
 		}
 	}
 
@@ -336,6 +357,8 @@ func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionReq
 	if resp.IdTagInfo.Status != types.AuthorizationStatusAccepted {
 		o.Asset.Evses[0].Connectors[i].DP.Position = 0
 		o.Asset.Evses[0].Connectors[i].Enabled = false
+		o.txnAlignedData = []types.MeterValue{}
+		o.txnSampledData = []types.MeterValue{}
 		o.statusNotification(&o.Asset.Evses[0].Connectors[i])
 	}
 }
@@ -390,6 +413,8 @@ func (o *Ocpp16) processReset(r *core.ResetRequest) *core.ResetConfirmation {
 				o.Asset.Evses[x].Connectors[y].Enabled = false
 				o.Asset.Evses[x].Connectors[y].DP.Position = 0
 				o.Asset.Evses[x].Connectors[y].DP.Ticker = 0
+				o.txnAlignedData = []types.MeterValue{}
+				o.txnSampledData = []types.MeterValue{}
 
 				go o.stopTransaction(o.Asset.Evses[x].CIDTag, &o.Asset.Evses[x].Connectors[y])
 			}
@@ -537,11 +562,25 @@ func (o *Ocpp16) processSampledData() {
 
 	for ie, e := range o.Asset.Evses {
 		for ic, c := range e.Connectors {
-			if c.Enabled {
-				var sd = o.meterValuesSampledData(ie, ic, conf)
-
-				o.meterValues(c.ID, sd)
+			if !c.Enabled {
+				continue
 			}
+
+			if c.Data[c.DP.Position].ChargingState != int64(assets.Charging) {
+				continue
+			}
+
+			var sd = o.meterValuesSampledData(ie, ic, conf)
+
+			var cl = strings.Split(*o.Conf["StopTxnSampledData"].Value, ",")
+
+			if len(cl) != 0 || cl[0] != "" {
+				var tsd = o.meterValuesSampledData(ie, ic, cl)
+
+				o.txnSampledData = append(o.txnSampledData, tsd...)
+			}
+
+			o.meterValues(c.ID, sd)
 		}
 	}
 }
@@ -663,6 +702,9 @@ func (o *Ocpp16) meterValuesSampledData(ie, ic int, confL []string) []types.Mete
 Process the logic to trigger the sampled data meter values. Get the configured interval, check
 if it is 0, check if it is time to send the message, gets the configuration data, and call the send
 function.
+
+If a connector is active get the transaction aligned data values and append them in a variable, to
+be used in the stop transaction message.
 */
 func (o *Ocpp16) processAlignedData() {
 	var i = time.Now().UTC().Sub(time.Date(time.Now().UTC().Year(), time.Now().UTC().Month(), time.Now().UTC().Day(), 0, 0, 0, 0, time.UTC)).Seconds()
@@ -691,10 +733,32 @@ func (o *Ocpp16) processAlignedData() {
 
 	var conf = strings.Split(*o.Conf["MeterValuesAlignedData"].Value, ",")
 
-	var sd = o.meterValuesAlignedData(conf)
+	var ad = o.meterValuesAlignedData(conf)
+
+	for _, e := range o.Asset.Evses {
+		if canEnable(e.Connectors) {
+			continue
+		}
+
+		var _, c = getActiveConnector(e)
+
+		if c.Data[c.DP.Position].ChargingState != int64(assets.Charging) {
+			continue
+		}
+
+		var cl = strings.Split(*o.Conf["StopTxnAlignedData"].Value, ",")
+
+		if len(cl) == 0 || cl[0] == "" {
+			continue
+		}
+
+		var tad = o.meterValuesAlignedData(cl)
+
+		o.txnAlignedData = append(o.txnAlignedData, tad...)
+	}
 
 	// TODO: review the connector id, at this moment is returning the total of the asset so the id is 0
-	o.meterValues(0, sd)
+	o.meterValues(0, ad)
 }
 
 /*
@@ -801,6 +865,8 @@ func (o *Ocpp16) updateData() {
 
 						if c.Data[o.Asset.Evses[x].Connectors[y].DP.Position].ChargingState == int64(assets.Finishing) {
 							o.stopTransaction(o.Asset.Evses[x].CIDTag, &o.Asset.Evses[x].Connectors[y])
+							o.txnAlignedData = []types.MeterValue{}
+							o.txnSampledData = []types.MeterValue{}
 						}
 
 						// If the connector starts charging send the start transaction request
@@ -935,8 +1001,31 @@ func (o *Ocpp16) startTransaction(id string, c *simulator.Connector) *core.Start
 	lm["sender"] = assets.CS
 	lm["type"] = assets.Response
 
+	// TODO: the transaction message attempts was not tested some investigation needs to be done
 	if err != nil {
 		o.logger.log(lm, err, assets.Error)
+
+		var tma, errTma = strconv.ParseInt(*o.Conf["TransactionMessageAttempts"].Value, 10, 64)
+
+		if errTma != nil {
+			o.logger.log(lm, errTma, assets.Fatal)
+		}
+
+		var tmai, errTmai = strconv.ParseInt(*o.Conf["TransactionMessageRetryInterval"].Value, 10, 64)
+
+		if errTmai != nil {
+			o.logger.log(lm, errTmai, assets.Fatal)
+		}
+
+		for i := 0; i < int(tma); i++ {
+			time.Sleep(time.Duration(tmai))
+
+			res, err = o.s.SendRequest(req)
+
+			if err == nil {
+				break
+			}
+		}
 	}
 
 	o.logger.log(lm, res.(*core.StartTransactionConfirmation), assets.Info)
@@ -961,38 +1050,51 @@ func (o *Ocpp16) stopTransaction(id string, c *simulator.Connector) {
 		"type":      assets.Request,
 	}
 
+	var td = o.txnAlignedData
+	td = append(td, o.txnSampledData...)
+
 	// TODO: the id tag needs to be created and stored and not hard coded
 	var req = core.StopTransactionRequest{
-		IdTag:         id,
-		MeterStop:     int(c.Energy),
-		Timestamp:     types.NewDateTime(time.Now()),
-		TransactionId: o.chargeProfile.TransactionId,
+		IdTag:           id,
+		MeterStop:       int(c.Energy),
+		Timestamp:       types.NewDateTime(time.Now()),
+		TransactionId:   o.chargeProfile.TransactionId,
+		TransactionData: td,
 	}
 
 	lm["feature"] = req.GetFeatureName()
 
 	o.logger.log(lm, req, assets.Info)
 
-	cb := func(res ocpp.Response, err error) {
-		var lm2 = map[string]string{
-			"protocol":  string(o.Asset.Protocol),
-			"function":  "stopTransaction",
-			"feature":   res.GetFeatureName(),
-			"simulator": o.Asset.Name,
-			"sender":    assets.CS,
-			"type":      assets.Response,
-		}
-
-		o.logger.log(lm2, res, assets.Info)
-	}
-
-	err := o.s.SendRequestAsync(req, cb)
+	var _, err = o.s.SendRequest(req)
 
 	lm["sender"] = assets.CS
 	lm["type"] = assets.Response
 
 	if err != nil {
 		o.logger.log(lm, err, assets.Error)
+
+		var tma, errTma = strconv.ParseInt(*o.Conf["TransactionMessageAttempts"].Value, 10, 64)
+
+		if errTma != nil {
+			o.logger.log(lm, errTma, assets.Fatal)
+		}
+
+		var tmai, errTmai = strconv.ParseInt(*o.Conf["TransactionMessageRetryInterval"].Value, 10, 64)
+
+		if errTmai != nil {
+			o.logger.log(lm, errTmai, assets.Fatal)
+		}
+
+		for i := 0; i < int(tma); i++ {
+			time.Sleep(time.Duration(tmai))
+
+			_, err = o.s.SendRequest(req)
+
+			if err == nil {
+				break
+			}
+		}
 	}
 }
 
@@ -1086,16 +1188,39 @@ func (o *Ocpp16) meterValues(id int64, mvl []types.MeterValue) {
 
 	o.logger.log(lm, req, assets.Info)
 
-	resp, err := o.s.SendRequest(req)
+	var res, err = o.s.SendRequest(req)
 
 	lm["sender"] = assets.CS
 	lm["type"] = assets.Response
 
+	// TODO: the transaction message attempts was not tested some investigation needs to be done
 	if err != nil {
 		o.logger.log(lm, err, assets.Error)
+
+		var tma, errTma = strconv.ParseInt(*o.Conf["TransactionMessageAttempts"].Value, 10, 64)
+
+		if errTma != nil {
+			o.logger.log(lm, errTma, assets.Fatal)
+		}
+
+		var tmai, errTmai = strconv.ParseInt(*o.Conf["TransactionMessageRetryInterval"].Value, 10, 64)
+
+		if errTmai != nil {
+			o.logger.log(lm, errTmai, assets.Fatal)
+		}
+
+		for i := 0; i < int(tma); i++ {
+			time.Sleep(time.Duration(tmai))
+
+			res, err = o.s.SendRequest(req)
+
+			if err == nil {
+				break
+			}
+		}
 	}
 
-	o.logger.log(lm, resp, assets.Info)
+	o.logger.log(lm, res, assets.Info)
 }
 
 /*
@@ -1118,7 +1243,25 @@ func (o *Ocpp16) getConfigurationKeys(k []string) (c []core.ConfigurationKey, u 
 		return c, u
 	}
 
+	var m, err = strconv.ParseInt(*o.Conf["GetConfigurationMaxKeys"].Value, 10, 64)
+
+	if err != nil {
+		var lm2 = map[string]string{
+			"protocol":  string(o.Asset.Protocol),
+			"function":  "getConfigurationKeys",
+			"simulator": o.Asset.Name,
+		}
+
+		o.logger.log(lm2, err, assets.Fatal)
+
+		return nil, nil
+	}
+
 	for i := range k {
+		if i == int(m) {
+			break
+		}
+
 		_, ok := o.Conf[k[i]]
 
 		if ok {
@@ -1214,6 +1357,8 @@ func (o *Ocpp16) notAutoChargePoint(c *simulator.Connector, x, y int) {
 			if assets.Status[c.Data[c.DP.Position].ChargingState] == assets.Status[assets.Finishing] {
 				o.Asset.Evses[x].Connectors[y].DP.Position = 0
 				o.Asset.Evses[x].Connectors[y].Enabled = false
+				o.txnAlignedData = []types.MeterValue{}
+				o.txnSampledData = []types.MeterValue{}
 
 				var aux = o.Asset.Evses[x].Connectors[y]
 
@@ -1260,6 +1405,8 @@ func (o *Ocpp16) notAutoChargePoint(c *simulator.Connector, x, y int) {
 		o.Asset.Evses[x].Connectors[y].DP.Position = 0
 		o.Asset.Evses[x].Connectors[y].DP.Ticker = 0
 		o.Asset.Evses[x].Connectors[y].Enabled = false
+		o.txnAlignedData = []types.MeterValue{}
+		o.txnSampledData = []types.MeterValue{}
 	}
 }
 
@@ -1293,4 +1440,22 @@ func (o *Ocpp16) getConnectorAndIndex(id *int) (ci *simulator.Connector, index i
 	}
 
 	return nil, 0
+}
+
+/*
+Get from the evse the connecto that is active, in case one of the connectors is active returns
+the evse connector index (int) and the connector structure (*simulator.Connector).
+
+In case none of the connectors is active will return the index -1 and the structure as nil.
+
+e	-	Evse structure simulator.Evse
+*/
+func getActiveConnector(e simulator.Evse) (i int, c *simulator.Connector) {
+	for ci, c := range e.Connectors {
+		if c.Enabled {
+			return ci, &c
+		}
+	}
+
+	return -1, nil
 }
