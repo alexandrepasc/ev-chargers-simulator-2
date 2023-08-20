@@ -14,6 +14,8 @@
 				- [/configs/simulators](#configssimulators)
 		- [Setup Simulators](#setup-simulators)
 			- [Manage Models](#manage-models)
+				- [/simulators/models](#simulatorsmodels)
+				- [/simulators/models/:id](#simulatorsmodelsid)
 			- [Manage Simulator](#manage-simulator)
 			- [Run The Simulators](#run-the-simulators)
 	- [Appendix](#appendix)
@@ -122,9 +124,100 @@ PUT http://{apiAddr}:{apiPort}/configs/simulators
 ```
 
 ### Setup Simulators
+In this section it is described how to setup and use the simulators. In oposition to the previous section the only way to do this is interfacing with the *Restful API*.
+
 #### Manage Models
-/simulators/models
-/simulators/models/:id
+The **Models** are used to add configurations to the simulators, for example the *OCPP Chargers* have information that are retreived by the central system that is related with the equipement. For the *OCPP Chargers* in the boot request the charger sends the brand, model, etc... and this type of information is configured in the **Model**.
+
+To use a *model* it needs to be configures in the *simulator* configuration. One simulator can be associated with one *model* but one *model* can have multiple *simulators*.
+
+##### /simulators/models
+This endpoint gives the ability to list and create *models*.
+
+To list the existing models use the following method:
+```
+GET http://{apiAddr}:{apiPort}/simulators/models
+```
+
+It will return the total of existing *models* and the list of them.
+```
+{
+    "total": 1,
+    "models": [
+        {
+            "id": "3dfb64f3-d26b-44f5-8b1a-c56b56fa1b15",
+            "name": "model1",
+            "type": "ocpp",
+            "ocpp": {
+                "serialNumb": "",
+                "model": "",
+                "vendor": "",
+                "vendorId": "",
+                "fwVersion": "",
+                "meterSerialNumb": "",
+                "modem": {
+                    "iccid": "",
+                    "imsi": ""
+                }
+            },
+            "modbus": {}
+        }
+    ]
+}
+```
+
+Create a new *model* with the same endpoint but now using the `POST` method:
+```
+POST http://{apiAddr}:{apiPort}/simulators/models
+{
+    "name": "model1",
+    "type": "ocpp",
+    "ocpp": {
+        "serialNumb": "qweqwe",
+        "model": "EV Charger 1",
+        "vendor": "Simulator",
+        "fwVersion": "1.0.0",
+        "meterSerialNumb": "789asd",
+        "modem": {
+            "iccid": "111111111111",
+            "imsi": "2222222222222"
+        }
+    }
+}
+```
+
+The service will return the same body structure sent in the request, but with the `ID` generated.
+
+The properties `name` and `type` are required, the `name` is a free field but the `type` is not. It can only have the values `ocpp` or `modbus`, and it will be used to handle the type of protocol the the associated simulators can have.
+
+##### /simulators/models/:id
+Besides listing and creating the *models*, the user has the ability to edit and delete a model. This endpoint has the same path as the previous one but with the `ID` (`:id`) at the end that will identify the *model* that will be edited or deleted.
+
+To edit a model get the `ID`, add it to the end of the endpoint path, and the full body of the *model* with the edited values.
+```
+PUT http://{apiAddr}:{apiPort}/simulators/models/{model-identifier-here}
+{
+    "name": "model1",
+    "type": "ocpp",
+    "ocpp": {
+        "serialNumb": "qweqwe",
+        "model": "EV Charger 1",
+        "vendor": "Simulator",
+        "fwVersion": "1.0.0",
+        "meterSerialNumb": "changed-value",
+        "modem": {
+            "iccid": "111111111111",
+            "imsi": "2222222222222"
+        }
+    }
+}
+```
+
+Now deleting a *model* use the following:
+```
+DELETE http://{apiAddr}:{apiPort}/simulators/models/{model-identifier-here}
+```
+
 #### Manage Simulator
 NOTE: the simulator data needs to have the Available state in the 1st item and Finishing in the last item
 /simulators
