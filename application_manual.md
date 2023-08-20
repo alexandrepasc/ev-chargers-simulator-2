@@ -127,9 +127,24 @@ PUT http://{apiAddr}:{apiPort}/configs/simulators
 In this section it is described how to setup and use the simulators. In oposition to the previous section the only way to do this is interfacing with the *Restful API*.
 
 #### Manage Models
-The **Models** are used to add configurations to the simulators, for example the *OCPP Chargers* have information that are retreived by the central system that is related with the equipement. For the *OCPP Chargers* in the boot request the charger sends the brand, model, etc... and this type of information is configured in the **Model**.
+The **Models** are used to add configurations to the simulators, for example the *OCPP Chargers* have information that are retreived by the central system that is related with the equipement. For the *OCPP Chargers* in the boot request the charger sends the brand, model, etc... and this type of information is configured in the **Model**. The properties are listed bellow:
 
-To use a *model* it needs to be configures in the *simulator* configuration. One simulator can be associated with one *model* but one *model* can have multiple *simulators*.
+- `id`: Model identifier
+- `name`: Model name
+- `type`: Type of asset that this config can be used (ocpp, modbus)
+- `ocpp`: Ocpp structure
+  - `serialNumb`: Equipment serial number
+  - `model`: Equipment model name
+  - `vendor`: Equipment vendor
+  - `vendorId`: Vendor identifier
+  - `fwVersion`: Firmware version
+  - `meterSerialNumb`: Power meter serial number
+  - `modem`: Modem information
+    - `iccid`: SIM card identifier
+    - `imsi`: International Mobile Subscriber Identity
+- `modbus`: Modbus structure
+
+To use a *model* it needs to be configured in the *simulator* configuration. One simulator can be associated with one *model* but one *model* can have multiple *simulators*.
 
 ##### /simulators/models
 This endpoint gives the ability to list and create *models*.
