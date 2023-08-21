@@ -632,6 +632,34 @@ func (o *Ocpp16) meterValuesSampledData(ie, ic int, confL []string) []types.Mete
 			var cdp = o.Asset.Evses[ie].Connectors[ic].DP.Position
 
 			switch confT {
+			case assets.CurrentExport:
+				sp = types.SampledValue{
+					Value: strconv.FormatFloat(assets.CalculateCurrent(
+						o.Asset.Evses[ie].Connectors[ic].Data[cdp].PowerExport,
+						o.Asset.Evses[ie].Connectors[ic].Data[cdp].PowerFactor,
+						o.Asset.Evses[ie].Connectors[ic].Data[cdp].Voltage[i],
+						int64(o.Asset.Phases),
+					), 'f', 4, 64),
+					Unit:      types.UnitOfMeasureA,
+					Format:    types.ValueFormatRaw,
+					Measurand: types.Measurand(assets.CurrentExport),
+					Phase:     types.Phase(assets.Phases[i]),
+				}
+
+			case assets.CurrentImport:
+				sp = types.SampledValue{
+					Value: strconv.FormatFloat(assets.CalculateCurrent(
+						o.Asset.Evses[ie].Connectors[ic].Data[cdp].Power,
+						o.Asset.Evses[ie].Connectors[ic].Data[cdp].PowerFactor,
+						o.Asset.Evses[ie].Connectors[ic].Data[cdp].Voltage[i],
+						int64(o.Asset.Phases),
+					), 'f', 4, 64),
+					Unit:      types.UnitOfMeasureA,
+					Format:    types.ValueFormatRaw,
+					Measurand: types.Measurand(assets.CurrentImport),
+					Phase:     types.Phase(assets.Phases[i]),
+				}
+
 			case assets.EnergyActiveImportRegister:
 				sp = types.SampledValue{
 					Value:     strconv.FormatFloat(o.Asset.Evses[ie].Connectors[ic].Energy, 'f', 4, 64),
@@ -657,20 +685,6 @@ func (o *Ocpp16) meterValuesSampledData(ie, ic int, confL []string) []types.Mete
 					Unit:      types.UnitOfMeasureV,
 					Format:    types.ValueFormatRaw,
 					Measurand: types.Measurand(assets.Voltage),
-					Phase:     types.Phase(assets.Phases[i]),
-				}
-
-			case assets.CurrentImport:
-				sp = types.SampledValue{
-					Value: strconv.FormatFloat(assets.CalculateCurrent(
-						o.Asset.Evses[ie].Connectors[ic].Data[cdp].Power,
-						o.Asset.Evses[ie].Connectors[ic].Data[cdp].PowerFactor,
-						o.Asset.Evses[ie].Connectors[ic].Data[cdp].Voltage[i],
-						int64(o.Asset.Phases),
-					), 'f', 4, 64),
-					Unit:      types.UnitOfMeasureA,
-					Format:    types.ValueFormatRaw,
-					Measurand: types.Measurand(assets.CurrentImport),
 					Phase:     types.Phase(assets.Phases[i]),
 				}
 
@@ -915,6 +929,7 @@ func (o *Ocpp16) updateData() {
 			}
 
 			o.Asset.Evses[x].Connectors[y].TPower = assets.CalculateTotalPower(c.TPower, c.Data[c.DP.Position].Power)
+			o.Asset.Evses[x].Connectors[y].TPower = assets.CalculateTotalPower(c.TPowerExport, c.Data[c.DP.Position].PowerExport)
 			o.Asset.Evses[x].Connectors[y].Energy = assets.CalculateEnergy(
 				o.Asset.Evses[x].Connectors[y].TPower,
 				o.Asset.Evses[x].Connectors[y].Energy,

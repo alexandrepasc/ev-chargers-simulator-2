@@ -89,6 +89,23 @@ func CalculateCPPower(el []simulator.Evse) float64 {
 }
 
 /*
+Sum the power export of all the connectors of the CP and returns the calculated value (float64).
+
+el	-	The list of evses that the CP has ([]simulator.Evse)
+*/
+func CalculateCPPowerExport(el []simulator.Evse) float64 {
+	var t float64
+
+	for _, e := range el {
+		for _, c := range e.Connectors {
+			t += c.TPower
+		}
+	}
+
+	return t
+}
+
+/*
 Calculate the energy of the CP and retuens tha value (float64)
 
 tp	-	CP total power (float64)
