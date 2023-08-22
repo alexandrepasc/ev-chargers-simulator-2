@@ -50,8 +50,9 @@ const (
 var (
 	Current                      = "Current"
 	Power                        = "Power"
-	CurrentExport                = "Current.Export" // Instantaneous current flow from EV
-	CurrentImport                = "Current.Import" // Instantaneous current flow to EV
+	CurrentExport                = "Current.Export"  // Instantaneous current flow from EV
+	CurrentImport                = "Current.Import"  // Instantaneous current flow to EV
+	CurrentOffered               = "Current.Offered" // Maximum current offered to EV
 	EnergyActiveExportRegister   = "Energy.Active.Export.Register"
 	EnergyActiveImportRegister   = "Energy.Active.Import.Register"
 	EnergyReactiveImportRegister = "Energy.Reactive.Import.Register"

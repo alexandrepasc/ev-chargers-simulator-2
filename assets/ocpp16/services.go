@@ -660,6 +660,19 @@ func (o *Ocpp16) meterValuesSampledData(ie, ic int, confL []string) []types.Mete
 					Phase:     types.Phase(assets.Phases[i]),
 				}
 
+			case assets.CurrentOffered:
+				sp = types.SampledValue{
+					Value: strconv.FormatFloat(assets.CalculateConnectorMaxCurrent(
+						&o.Asset.Evses[ie].Connectors[ic],
+						int(o.Asset.Phases),
+						i,
+					), 'f', 4, 64),
+					Unit:      types.UnitOfMeasureA,
+					Format:    types.ValueFormatRaw,
+					Measurand: types.Measurand(assets.CurrentOffered),
+					Phase:     types.Phase(assets.Phases[i]),
+				}
+
 			case assets.EnergyActiveImportRegister:
 				sp = types.SampledValue{
 					Value:     strconv.FormatFloat(o.Asset.Evses[ie].Connectors[ic].Energy, 'f', 4, 64),
@@ -794,6 +807,15 @@ func (o *Ocpp16) meterValuesAlignedData(confL []string) []types.MeterValue {
 		var sp types.SampledValue
 
 		switch confT {
+		// TODO: this is only using the evse index 0 to calculate the max current, since didn't found a way to control multiple evses
+		case assets.CurrentOffered:
+			sp = types.SampledValue{
+				Value:     strconv.FormatFloat(assets.CalculateMaxCurrent(&o.Asset.Evses[0], int(o.Asset.Phases)), 'f', 4, 64),
+				Unit:      types.UnitOfMeasureA,
+				Format:    types.ValueFormatRaw,
+				Measurand: types.Measurand(assets.CurrentOffered),
+			}
+
 		case assets.EnergyActiveImportRegister:
 			sp = types.SampledValue{
 				Value:     strconv.FormatFloat(assets.CalculateCPEnergy(tp, o.st), 'f', 4, 64),

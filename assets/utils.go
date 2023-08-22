@@ -118,6 +118,73 @@ func CalculateCPEnergy(tp float64, st time.Time) float64 {
 	return t
 }
 
+/*
+Calculate the max current sent to the ev by the cp. Will loop all the connector data,
+calculating the current for each of the data, and comparing if it is the max current. At
+the end it will return the max current value (float64)
+
+c	-	Connector (simulator.Connector)
+
+ph	-	CP number of phases (int)
+
+vi	-	Phase index (int)
+*/
+func CalculateConnectorMaxCurrent(c *simulator.Connector, ph, vi int) float64 {
+	var mc float64
+
+	for _, i := range c.Data {
+		var a = CalculateCurrent(i.Power, i.PowerFactor, i.Voltage[vi], int64(ph))
+
+		if a > mc {
+			mc = a
+		}
+	}
+
+	return mc
+}
+
+/*
+Calculate the max current sent to the ev by the cp. Will loop all the connectors if a connector
+is enabled will loop add the data. For each data will canculate the current and compare it with
+the previous stored current. At the end will return the max current from the data list (float64)
+or 0 in case no connector is enabled.
+
+e	-	Evse structure (simulator.Evse)
+
+ph	-	Asset phase number (int)
+*/
+func CalculateMaxCurrent(e *simulator.Evse, ph int) float64 {
+	var mc float64
+
+	for _, c := range e.Connectors {
+		if !c.Enabled {
+			continue
+		}
+
+		for _, i := range c.Data {
+			var v int64
+
+			for _, vi := range i.Voltage {
+				if vi > 0 {
+					v = vi
+
+					break
+				}
+			}
+
+			var a = CalculateCurrent(i.Power, i.PowerFactor, v, int64(ph))
+
+			if a > mc {
+				mc = a
+			}
+		}
+
+		return mc
+	}
+
+	return 0
+}
+
 func IsDataChanClosed(ch <-chan common.Channel) bool {
 	select {
 	case <-ch:
