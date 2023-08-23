@@ -33,6 +33,7 @@ type Connector struct {
 	TPower       float64      `json:"tPower,omitempty"`       // Store the total power for the connector, this will be used by the application only
 	TPowerExport float64      `json:"tPowerExport,omitempty"` // Store the total power export for the connector, this will be used by the application only
 	Energy       float64      `json:"energy,omitempty"`       // store the energy of the connector, this will be used by the application only
+	EnergyExport float64      `json:"energyExport,omitempty"` // store the energy export of the connector, this will be used by the application only
 	Availability string       `json:"availability,omitempty"` // Store the availability state of the connector, this will only be used by the application
 }
 

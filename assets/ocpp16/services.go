@@ -673,6 +673,15 @@ func (o *Ocpp16) meterValuesSampledData(ie, ic int, confL []string) []types.Mete
 					Phase:     types.Phase(assets.Phases[i]),
 				}
 
+			case assets.EnergyActiveExportRegister:
+				sp = types.SampledValue{
+					Value:     strconv.FormatFloat(o.Asset.Evses[ie].Connectors[ic].EnergyExport, 'f', 4, 64),
+					Unit:      types.UnitOfMeasureWh,
+					Format:    types.ValueFormatRaw,
+					Measurand: types.Measurand(assets.EnergyActiveExportRegister),
+					Phase:     types.Phase(assets.Phases[i]),
+				}
+
 			case assets.EnergyActiveImportRegister:
 				sp = types.SampledValue{
 					Value:     strconv.FormatFloat(o.Asset.Evses[ie].Connectors[ic].Energy, 'f', 4, 64),
@@ -816,6 +825,22 @@ func (o *Ocpp16) meterValuesAlignedData(confL []string) []types.MeterValue {
 				Measurand: types.Measurand(assets.CurrentOffered),
 			}
 
+		case assets.EnergyActiveExportRegister:
+			var eet float64
+
+			for _, e := range o.Asset.Evses {
+				for _, c := range e.Connectors {
+					eet += c.EnergyExport
+				}
+			}
+
+			sp = types.SampledValue{
+				Value:     strconv.FormatFloat(eet, 'f', 4, 64),
+				Unit:      types.UnitOfMeasureWh,
+				Format:    types.ValueFormatRaw,
+				Measurand: types.Measurand(assets.EnergyActiveExportRegister),
+			}
+
 		case assets.EnergyActiveImportRegister:
 			sp = types.SampledValue{
 				Value:     strconv.FormatFloat(assets.CalculateCPEnergy(tp, o.st), 'f', 4, 64),
@@ -951,11 +976,17 @@ func (o *Ocpp16) updateData() {
 			}
 
 			o.Asset.Evses[x].Connectors[y].TPower = assets.CalculateTotalPower(c.TPower, c.Data[c.DP.Position].Power)
-			o.Asset.Evses[x].Connectors[y].TPower = assets.CalculateTotalPower(c.TPowerExport, c.Data[c.DP.Position].PowerExport)
+			o.Asset.Evses[x].Connectors[y].TPowerExport = assets.CalculateTotalPower(c.TPowerExport, c.Data[c.DP.Position].PowerExport)
 			o.Asset.Evses[x].Connectors[y].Energy = assets.CalculateEnergy(
 				o.Asset.Evses[x].Connectors[y].TPower,
 				o.Asset.Evses[x].Connectors[y].Energy,
 				c.Data[c.DP.Position].Power,
+				o.st,
+			)
+			o.Asset.Evses[x].Connectors[y].EnergyExport = assets.CalculateEnergy(
+				o.Asset.Evses[x].Connectors[y].TPowerExport,
+				o.Asset.Evses[x].Connectors[y].EnergyExport,
+				c.Data[c.DP.Position].PowerExport,
 				o.st,
 			)
 		}
