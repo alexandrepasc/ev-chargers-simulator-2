@@ -692,6 +692,16 @@ func (o *Ocpp16) meterValuesSampledData(ie, ic int, confL []string) []types.Mete
 				}
 
 			// TODO: this is not being calculated and the value is set to 0
+			case assets.EnergyReactiveExportRegister:
+				sp = types.SampledValue{
+					Value:     "0",
+					Unit:      types.UnitOfMeasureVarh,
+					Format:    types.ValueFormatRaw,
+					Measurand: types.Measurand(assets.EnergyReactiveExportRegister),
+					Phase:     types.Phase(assets.Phases[i]),
+				}
+
+			// TODO: this is not being calculated and the value is set to 0
 			case assets.EnergyReactiveImportRegister:
 				sp = types.SampledValue{
 					Value:     "0",
@@ -847,6 +857,15 @@ func (o *Ocpp16) meterValuesAlignedData(confL []string) []types.MeterValue {
 				Unit:      types.UnitOfMeasureWh,
 				Format:    types.ValueFormatRaw,
 				Measurand: types.Measurand(assets.EnergyActiveImportRegister),
+			}
+
+		// TODO: this is not being calculated and the value is set to 0
+		case assets.EnergyReactiveExportRegister:
+			sp = types.SampledValue{
+				Value:     "0",
+				Unit:      types.UnitOfMeasureVarh,
+				Format:    types.ValueFormatRaw,
+				Measurand: types.Measurand(assets.EnergyReactiveExportRegister),
 			}
 
 		case assets.EnergyReactiveImportRegister:

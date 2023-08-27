@@ -50,12 +50,13 @@ const (
 var (
 	Current                      = "Current"
 	Power                        = "Power"
-	CurrentExport                = "Current.Export"                // Instantaneous current flow from EV
-	CurrentImport                = "Current.Import"                // Instantaneous current flow to EV
-	CurrentOffered               = "Current.Offered"               // Maximum current offered to EV
-	EnergyActiveExportRegister   = "Energy.Active.Export.Register" // Numerical value read from the "active electrical energy" (Wh or kWh) register of the (most authoritative) electrical meter measuring energy exported (to the grid).
-	EnergyActiveImportRegister   = "Energy.Active.Import.Register"
-	EnergyReactiveImportRegister = "Energy.Reactive.Import.Register"
+	CurrentExport                = "Current.Export"                  // Instantaneous current flow from EV
+	CurrentImport                = "Current.Import"                  // Instantaneous current flow to EV
+	CurrentOffered               = "Current.Offered"                 // Maximum current offered to EV
+	EnergyActiveExportRegister   = "Energy.Active.Export.Register"   // Numerical value read from the "active electrical energy" (Wh or kWh) register of the (most authoritative) electrical meter measuring energy exported (to the grid).
+	EnergyActiveImportRegister   = "Energy.Active.Import.Register"   // Numerical value read from the "active electrical energy" (Wh or kWh) register of the (most authoritative) electrical meter measuring energy imported (from the grid supply).
+	EnergyReactiveExportRegister = "Energy.Reactive.Export.Register" // Numerical value read from the "reactive electrical energy" (VARh or kVARh) register of the (most authoritative) electrical meter measuring energy exported (to the grid).
+	EnergyReactiveImportRegister = "Energy.Reactive.Import.Register" // Numerical value read from the "reactive electrical energy" (VARh or kVARh) register of the (most authoritative) electrical meter measuring energy imported (from the grid supply).
 	Voltage                      = "Voltage"
 	PowerActiveImport            = "Power.Active.Import"
 	Phases                       = []string{"L1", "L2", "L3"}
