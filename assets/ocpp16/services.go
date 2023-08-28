@@ -725,17 +725,35 @@ func (o *Ocpp16) meterValuesSampledData(ie, ic int, confL []string) []types.Mete
 					return nil
 				}
 
-				sp = types.SampledValue{
-					Value: strconv.FormatFloat(assets.CalculateEnergy(
-						o.Asset.Evses[ie].Connectors[ic].TPowerExport,
-						o.Asset.Evses[ie].Connectors[ic].EnergyExport,
-						o.Asset.Evses[ie].Connectors[ic].Data[cdp].PowerExport,
-						time.Now().Add(-time.Second*time.Duration(t)),
-					), 'f', 4, 64),
-					Unit:      types.UnitOfMeasureWh,
-					Format:    types.ValueFormatRaw,
-					Measurand: types.Measurand(assets.EnergyActiveExportInterval),
+				sp = sampledEnergyActiveInterval(
+					o.Asset.Evses[ie].Connectors[ic].TPowerExport,
+					o.Asset.Evses[ie].Connectors[ic].EnergyExport,
+					o.Asset.Evses[ie].Connectors[ic].Data[cdp].PowerExport,
+					t,
+					assets.EnergyActiveExportInterval,
+				)
+
+			case assets.EnergyActiveImportInterval:
+				var t, err = strconv.ParseInt(*o.Conf["MeterValueSampleInterval"].Value, 10, 64)
+				if err != nil {
+					var lm2 = map[string]string{
+						"protocol":  string(o.Asset.Protocol),
+						"function":  "meterValuesSampledData",
+						"simulator": o.Asset.Name,
+					}
+
+					o.logger.log(lm2, err, assets.Fatal)
+
+					return nil
 				}
+
+				sp = sampledEnergyActiveInterval(
+					o.Asset.Evses[ie].Connectors[ic].TPower,
+					o.Asset.Evses[ie].Connectors[ic].Energy,
+					o.Asset.Evses[ie].Connectors[ic].Data[cdp].Power,
+					t,
+					assets.EnergyActiveImportInterval,
+				)
 
 			case assets.Voltage:
 				sp = types.SampledValue{
@@ -918,12 +936,23 @@ func (o *Ocpp16) meterValuesAlignedData(confL []string) []types.MeterValue {
 				return nil
 			}
 
-			sp = types.SampledValue{
-				Value:     strconv.FormatFloat(assets.CalculateCPEnergy(tpe, time.Now().Add(-time.Second*time.Duration(t))), 'f', 4, 64),
-				Unit:      types.UnitOfMeasureWh,
-				Format:    types.ValueFormatRaw,
-				Measurand: types.Measurand(assets.EnergyActiveExportInterval),
+			sp = alignedEnergyActiveInterval(tpe, t, assets.EnergyActiveExportInterval)
+
+		case assets.EnergyActiveImportInterval:
+			var t, err = strconv.ParseInt(*o.Conf["ClockAlignedDataInterval"].Value, 10, 64)
+			if err != nil {
+				var lm2 = map[string]string{
+					"protocol":  string(o.Asset.Protocol),
+					"function":  "meterValuesAlignedData",
+					"simulator": o.Asset.Name,
+				}
+
+				o.logger.log(lm2, err, assets.Fatal)
+
+				return nil
 			}
+
+			sp = alignedEnergyActiveInterval(tp, t, assets.EnergyActiveImportInterval)
 
 		case assets.PowerActiveImport:
 			sp = types.SampledValue{
@@ -1594,4 +1623,55 @@ func getActiveConnector(e simulator.Evse) (i int, c *simulator.Connector) {
 	}
 
 	return -1, nil
+}
+
+/*
+Create and return the energy active export and import interval message for the sampled data
+(types.SampledValue). This function is created only to not have duplicated code.
+
+tp	-	Total power (float64)
+
+e	-	Energy (float64)
+
+p	-	Current power (int64)
+
+t	-	Time interval (int64)
+
+m	-	Measurand name (string)
+*/
+func sampledEnergyActiveInterval(tp, e float64, p, t int64, m string) types.SampledValue {
+	var sp = types.SampledValue{
+		Value: strconv.FormatFloat(assets.CalculateEnergy(
+			tp,
+			e,
+			p,
+			time.Now().Add(-time.Second*time.Duration(t)),
+		), 'f', 4, 64),
+		Unit:      types.UnitOfMeasureWh,
+		Format:    types.ValueFormatRaw,
+		Measurand: types.Measurand(m),
+	}
+
+	return sp
+}
+
+/*
+Create and return the energy active export and import interval message for the aligned data
+(types.SampledValue). This function is created only to not have duplicated code.
+
+p	-	Power of the cp (float64)
+
+t	-	Time interval (int64)
+
+m	-	Measurand name (string)
+*/
+func alignedEnergyActiveInterval(p float64, t int64, m string) types.SampledValue {
+	var sp = types.SampledValue{
+		Value:     strconv.FormatFloat(assets.CalculateCPEnergy(p, time.Now().Add(-time.Second*time.Duration(t))), 'f', 4, 64),
+		Unit:      types.UnitOfMeasureWh,
+		Format:    types.ValueFormatRaw,
+		Measurand: types.Measurand(m),
+	}
+
+	return sp
 }
