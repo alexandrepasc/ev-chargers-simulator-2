@@ -711,6 +711,32 @@ func (o *Ocpp16) meterValuesSampledData(ie, ic int, confL []string) []types.Mete
 					Phase:     types.Phase(assets.Phases[i]),
 				}
 
+			case assets.EnergyActiveExportInterval:
+				var t, err = strconv.ParseInt(*o.Conf["MeterValueSampleInterval"].Value, 10, 64)
+				if err != nil {
+					var lm2 = map[string]string{
+						"protocol":  string(o.Asset.Protocol),
+						"function":  "meterValuesSampledData",
+						"simulator": o.Asset.Name,
+					}
+
+					o.logger.log(lm2, err, assets.Fatal)
+
+					return nil
+				}
+
+				sp = types.SampledValue{
+					Value: strconv.FormatFloat(assets.CalculateEnergy(
+						o.Asset.Evses[ie].Connectors[ic].TPowerExport,
+						o.Asset.Evses[ie].Connectors[ic].EnergyExport,
+						o.Asset.Evses[ie].Connectors[ic].Data[cdp].PowerExport,
+						time.Now().Add(-time.Second*time.Duration(t)),
+					), 'f', 4, 64),
+					Unit:      types.UnitOfMeasureWh,
+					Format:    types.ValueFormatRaw,
+					Measurand: types.Measurand(assets.EnergyActiveExportInterval),
+				}
+
 			case assets.Voltage:
 				sp = types.SampledValue{
 					Value:     strconv.FormatInt(o.Asset.Evses[ie].Connectors[ic].Data[cdp].Voltage[i], 10),
@@ -820,6 +846,8 @@ func (o *Ocpp16) meterValuesAlignedData(confL []string) []types.MeterValue {
 
 	var tp = assets.CalculateCPPower(o.Asset.Evses)
 
+	var tpe = assets.CalculateCPPowerExport(o.Asset.Evses)
+
 	for _, conf := range confL {
 		var confT = strings.TrimSpace(conf)
 
@@ -874,6 +902,27 @@ func (o *Ocpp16) meterValuesAlignedData(confL []string) []types.MeterValue {
 				Unit:      types.UnitOfMeasureVarh,
 				Format:    types.ValueFormatRaw,
 				Measurand: types.Measurand(assets.EnergyReactiveImportRegister),
+			}
+
+		case assets.EnergyActiveExportInterval:
+			var t, err = strconv.ParseInt(*o.Conf["ClockAlignedDataInterval"].Value, 10, 64)
+			if err != nil {
+				var lm2 = map[string]string{
+					"protocol":  string(o.Asset.Protocol),
+					"function":  "meterValuesAlignedData",
+					"simulator": o.Asset.Name,
+				}
+
+				o.logger.log(lm2, err, assets.Fatal)
+
+				return nil
+			}
+
+			sp = types.SampledValue{
+				Value:     strconv.FormatFloat(assets.CalculateCPEnergy(tpe, time.Now().Add(-time.Second*time.Duration(t))), 'f', 4, 64),
+				Unit:      types.UnitOfMeasureWh,
+				Format:    types.ValueFormatRaw,
+				Measurand: types.Measurand(assets.EnergyActiveExportInterval),
 			}
 
 		case assets.PowerActiveImport:
