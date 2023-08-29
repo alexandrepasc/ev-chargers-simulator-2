@@ -783,12 +783,12 @@ func (o *Ocpp16) meterValuesSampledData(ie, ic int, confL []string) []types.Mete
 					Phase:     types.Phase(assets.Phases[i]),
 				}
 
-			case assets.Voltage:
+			case assets.PowerActiveExport:
 				sp = types.SampledValue{
-					Value:     strconv.FormatInt(o.Asset.Evses[ie].Connectors[ic].Data[cdp].Voltage[i], 10),
-					Unit:      types.UnitOfMeasureV,
+					Value:     strconv.FormatFloat(float64(o.Asset.Evses[ie].Connectors[ic].Data[cdp].PowerExport), 'f', 4, 64),
+					Unit:      types.UnitOfMeasureW,
 					Format:    types.ValueFormatRaw,
-					Measurand: types.Measurand(assets.Voltage),
+					Measurand: types.Measurand(assets.PowerActiveExport),
 					Phase:     types.Phase(assets.Phases[i]),
 				}
 
@@ -798,6 +798,15 @@ func (o *Ocpp16) meterValuesSampledData(ie, ic int, confL []string) []types.Mete
 					Unit:      types.UnitOfMeasureW,
 					Format:    types.ValueFormatRaw,
 					Measurand: types.Measurand(assets.PowerActiveImport),
+					Phase:     types.Phase(assets.Phases[i]),
+				}
+
+			case assets.Voltage:
+				sp = types.SampledValue{
+					Value:     strconv.FormatInt(o.Asset.Evses[ie].Connectors[ic].Data[cdp].Voltage[i], 10),
+					Unit:      types.UnitOfMeasureV,
+					Format:    types.ValueFormatRaw,
+					Measurand: types.Measurand(assets.Voltage),
 					Phase:     types.Phase(assets.Phases[i]),
 				}
 			}
@@ -1005,6 +1014,14 @@ func (o *Ocpp16) meterValuesAlignedData(confL []string) []types.MeterValue {
 				Value:     assets.DefFrequency,
 				Format:    types.ValueFormatRaw,
 				Measurand: types.Measurand(assets.Frequency),
+			}
+
+		case assets.PowerActiveExport:
+			sp = types.SampledValue{
+				Value:     strconv.FormatFloat(tpe, 'f', 4, 64),
+				Unit:      types.UnitOfMeasureW,
+				Format:    types.ValueFormatRaw,
+				Measurand: types.Measurand(assets.PowerActiveExport),
 			}
 
 		case assets.PowerActiveImport:
