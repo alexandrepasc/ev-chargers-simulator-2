@@ -59,6 +59,7 @@ var (
 	EnergyReactiveImportRegister = "Energy.Reactive.Import.Register" // Numerical value read from the "reactive electrical energy" (VARh or kVARh) register of the (most authoritative) electrical meter measuring energy imported (from the grid supply).
 	EnergyActiveExportInterval   = "Energy.Active.Export.Interval"   // Absolute amount of "active electrical energy" (Wh or kWh) exported (to the grid) during an associated time "interval", specified by a Metervalues ReadingContext, and applicable interval duration configuration values (in seconds) for "ClockAlignedDataInterval" and "MeterValueSampleInterval".
 	EnergyActiveImportInterval   = "Energy.Active.Import.Interval"   // Absolute amount of "active electrical energy" (Wh or kWh) imported (from the grid supply) during an associated time "interval", specified by a Metervalues ReadingContext, and applicable interval duration configuration values (in seconds) for "ClockAlignedDataInterval" and "MeterValueSampleInterval".
+	EnergyReactiveExportInterval = "Energy.Reactive.Export.Interval" // Absolute amount of "reactive electrical energy" (VARh or kVARh) exported (to the grid) during an associated time "interval", specified by a Metervalues ReadingContext, and applicable interval duration configuration values (in seconds) for "ClockAlignedDataInterval" and "MeterValueSampleInterval".
 	Voltage                      = "Voltage"
 	PowerActiveImport            = "Power.Active.Import"
 	Phases                       = []string{"L1", "L2", "L3"}
