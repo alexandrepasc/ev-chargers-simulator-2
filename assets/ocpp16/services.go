@@ -775,6 +775,14 @@ func (o *Ocpp16) meterValuesSampledData(ie, ic int, confL []string) []types.Mete
 					Phase:     types.Phase(assets.Phases[i]),
 				}
 
+			case assets.Frequency:
+				sp = types.SampledValue{
+					Value:     assets.DefFrequency,
+					Format:    types.ValueFormatRaw,
+					Measurand: types.Measurand(assets.Frequency),
+					Phase:     types.Phase(assets.Phases[i]),
+				}
+
 			case assets.Voltage:
 				sp = types.SampledValue{
 					Value:     strconv.FormatInt(o.Asset.Evses[ie].Connectors[ic].Data[cdp].Voltage[i], 10),
@@ -990,6 +998,13 @@ func (o *Ocpp16) meterValuesAlignedData(confL []string) []types.MeterValue {
 				Unit:      types.UnitOfMeasureVarh,
 				Format:    types.ValueFormatRaw,
 				Measurand: types.Measurand(assets.EnergyReactiveImportInterval),
+			}
+
+		case assets.Frequency:
+			sp = types.SampledValue{
+				Value:     assets.DefFrequency,
+				Format:    types.ValueFormatRaw,
+				Measurand: types.Measurand(assets.Frequency),
 			}
 
 		case assets.PowerActiveImport:

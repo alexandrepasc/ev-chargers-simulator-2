@@ -45,6 +45,7 @@ const (
 	DefResetRetries                      int64  = 0
 	DefStopTransactionOnEvSideDisconnect bool   = false
 	DefStopTransactionOnInvalidID        bool   = true
+	DefFrequency                         string = "1"
 )
 
 var (
@@ -61,6 +62,7 @@ var (
 	EnergyActiveImportInterval   = "Energy.Active.Import.Interval"   // Absolute amount of "active electrical energy" (Wh or kWh) imported (from the grid supply) during an associated time "interval", specified by a Metervalues ReadingContext, and applicable interval duration configuration values (in seconds) for "ClockAlignedDataInterval" and "MeterValueSampleInterval".
 	EnergyReactiveExportInterval = "Energy.Reactive.Export.Interval" // Absolute amount of "reactive electrical energy" (VARh or kVARh) exported (to the grid) during an associated time "interval", specified by a Metervalues ReadingContext, and applicable interval duration configuration values (in seconds) for "ClockAlignedDataInterval" and "MeterValueSampleInterval".
 	EnergyReactiveImportInterval = "Energy.Reactive.Import.Interval" // Absolute amount of "reactive electrical energy" (VARh or kVARh) imported (from the grid supply) during an associated time "interval", specified by a Metervalues ReadingContext, and applicable interval duration configuration values (in seconds) for "ClockAlignedDataInterval" and "MeterValueSampleInterval".
+	Frequency                    = "Frequency"                       // Instantaneous reading of powerline frequency. NOTE: OCPP 1.6 does not have a UnitOfMeasure for frequency, the UnitOfMeasure for any SampledValue with measurand: Frequency is Hertz.
 	Voltage                      = "Voltage"
 	PowerActiveImport            = "Power.Active.Import"
 	Phases                       = []string{"L1", "L2", "L3"}
