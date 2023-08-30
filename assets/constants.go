@@ -48,6 +48,7 @@ const (
 	DefReactiveEnergy                    string = "0"
 	DefFrequency                         string = "1"
 	DefReactivePower                     string = "0"
+	DefRPM                               string = "100"
 )
 
 var (
@@ -71,6 +72,7 @@ var (
 	PowerOffered                 = "Power.Offered"                   // Maximum power offered to EV
 	PowerReactiveExport          = "Power.Reactive.Export"           // Instantaneous reactive power exported by EV. (var or kvar)
 	PowerReactiveImport          = "Power.Reactive.Import"           // Instantaneous reactive power imported by EV. (var or kvar)
+	RPM                          = "RPM"                             // Fan speed in RPM
 	Voltage                      = "Voltage"
 	Phases                       = []string{"L1", "L2", "L3"}
 	Status                       = []string{
