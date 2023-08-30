@@ -145,7 +145,7 @@ func CalculateConnectorMaxCurrent(c *simulator.Connector, ph, vi int) float64 {
 
 /*
 Calculate the max current sent to the ev by the cp. Will loop all the connectors if a connector
-is enabled will loop add the data. For each data will canculate the current and compare it with
+is enabled will loop through the data. For each data will canculate the current and compare it with
 the previous stored current. At the end will return the max current from the data list (float64)
 or 0 in case no connector is enabled.
 
@@ -183,6 +183,53 @@ func CalculateMaxCurrent(e *simulator.Evse, ph int) float64 {
 	}
 
 	return 0
+}
+
+/*
+Get the max power sent to the ev by the cp connector. Will loop all the connector data and
+comparing if it with the previous stored one. Will return the max power from the data list (int64).
+
+c	-	Connector structure (*simulator.Connector)
+*/
+func GetConnectorMaxPower(c *simulator.Connector) int64 {
+	var p int64
+
+	for _, d := range c.Data {
+		if d.Power < p {
+			continue
+		}
+
+		p = d.Power
+	}
+
+	return p
+}
+
+/*
+Get the max power sent to the ev by the cp. Will loop all the connectors if the connector is
+enabled loop through it's data and compare it with the previous stored one. Will return the
+max power from the data list (int64).
+
+e	-	Evse structure (*simulator.Evse)
+*/
+func GetMaxPower(e *simulator.Evse) int64 {
+	var p int64
+
+	for _, c := range e.Connectors {
+		if !c.Enabled {
+			continue
+		}
+
+		for _, d := range c.Data {
+			if d.Power < p {
+				continue
+			}
+
+			p = d.Power
+		}
+	}
+
+	return p
 }
 
 func IsDataChanClosed(ch <-chan common.Channel) bool {

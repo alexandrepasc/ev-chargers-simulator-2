@@ -810,6 +810,15 @@ func (o *Ocpp16) meterValuesSampledData(ie, ic int, confL []string) []types.Mete
 					Phase:     types.Phase(assets.Phases[i]),
 				}
 
+			case assets.PowerOffered:
+				sp = types.SampledValue{
+					Value:     strconv.FormatInt(assets.GetConnectorMaxPower(&o.Asset.Evses[ie].Connectors[ic]), 10),
+					Unit:      types.UnitOfMeasureW,
+					Format:    types.ValueFormatRaw,
+					Measurand: types.Measurand(assets.PowerOffered),
+					Phase:     types.Phase(assets.Phases[i]),
+				}
+
 			case assets.Voltage:
 				sp = types.SampledValue{
 					Value:     strconv.FormatInt(o.Asset.Evses[ie].Connectors[ic].Data[cdp].Voltage[i], 10),
@@ -1055,6 +1064,14 @@ func (o *Ocpp16) meterValuesAlignedData(confL []string) []types.MeterValue {
 				Unit:      types.UnitOfMeasurePercent,
 				Format:    types.ValueFormatRaw,
 				Measurand: types.Measurand(assets.PowerFactor),
+			}
+
+		case assets.PowerOffered:
+			sp = types.SampledValue{
+				Value:     strconv.FormatInt(assets.GetMaxPower(&o.Asset.Evses[0]), 10),
+				Unit:      types.UnitOfMeasureW,
+				Format:    types.ValueFormatRaw,
+				Measurand: types.Measurand(assets.PowerOffered),
 			}
 		}
 

@@ -66,6 +66,7 @@ var (
 	PowerActiveExport            = "Power.Active.Export"             // Instantaneous active power exported by EV. (W or kW)
 	PowerActiveImport            = "Power.Active.Import"             // Instantaneous active power imported by EV. (W or kW)
 	PowerFactor                  = "Power.Factor"                    // Instantaneous power factor of total energy flow
+	PowerOffered                 = "Power.Offered"                   // Maximum power offered to EV
 	Voltage                      = "Voltage"
 	Phases                       = []string{"L1", "L2", "L3"}
 	Status                       = []string{
