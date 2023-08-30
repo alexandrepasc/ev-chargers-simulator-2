@@ -758,7 +758,7 @@ func (o *Ocpp16) meterValuesSampledData(ie, ic int, confL []string) []types.Mete
 			// This value is static
 			case assets.EnergyReactiveExportInterval:
 				sp = types.SampledValue{
-					Value:     "0",
+					Value:     assets.DefReactiveEnergy,
 					Unit:      types.UnitOfMeasureVarh,
 					Format:    types.ValueFormatRaw,
 					Measurand: types.Measurand(assets.EnergyReactiveExportInterval),
@@ -768,7 +768,7 @@ func (o *Ocpp16) meterValuesSampledData(ie, ic int, confL []string) []types.Mete
 			// This value is static
 			case assets.EnergyReactiveImportInterval:
 				sp = types.SampledValue{
-					Value:     "0",
+					Value:     assets.DefReactiveEnergy,
 					Unit:      types.UnitOfMeasureVarh,
 					Format:    types.ValueFormatRaw,
 					Measurand: types.Measurand(assets.EnergyReactiveImportInterval),
@@ -816,6 +816,24 @@ func (o *Ocpp16) meterValuesSampledData(ie, ic int, confL []string) []types.Mete
 					Unit:      types.UnitOfMeasureW,
 					Format:    types.ValueFormatRaw,
 					Measurand: types.Measurand(assets.PowerOffered),
+					Phase:     types.Phase(assets.Phases[i]),
+				}
+
+			case assets.PowerReactiveExport:
+				sp = types.SampledValue{
+					Value:     assets.DefReactivePower,
+					Unit:      types.UnitOfMeasureVar,
+					Format:    types.ValueFormatRaw,
+					Measurand: types.Measurand(assets.PowerReactiveExport),
+					Phase:     types.Phase(assets.Phases[i]),
+				}
+
+			case assets.PowerReactiveImport:
+				sp = types.SampledValue{
+					Value:     assets.DefReactivePower,
+					Unit:      types.UnitOfMeasureVar,
+					Format:    types.ValueFormatRaw,
+					Measurand: types.Measurand(assets.PowerReactiveImport),
 					Phase:     types.Phase(assets.Phases[i]),
 				}
 
