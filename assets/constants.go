@@ -73,6 +73,7 @@ var (
 	PowerReactiveExport          = "Power.Reactive.Export"           // Instantaneous reactive power exported by EV. (var or kvar)
 	PowerReactiveImport          = "Power.Reactive.Import"           // Instantaneous reactive power imported by EV. (var or kvar)
 	RPM                          = "RPM"                             // Fan speed in RPM
+	SoC                          = "SoC"                             // State of charge of charging vehicle in percentage
 	Voltage                      = "Voltage"
 	Phases                       = []string{"L1", "L2", "L3"}
 	Status                       = []string{

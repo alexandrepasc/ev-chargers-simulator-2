@@ -47,8 +47,8 @@ type Data struct {
 	Power         int64   `json:"power"`         // Power in W
 	PowerExport   int64   `json:"powerExport"`   // Power exported by the ev to the cp in W, vehicle to grid
 	Voltage       []int64 `json:"voltage"`       // Array of voltages each entry for each phase in V
-	StartSoC      int64   `json:"startSoC"`
-	EndSoC        int64   `json:"endSoC"`
+	StartSoC      int64   `json:"startSoC"`      // Start ev charge state in percentage
+	EndSoC        int64   `json:"endSoC"`        // End ev charge state in percentage
 }
 
 type DataPosition struct {
