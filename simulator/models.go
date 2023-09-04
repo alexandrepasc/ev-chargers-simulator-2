@@ -35,7 +35,7 @@ type Connector struct {
 	Energy       float64      `json:"energy,omitempty"`       // store the energy of the connector, this will be used by the application only
 	EnergyExport float64      `json:"energyExport,omitempty"` // store the energy export of the connector, this will be used by the application only
 	Availability string       `json:"availability,omitempty"` // Store the availability state of the connector, this will only be used by the application
-	CurrentSoC   int64        `json:"currentSoC,omitempty"`   // Store the current ev state of charge in the current position, this will only be used by the applicaion
+	CurrentSoC   float64      `json:"currentSoC,omitempty"`   // Store the current ev state of charge in the current position, this will only be used by the applicaion
 }
 
 // TODO: evaluate if the charging state should be a number or the name of the state
@@ -47,8 +47,8 @@ type Data struct {
 	Power         int64   `json:"power"`         // Power in W
 	PowerExport   int64   `json:"powerExport"`   // Power exported by the ev to the cp in W, vehicle to grid
 	Voltage       []int64 `json:"voltage"`       // Array of voltages each entry for each phase in V
-	StartSoC      int64   `json:"startSoC"`      // Start ev charge state in percentage
-	EndSoC        int64   `json:"endSoC"`        // End ev charge state in percentage
+	StartSoC      float64 `json:"startSoC"`      // Start ev charge state in percentage
+	EndSoC        float64 `json:"endSoC"`        // End ev charge state in percentage
 }
 
 type DataPosition struct {

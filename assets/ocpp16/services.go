@@ -850,7 +850,7 @@ func (o *Ocpp16) meterValuesSampledData(ie, ic int, confL []string) []types.Mete
 
 			case assets.SoC:
 				sp = types.SampledValue{
-					Value:     strconv.FormatInt(o.Asset.Evses[ie].Connectors[ic].CurrentSoC, 10),
+					Value:     strconv.FormatFloat(o.Asset.Evses[ie].Connectors[ic].CurrentSoC, 'f', 4, 64),
 					Unit:      types.UnitOfMeasurePercent,
 					Format:    types.ValueFormatRaw,
 					Measurand: types.Measurand(assets.SoC),
@@ -1136,7 +1136,7 @@ func (o *Ocpp16) meterValuesAlignedData(confL []string) []types.MeterValue {
 			}
 
 		case assets.SoC:
-			var csoc int64
+			var csoc float64
 
 			for _, e := range o.Asset.Evses {
 				for _, c := range e.Connectors {
@@ -1147,7 +1147,7 @@ func (o *Ocpp16) meterValuesAlignedData(confL []string) []types.MeterValue {
 			}
 
 			sp = types.SampledValue{
-				Value:     strconv.FormatInt(csoc, 10),
+				Value:     strconv.FormatFloat(csoc, 'f', 4, 64),
 				Unit:      types.UnitOfMeasurePercent,
 				Format:    types.ValueFormatRaw,
 				Measurand: types.Measurand(assets.SoC),
@@ -1910,8 +1910,11 @@ e	-	Data position end SoC
 
 d	-	Data position duration
 */
-func calculateSoC(c, s, e, d int64) int64 {
-	var inc = (e - s) / d
+// TODO: being a percentage the current soc should be converted into int64, not sure if here is the best location to do it
+func calculateSoC(c, s, e float64, d int64) float64 {
+	var diff = e - s
+
+	var inc = diff / float64(d)
 
 	c += inc
 
