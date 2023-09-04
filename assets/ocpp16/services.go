@@ -156,6 +156,7 @@ func (o *Ocpp16) setStartUpConfigurations() {
 			o.Asset.Evses[x].Connectors[y].Energy = 0
 			o.Asset.Evses[x].Connectors[y].Enabled = false
 			o.Asset.Evses[x].Connectors[y].Availability = string(assets.Operative)
+			o.Asset.Evses[x].Connectors[y].CurrentSoC = 0
 		}
 	}
 
@@ -413,6 +414,7 @@ func (o *Ocpp16) processReset(r *core.ResetRequest) *core.ResetConfirmation {
 				o.Asset.Evses[x].Connectors[y].Enabled = false
 				o.Asset.Evses[x].Connectors[y].DP.Position = 0
 				o.Asset.Evses[x].Connectors[y].DP.Ticker = 0
+				o.Asset.Evses[x].Connectors[y].CurrentSoC = 0
 				o.txnAlignedData = []types.MeterValue{}
 				o.txnSampledData = []types.MeterValue{}
 
@@ -428,6 +430,7 @@ func (o *Ocpp16) processReset(r *core.ResetRequest) *core.ResetConfirmation {
 			o.Asset.Evses[x].Connectors[y].Enabled = false
 			o.Asset.Evses[x].Connectors[y].DP.Position = 0
 			o.Asset.Evses[x].Connectors[y].DP.Ticker = 0
+			o.Asset.Evses[x].Connectors[y].CurrentSoC = 0
 			o.Asset.Evses[x].Connectors[y].TPower = 0
 			o.Asset.Evses[x].Connectors[y].Energy = 0
 			o.Asset.Evses[x].Connectors[y].Availability = string(assets.Operative)
@@ -1169,6 +1172,12 @@ func (o *Ocpp16) updateData() {
 
 					if c.DP.Ticker < c.Data[c.DP.Position].Duration {
 						o.Asset.Evses[x].Connectors[y].DP.Ticker++
+						o.Asset.Evses[x].Connectors[y].CurrentSoC = calculateSoC(
+							o.Asset.Evses[x].Connectors[y].CurrentSoC,
+							c.Data[o.Asset.Evses[x].Connectors[y].DP.Position].StartSoC,
+							c.Data[o.Asset.Evses[x].Connectors[y].DP.Position].EndSoC,
+							c.Data[o.Asset.Evses[x].Connectors[y].DP.Position].Duration,
+						)
 					} else {
 						o.Asset.Evses[x].Connectors[y].DP.Ticker = 0
 
@@ -1177,6 +1186,10 @@ func (o *Ocpp16) updateData() {
 						} else {
 							o.Asset.Evses[x].Connectors[y].DP.Position = 0
 						}
+
+						// reset the current soc when the position changes
+						o.Asset.Evses[x].Connectors[y].CurrentSoC =
+							o.Asset.Evses[x].Connectors[y].Data[o.Asset.Evses[x].Connectors[y].DP.Position].StartSoC
 					}
 
 					if cs != c.Data[o.Asset.Evses[x].Connectors[y].DP.Position].ChargingState {
@@ -1217,6 +1230,9 @@ func (o *Ocpp16) updateData() {
 										if c.Data[i].ChargingState == int64(assets.Finishing) {
 											o.Asset.Evses[x].Connectors[y].DP.Position = i
 											o.Asset.Evses[x].Connectors[y].DP.Ticker = 0
+											// reset the current soc when the position changes
+											o.Asset.Evses[x].Connectors[y].CurrentSoC =
+												o.Asset.Evses[x].Connectors[y].Data[o.Asset.Evses[x].Connectors[y].DP.Position].StartSoC
 
 											break
 										}
@@ -1228,6 +1244,7 @@ func (o *Ocpp16) updateData() {
 				} else {
 					o.Asset.Evses[x].Connectors[y].DP.Position = 0
 					o.Asset.Evses[x].Connectors[y].DP.Ticker = 0
+					o.Asset.Evses[x].Connectors[y].CurrentSoC = 0
 				}
 			} else {
 				o.notAutoChargePoint(&o.Asset.Evses[x].Connectors[y], x, y)
@@ -1675,6 +1692,12 @@ func (o *Ocpp16) notAutoChargePoint(c *simulator.Connector, x, y int) {
 	if c.Enabled {
 		if c.DP.Ticker < c.Data[c.DP.Position].Duration {
 			o.Asset.Evses[x].Connectors[y].DP.Ticker++
+			o.Asset.Evses[x].Connectors[y].CurrentSoC = calculateSoC(
+				o.Asset.Evses[x].Connectors[y].CurrentSoC,
+				c.Data[o.Asset.Evses[x].Connectors[y].DP.Position].StartSoC,
+				c.Data[o.Asset.Evses[x].Connectors[y].DP.Position].EndSoC,
+				c.Data[o.Asset.Evses[x].Connectors[y].DP.Position].Duration,
+			)
 		} else {
 			o.Asset.Evses[x].Connectors[y].DP.Ticker = 0
 
@@ -1683,6 +1706,7 @@ func (o *Ocpp16) notAutoChargePoint(c *simulator.Connector, x, y int) {
 			if assets.Status[c.Data[c.DP.Position].ChargingState] == assets.Status[assets.Finishing] {
 				o.Asset.Evses[x].Connectors[y].DP.Position = 0
 				o.Asset.Evses[x].Connectors[y].Enabled = false
+				o.Asset.Evses[x].Connectors[y].CurrentSoC = 0
 				o.txnAlignedData = []types.MeterValue{}
 				o.txnSampledData = []types.MeterValue{}
 
@@ -1701,11 +1725,16 @@ func (o *Ocpp16) notAutoChargePoint(c *simulator.Connector, x, y int) {
 				return
 			}
 
+			// change array data position
 			if c.DP.Position < int64(len(c.Data)-1) {
 				o.Asset.Evses[x].Connectors[y].DP.Position++
 			} else {
 				o.Asset.Evses[x].Connectors[y].DP.Position = 0
 			}
+
+			// reset the current soc when the position changes
+			o.Asset.Evses[x].Connectors[y].CurrentSoC =
+				o.Asset.Evses[x].Connectors[y].Data[o.Asset.Evses[x].Connectors[y].DP.Position].StartSoC
 
 			for {
 				if c.Data[c.DP.Position].ChargingState == int64(assets.Charging) {
@@ -1717,6 +1746,10 @@ func (o *Ocpp16) notAutoChargePoint(c *simulator.Connector, x, y int) {
 				} else {
 					o.Asset.Evses[x].Connectors[y].DP.Position = 0
 				}
+
+				// reset the current soc when the position changes
+				o.Asset.Evses[x].Connectors[y].CurrentSoC =
+					o.Asset.Evses[x].Connectors[y].Data[o.Asset.Evses[x].Connectors[y].DP.Position].StartSoC
 			}
 
 			if cs != c.Data[o.Asset.Evses[x].Connectors[y].DP.Position].ChargingState {
@@ -1730,6 +1763,7 @@ func (o *Ocpp16) notAutoChargePoint(c *simulator.Connector, x, y int) {
 	} else {
 		o.Asset.Evses[x].Connectors[y].DP.Position = 0
 		o.Asset.Evses[x].Connectors[y].DP.Ticker = 0
+		o.Asset.Evses[x].Connectors[y].CurrentSoC = 0
 		o.Asset.Evses[x].Connectors[y].Enabled = false
 		o.txnAlignedData = []types.MeterValue{}
 		o.txnSampledData = []types.MeterValue{}
@@ -1835,4 +1869,24 @@ func alignedEnergyActiveInterval(p float64, t int64, m string) types.SampledValu
 	}
 
 	return sp
+}
+
+/*
+Calculate the SoC increment to apply, and increment it to the current SoC. It returns the current
+SoC result.
+
+c	-	Current SoC
+
+s	-	Data position start SoC
+
+e	-	Data position end SoC
+
+d	-	Data position duration
+*/
+func calculateSoC(c, s, e, d int64) int64 {
+	var inc = (e - s) / d
+
+	c += inc
+
+	return c
 }
