@@ -31,8 +31,11 @@ type Connector struct {
 	Data         []Data       `json:"data"`                   // The loop of data
 	DP           DataPosition `json:"dp,omitempty"`           // Data position used to control the data
 	TPower       float64      `json:"tPower,omitempty"`       // Store the total power for the connector, this will be used by the application only
+	TPowerExport float64      `json:"tPowerExport,omitempty"` // Store the total power export for the connector, this will be used by the application only
 	Energy       float64      `json:"energy,omitempty"`       // store the energy of the connector, this will be used by the application only
+	EnergyExport float64      `json:"energyExport,omitempty"` // store the energy export of the connector, this will be used by the application only
 	Availability string       `json:"availability,omitempty"` // Store the availability state of the connector, this will only be used by the application
+	CurrentSoC   float64      `json:"currentSoC,omitempty"`   // Store the current ev state of charge in the current position, this will only be used by the applicaion
 }
 
 // TODO: evaluate if the charging state should be a number or the name of the state
@@ -42,10 +45,13 @@ type Data struct {
 	ErrorCode     int64   `json:"errorCode"`     // Error code
 	PowerFactor   int64   `json:"powerFactor"`   // The power factor
 	Power         int64   `json:"power"`         // Power in W
+	PowerExport   int64   `json:"powerExport"`   // Power exported by the ev to the cp in W, vehicle to grid
 	Voltage       []int64 `json:"voltage"`       // Array of voltages each entry for each phase in V
+	StartSoC      float64 `json:"startSoC"`      // Start ev charge state in percentage
+	EndSoC        float64 `json:"endSoC"`        // End ev charge state in percentage
 }
 
 type DataPosition struct {
-	Position int64
-	Ticker   int64
+	Position int64 // Current data array position
+	Ticker   int64 // Time in seconds that is in the position
 }
