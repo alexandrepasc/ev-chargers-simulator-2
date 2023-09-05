@@ -1136,21 +1136,23 @@ func (o *Ocpp16) meterValuesAlignedData(confL []string) []types.MeterValue {
 			}
 
 		case assets.SoC:
-			var csoc float64
-
-			for _, e := range o.Asset.Evses {
-				for _, c := range e.Connectors {
-					if c.Enabled {
-						csoc = c.CurrentSoC
-					}
-				}
-			}
+			var csoc = getAlignedDataSoC(o.Asset.Evses)
 
 			sp = types.SampledValue{
-				Value:     strconv.FormatFloat(csoc, 'f', 4, 64),
+				Value:     strconv.FormatInt(int64(csoc), 10),
 				Unit:      types.UnitOfMeasurePercent,
 				Format:    types.ValueFormatRaw,
 				Measurand: types.Measurand(assets.SoC),
+			}
+
+		case assets.Voltage:
+			var cv = getAlignedDataVoltage(o.Asset.Evses)
+
+			sp = types.SampledValue{
+				Value:     strconv.FormatInt(cv, 10),
+				Unit:      types.UnitOfMeasureV,
+				Format:    types.ValueFormatRaw,
+				Measurand: types.Measurand(assets.Voltage),
 			}
 		}
 
@@ -1919,4 +1921,56 @@ func calculateSoC(c, s, e float64, d int64) float64 {
 	c += inc
 
 	return c
+}
+
+/*
+Get the SoC from the active connector. Loop the evse list, get the active connector and
+return the current SoC for that connector (float64).
+
+el	-	Evses list of the asset ([]simulator.Evse)
+*/
+// TODO: this needs to be reviwed don't think that with the ocpp 1.6 a cp can have multiple evses
+func getAlignedDataSoC(el []simulator.Evse) float64 {
+	var csoc float64
+
+	for _, e := range el {
+		var i, c = getActiveConnector(e)
+
+		if i == -1 {
+			continue
+		}
+
+		csoc = c.CurrentSoC
+	}
+
+	return csoc
+}
+
+/*
+Get the Voltage from the active connector. Loop the evse list, get the active connector, loop the
+the phases and return the current voltage for that connector (int64).
+
+el	-	Evses list of the asset ([]simulator.Evse)
+*/
+// TODO: this needs to be reviwed don't think that with the ocpp 1.6 a cp can have multiple evses
+func getAlignedDataVoltage(el []simulator.Evse) int64 {
+	var cv int64
+
+	for _, e := range el {
+		var i, c = getActiveConnector(e)
+
+		if i == -1 {
+			continue
+		}
+
+		for _, v := range c.Data[c.DP.Position].Voltage {
+			if v <= 0 {
+				continue
+			}
+
+			cv = v
+		}
+	}
+
+	return cv
 }
