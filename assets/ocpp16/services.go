@@ -624,6 +624,12 @@ ic		-	Connector array index (int)
 confL	-	Configuration list with the data needed to the request ([]string)
 */
 func (o *Ocpp16) meterValuesSampledData(ie, ic int, confL []string) []types.MeterValue {
+	var lm = map[string]string{
+		"protocol":  string(o.Asset.Protocol),
+		"function":  "meterValuesSampledData",
+		"simulator": o.Asset.Name,
+	}
+
 	var spl []types.SampledValue
 
 	for _, conf := range confL {
@@ -717,13 +723,7 @@ func (o *Ocpp16) meterValuesSampledData(ie, ic int, confL []string) []types.Mete
 			case assets.EnergyActiveExportInterval:
 				var t, err = strconv.ParseInt(*o.Conf["MeterValueSampleInterval"].Value, 10, 64)
 				if err != nil {
-					var lm2 = map[string]string{
-						"protocol":  string(o.Asset.Protocol),
-						"function":  "meterValuesSampledData",
-						"simulator": o.Asset.Name,
-					}
-
-					o.logger.log(lm2, err, assets.Fatal)
+					o.logger.log(lm, err, assets.Fatal)
 
 					return nil
 				}
@@ -739,13 +739,7 @@ func (o *Ocpp16) meterValuesSampledData(ie, ic int, confL []string) []types.Mete
 			case assets.EnergyActiveImportInterval:
 				var t, err = strconv.ParseInt(*o.Conf["MeterValueSampleInterval"].Value, 10, 64)
 				if err != nil {
-					var lm2 = map[string]string{
-						"protocol":  string(o.Asset.Protocol),
-						"function":  "meterValuesSampledData",
-						"simulator": o.Asset.Name,
-					}
-
-					o.logger.log(lm2, err, assets.Fatal)
+					o.logger.log(lm, err, assets.Fatal)
 
 					return nil
 				}
@@ -953,6 +947,12 @@ confL	-	Configuration list with the data needed to the request ([]string)
 */
 // TODO: some more research is needed to this functionality
 func (o *Ocpp16) meterValuesAlignedData(confL []string) []types.MeterValue {
+	var lm = map[string]string{
+		"protocol":  string(o.Asset.Protocol),
+		"function":  "meterValuesAlignedData",
+		"simulator": o.Asset.Name,
+	}
+
 	var spl = []types.SampledValue{}
 
 	var tp = assets.CalculateCPPower(o.Asset.Evses)
@@ -1018,13 +1018,7 @@ func (o *Ocpp16) meterValuesAlignedData(confL []string) []types.MeterValue {
 		case assets.EnergyActiveExportInterval:
 			var t, err = strconv.ParseInt(*o.Conf["ClockAlignedDataInterval"].Value, 10, 64)
 			if err != nil {
-				var lm2 = map[string]string{
-					"protocol":  string(o.Asset.Protocol),
-					"function":  "meterValuesAlignedData",
-					"simulator": o.Asset.Name,
-				}
-
-				o.logger.log(lm2, err, assets.Fatal)
+				o.logger.log(lm, err, assets.Fatal)
 
 				return nil
 			}
@@ -1034,13 +1028,7 @@ func (o *Ocpp16) meterValuesAlignedData(confL []string) []types.MeterValue {
 		case assets.EnergyActiveImportInterval:
 			var t, err = strconv.ParseInt(*o.Conf["ClockAlignedDataInterval"].Value, 10, 64)
 			if err != nil {
-				var lm2 = map[string]string{
-					"protocol":  string(o.Asset.Protocol),
-					"function":  "meterValuesAlignedData",
-					"simulator": o.Asset.Name,
-				}
-
-				o.logger.log(lm2, err, assets.Fatal)
+				o.logger.log(lm, err, assets.Fatal)
 
 				return nil
 			}
