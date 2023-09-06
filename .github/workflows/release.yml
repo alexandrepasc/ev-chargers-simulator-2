@@ -72,7 +72,7 @@ jobs:
           name: 'v${{ env.RELEASE_VERSION }}'
           allow_override: true
           files: >
-            ${{ env.GITHUB_WORKSPACE }}/ev-chargers-simulator-linux-amd64
+            '${{ env.GITHUB_WORKSPACE }}/ev-chargers-simulator-linux-amd64'
             ./ev-chargers-simulator-linux-arm64
             ./changelog.md
           body: ${{ env.RELEASE_NOTES }}
