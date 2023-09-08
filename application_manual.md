@@ -17,6 +17,7 @@
         - [/simulators/models](#simulatorsmodels)
         - [/simulators/models/:id](#simulatorsmodelsid)
       - [Manage Simulator](#manage-simulator)
+        - [/simulators](#simulators)
       - [Run The Simulators](#run-the-simulators)
   - [Appendix](#appendix)
     - [Flags](#flags)
@@ -262,6 +263,111 @@ Now looking into the core of this application, the **Simulators**. There is on e
         - `voltage`: Array of voltages each entry for each phase in V
         - `startSoC`: Start ev charge state in percentage
         - `endSoC`: End ev charge state in percentage
+
+##### /simulators
+This endpoint can be used to create and list all the *simulators*.
+
+To list the existing *simulators* use the following method:
+```
+GET http://{apiAddr}:{apiPort}/simulators
+```
+
+It will return the total number of number of existing *simulators* and their list.
+```
+{
+    "total": 1,
+    "assets": [
+        {
+            "simId": "585e8e82-b296-49f7-aea7-f3478a0c3a51",
+            "name": "sim1",
+            "type": "evc",
+            "protocol": "ocpp16",
+            "model": "00000000-0000-0000-0000-000000000000",
+            "cPId": "123789",
+            "startCharging": false,
+            "phases": 1,
+            "phaseRotation": "NotApplicable",
+            "curentType": "dc",
+            "authorizeRemote": true,
+            "authList": true,
+            "evses": [
+                {
+                    "id": 1,
+                    "connectors": [
+                        {
+                            "id": 1,
+                            "omitempty": false,
+                            "data": [
+                                {
+                                    "duration": 10,
+                                    "chargingState": 1,
+                                    "errorCode": 0,
+                                    "powerFactor": 900,
+                                    "power": 0,
+                                    "powerExport": 0,
+                                    "voltage": [
+                                        230,
+                                        0,
+                                        0
+                                    ],
+                                    "startSoC": 0,
+                                    "endSoC": 0
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}
+```
+
+To create a new *simulator* use the same endpoint but with a new method and sending the body described down:
+```
+POST http://{apiAddr}:{apiPort}/simulators
+{
+    "name": "sim1",
+    "type": "evc",
+    "protocol": "ocpp16",
+    "model": "00000000-0000-0000-0000-000000000000",
+    "cPId": "123789",
+    "startCharging": false,
+    "phases": 1,
+    "phaseRotation": "NotApplicable",
+    "curentType": "dc",
+    "authorizeRemote": true,
+    "authList": true,
+    "evses": [
+        {
+            "id": 1,
+            "connectors": [
+                {
+                    "id": 1,
+                    "omitempty": false,
+                    "data": [
+                        {
+                            "duration": 10,
+                            "chargingState": 1,
+                            "errorCode": 0,
+                            "powerFactor": 900,
+                            "power": 0,
+                            "powerExport": 0,
+                            "voltage": [
+                                230,
+                                0,
+                                0
+                            ],
+                            "startSoC": 0,
+                            "endSoC": 0
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}
+```
 
 NOTE: the simulator data needs to have the Available state in the 1st item and Finishing in the last item
 /simulators
