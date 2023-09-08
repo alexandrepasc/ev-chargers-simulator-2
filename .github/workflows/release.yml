@@ -65,14 +65,24 @@ jobs:
           cat changelog.md>> $GITHUB_ENV
           echo "$EOF" >> $GITHUB_ENV
 
-      - uses: meeDamian/github-release@2.0
+      # - name: Create release
+      #   uses: meeDamian/github-release@2.0
+      #   with:
+      #     token: ${{ secrets.GIT_TOKEN }}
+      #     tag: 'v${{ env.RELEASE_VERSION }}'
+      #     name: 'v${{ env.RELEASE_VERSION }}'
+      #     allow_override: true
+      #     files: >
+      #       '${{ env.GITHUB_WORKSPACE }}/ev-chargers-simulator-linux-amd64'
+      #       ./ev-chargers-simulator-linux-arm64
+      #       ./changelog.md
+      #     body: ${{ env.RELEASE_NOTES }}
+
+      - name: Create release
+        uses: ncipollo/release-action@v1
         with:
           token: ${{ secrets.GIT_TOKEN }}
-          tag: 'v${{ env.RELEASE_VERSION }}'
           name: 'v${{ env.RELEASE_VERSION }}'
-          allow_override: true
-          files: >
-            '${{ env.GITHUB_WORKSPACE }}/ev-chargers-simulator-linux-amd64'
-            ./ev-chargers-simulator-linux-arm64
-            ./changelog.md
-          body: ${{ env.RELEASE_NOTES }}
+          tag: 'v${{ env.RELEASE_VERSION }}'
+          bodyFile: 'changelog.md'
+          artifact: 'ev-chargers-simulator-linux-amd64,ev-chargers-simulator-linux-arm64,changelog.md'
