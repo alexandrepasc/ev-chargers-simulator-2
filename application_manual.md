@@ -1,25 +1,25 @@
 # Electric Vehicle Charging Simulator Manual
 
 - [Electric Vehicle Charging Simulator Manual](#electric-vehicle-charging-simulator-manual)
-	- [Introduction](#introduction)
-	- [Installation](#installation)
-		- [First Run Default Configurations](#first-run-default-configurations)
-		- [First Run Define Configurations](#first-run-define-configurations)
-		- [First Run](#first-run)
-	- [Use the Application](#use-the-application)
-		- [Change Configurations](#change-configurations)
-			- [By Flags](#by-flags)
-			- [By Restful API](#by-restful-api)
-				- [/configs/general](#configsgeneral)
-				- [/configs/simulators](#configssimulators)
-		- [Setup Simulators](#setup-simulators)
-			- [Manage Models](#manage-models)
-				- [/simulators/models](#simulatorsmodels)
-				- [/simulators/models/:id](#simulatorsmodelsid)
-			- [Manage Simulator](#manage-simulator)
-			- [Run The Simulators](#run-the-simulators)
-	- [Appendix](#appendix)
-		- [Flags](#flags)
+  - [Introduction](#introduction)
+  - [Installation](#installation)
+    - [First Run Default Configurations](#first-run-default-configurations)
+    - [First Run Define Configurations](#first-run-define-configurations)
+    - [First Run](#first-run)
+  - [Use the Application](#use-the-application)
+    - [Change Configurations](#change-configurations)
+      - [By Flags](#by-flags)
+      - [By Restful API](#by-restful-api)
+        - [/configs/general](#configsgeneral)
+        - [/configs/simulators](#configssimulators)
+    - [Setup Simulators](#setup-simulators)
+      - [Manage Models](#manage-models)
+        - [/simulators/models](#simulatorsmodels)
+        - [/simulators/models/:id](#simulatorsmodelsid)
+      - [Manage Simulator](#manage-simulator)
+      - [Run The Simulators](#run-the-simulators)
+  - [Appendix](#appendix)
+    - [Flags](#flags)
 
 ## Introduction
 
@@ -234,6 +234,35 @@ DELETE http://{apiAddr}:{apiPort}/simulators/models/{model-identifier-here}
 ```
 
 #### Manage Simulator
+Now looking into the core of this application, the **Simulators**. There is on endpoint that is used to manage the **Simulator** assets and their configurations. In here will explaine how to add, edit, delete, and configure the assets. All the configurable properties are listed bellow:
+
+- `name`: Simulator name
+- `type`: Type of the asset that the configuration will be used to (evc, pm)
+- `protocol`: Protocol used by the asset
+- `model`: Id of the configuration file set in the model's folder
+- `port`: Communication ip port
+- `cPId`: Charge point id to identify the unit (used in the ocpp protocol)
+- `startCharging`: Set the asset to start charging behaviour by itself
+- `phases`: Phases number
+- `phaseRotation`: The asset phase rotation, if the asset is DC the value should be NotApplicable
+- `curentType`: Type of current of the asset (AC or DC)
+- `authorizeRemote`: Configurataion AuthorizeRemoteTxRequests
+- `authList`: Enable or disable authorization local list
+- `evses`: List of evses that the asset has
+  - `id`: Evse identifier number
+  - `connectors`: The list of connectors of the evse
+    - `id`: Connector identifier number
+	- `data`: The loop of data
+    	- `duration`: The duration in seconds that the current data will be in place
+        - `chargingState`: The state of charging for the current data
+        - `errorCode`: Error code
+        - `powerFactor`: The power factor
+        - `power`: Power in W
+        - `powerExport`: Power exported by the ev to the cp in W, vehicle to grid
+        - `voltage`: Array of voltages each entry for each phase in V
+        - `startSoC`: Start ev charge state in percentage
+        - `endSoC`: End ev charge state in percentage
+
 NOTE: the simulator data needs to have the Available state in the 1st item and Finishing in the last item
 /simulators
 /simulators/:id
