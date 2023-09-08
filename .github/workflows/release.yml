@@ -25,23 +25,23 @@ jobs:
         run: echo "RELEASE_VERSION=$(go run . -v | cut -d " " -f 2)" >> $GITHUB_ENV
 
       - name: Build Linux AMD 64
-        run: env GOOS=linux GOARCH=amd64 go build -o ./build/ev-chargers-simulator-linux-amd64
+        run: env GOOS=linux GOARCH=amd64 go build -o ./ev-chargers-simulator-linux-amd64
 
       - name: Build Linux ARM 64
-        run: env GOOS=linux GOARCH=arm64 GOARM=7 go build -o ./build/ev-chargers-simulator-linux-arm64
+        run: env GOOS=linux GOARCH=arm64 GOARM=7 go build -o ./ev-chargers-simulator-linux-arm64
 
       - name: Create Linux AMD64 Artifact v${{ env.RELEASE_VERSION }}
         uses: actions/upload-artifact@v3
         with:
           name: EV Chargers Simulator Linux AMD64 v${{ env.RELEASE_VERSION }}
-          path: build/ev-chargers-simulator-linux-amd64
+          path: ev-chargers-simulator-linux-amd64
           retention-days: 1
 
       - name: Create Linux ARM64 Artifact v${{ env.RELEASE_VERSION }}
         uses: actions/upload-artifact@v3
         with:
           name: EV Chargers Simulator Linux ARM64 v${{ env.RELEASE_VERSION }}
-          path: build/ev-chargers-simulator-linux-arm64
+          path: ev-chargers-simulator-linux-arm64
           retention-days: 1
         
       - name: Install git-chglog
@@ -65,14 +65,13 @@ jobs:
           cat changelog.md>> $GITHUB_ENV
           echo "$EOF" >> $GITHUB_ENV
 
-      - uses: meeDamian/github-release@2.0
+      - name: Create release
+        uses: ncipollo/release-action@v1
         with:
           token: ${{ secrets.GIT_TOKEN }}
-          tag: 'v${{ env.RELEASE_VERSION }}'
           name: 'v${{ env.RELEASE_VERSION }}'
-          allow_override: true
-          files: >
-            build/ev-chargers-simulator-linux-amd64
-            build/ev-chargers-simulator-linux-arm64
-            changelog.md
-          body: ${{ env.RELEASE_NOTES }}
+          tag: 'v${{ env.RELEASE_VERSION }}'
+          allowUpdates: true
+          replacesArtifacts: true
+          bodyFile: 'changelog.md'
+          artifacts: 'ev-chargers-simulator-linux-amd64,ev-chargers-simulator-linux-arm64,changelog.md'

@@ -156,6 +156,7 @@ func (o *Ocpp16) setStartUpConfigurations() {
 			o.Asset.Evses[x].Connectors[y].Energy = 0
 			o.Asset.Evses[x].Connectors[y].Enabled = false
 			o.Asset.Evses[x].Connectors[y].Availability = string(assets.Operative)
+			o.Asset.Evses[x].Connectors[y].CurrentSoC = 0
 		}
 	}
 
@@ -413,6 +414,7 @@ func (o *Ocpp16) processReset(r *core.ResetRequest) *core.ResetConfirmation {
 				o.Asset.Evses[x].Connectors[y].Enabled = false
 				o.Asset.Evses[x].Connectors[y].DP.Position = 0
 				o.Asset.Evses[x].Connectors[y].DP.Ticker = 0
+				o.Asset.Evses[x].Connectors[y].CurrentSoC = 0
 				o.txnAlignedData = []types.MeterValue{}
 				o.txnSampledData = []types.MeterValue{}
 
@@ -428,6 +430,7 @@ func (o *Ocpp16) processReset(r *core.ResetRequest) *core.ResetConfirmation {
 			o.Asset.Evses[x].Connectors[y].Enabled = false
 			o.Asset.Evses[x].Connectors[y].DP.Position = 0
 			o.Asset.Evses[x].Connectors[y].DP.Ticker = 0
+			o.Asset.Evses[x].Connectors[y].CurrentSoC = 0
 			o.Asset.Evses[x].Connectors[y].TPower = 0
 			o.Asset.Evses[x].Connectors[y].Energy = 0
 			o.Asset.Evses[x].Connectors[y].Availability = string(assets.Operative)
@@ -621,6 +624,12 @@ ic		-	Connector array index (int)
 confL	-	Configuration list with the data needed to the request ([]string)
 */
 func (o *Ocpp16) meterValuesSampledData(ie, ic int, confL []string) []types.MeterValue {
+	var lm = map[string]string{
+		"protocol":  string(o.Asset.Protocol),
+		"function":  "meterValuesSampledData",
+		"simulator": o.Asset.Name,
+	}
+
 	var spl []types.SampledValue
 
 	for _, conf := range confL {
@@ -632,31 +641,17 @@ func (o *Ocpp16) meterValuesSampledData(ie, ic int, confL []string) []types.Mete
 			var cdp = o.Asset.Evses[ie].Connectors[ic].DP.Position
 
 			switch confT {
-			case assets.EnergyActiveImportRegister:
+			case assets.CurrentExport:
 				sp = types.SampledValue{
-					Value:     strconv.FormatFloat(o.Asset.Evses[ie].Connectors[ic].Energy, 'f', 4, 64),
-					Unit:      types.UnitOfMeasureWh,
+					Value: strconv.FormatFloat(assets.CalculateCurrent(
+						o.Asset.Evses[ie].Connectors[ic].Data[cdp].PowerExport,
+						o.Asset.Evses[ie].Connectors[ic].Data[cdp].PowerFactor,
+						o.Asset.Evses[ie].Connectors[ic].Data[cdp].Voltage[i],
+						int64(o.Asset.Phases),
+					), 'f', 4, 64),
+					Unit:      types.UnitOfMeasureA,
 					Format:    types.ValueFormatRaw,
-					Measurand: types.Measurand(assets.EnergyActiveImportRegister),
-					Phase:     types.Phase(assets.Phases[i]),
-				}
-
-			// TODO: this is not being calculated and the value is set to 0
-			case assets.EnergyReactiveImportRegister:
-				sp = types.SampledValue{
-					Value:     "0",
-					Unit:      types.UnitOfMeasureVarh,
-					Format:    types.ValueFormatRaw,
-					Measurand: types.Measurand(assets.EnergyReactiveImportRegister),
-					Phase:     types.Phase(assets.Phases[i]),
-				}
-
-			case assets.Voltage:
-				sp = types.SampledValue{
-					Value:     strconv.FormatInt(o.Asset.Evses[ie].Connectors[ic].Data[cdp].Voltage[i], 10),
-					Unit:      types.UnitOfMeasureV,
-					Format:    types.ValueFormatRaw,
-					Measurand: types.Measurand(assets.Voltage),
+					Measurand: types.Measurand(assets.CurrentExport),
 					Phase:     types.Phase(assets.Phases[i]),
 				}
 
@@ -674,12 +669,194 @@ func (o *Ocpp16) meterValuesSampledData(ie, ic int, confL []string) []types.Mete
 					Phase:     types.Phase(assets.Phases[i]),
 				}
 
+			case assets.CurrentOffered:
+				sp = types.SampledValue{
+					Value: strconv.FormatFloat(assets.CalculateConnectorMaxCurrent(
+						&o.Asset.Evses[ie].Connectors[ic],
+						int(o.Asset.Phases),
+						i,
+					), 'f', 4, 64),
+					Unit:      types.UnitOfMeasureA,
+					Format:    types.ValueFormatRaw,
+					Measurand: types.Measurand(assets.CurrentOffered),
+					Phase:     types.Phase(assets.Phases[i]),
+				}
+
+			case assets.EnergyActiveExportRegister:
+				sp = types.SampledValue{
+					Value:     strconv.FormatFloat(o.Asset.Evses[ie].Connectors[ic].EnergyExport, 'f', 4, 64),
+					Unit:      types.UnitOfMeasureWh,
+					Format:    types.ValueFormatRaw,
+					Measurand: types.Measurand(assets.EnergyActiveExportRegister),
+					Phase:     types.Phase(assets.Phases[i]),
+				}
+
+			case assets.EnergyActiveImportRegister:
+				sp = types.SampledValue{
+					Value:     strconv.FormatFloat(o.Asset.Evses[ie].Connectors[ic].Energy, 'f', 4, 64),
+					Unit:      types.UnitOfMeasureWh,
+					Format:    types.ValueFormatRaw,
+					Measurand: types.Measurand(assets.EnergyActiveImportRegister),
+					Phase:     types.Phase(assets.Phases[i]),
+				}
+
+			// TODO: this is not being calculated and the value is set to 0
+			case assets.EnergyReactiveExportRegister:
+				sp = types.SampledValue{
+					Value:     "0",
+					Unit:      types.UnitOfMeasureVarh,
+					Format:    types.ValueFormatRaw,
+					Measurand: types.Measurand(assets.EnergyReactiveExportRegister),
+					Phase:     types.Phase(assets.Phases[i]),
+				}
+
+			// TODO: this is not being calculated and the value is set to 0
+			case assets.EnergyReactiveImportRegister:
+				sp = types.SampledValue{
+					Value:     "0",
+					Unit:      types.UnitOfMeasureVarh,
+					Format:    types.ValueFormatRaw,
+					Measurand: types.Measurand(assets.EnergyReactiveImportRegister),
+					Phase:     types.Phase(assets.Phases[i]),
+				}
+
+			case assets.EnergyActiveExportInterval:
+				var t, err = strconv.ParseInt(*o.Conf["MeterValueSampleInterval"].Value, 10, 64)
+				if err != nil {
+					o.logger.log(lm, err, assets.Fatal)
+
+					return nil
+				}
+
+				sp = sampledEnergyActiveInterval(
+					o.Asset.Evses[ie].Connectors[ic].TPowerExport,
+					o.Asset.Evses[ie].Connectors[ic].EnergyExport,
+					o.Asset.Evses[ie].Connectors[ic].Data[cdp].PowerExport,
+					t,
+					assets.EnergyActiveExportInterval,
+				)
+
+			case assets.EnergyActiveImportInterval:
+				var t, err = strconv.ParseInt(*o.Conf["MeterValueSampleInterval"].Value, 10, 64)
+				if err != nil {
+					o.logger.log(lm, err, assets.Fatal)
+
+					return nil
+				}
+
+				sp = sampledEnergyActiveInterval(
+					o.Asset.Evses[ie].Connectors[ic].TPower,
+					o.Asset.Evses[ie].Connectors[ic].Energy,
+					o.Asset.Evses[ie].Connectors[ic].Data[cdp].Power,
+					t,
+					assets.EnergyActiveImportInterval,
+				)
+
+			// This value is static
+			case assets.EnergyReactiveExportInterval:
+				sp = types.SampledValue{
+					Value:     assets.DefReactiveEnergy,
+					Unit:      types.UnitOfMeasureVarh,
+					Format:    types.ValueFormatRaw,
+					Measurand: types.Measurand(assets.EnergyReactiveExportInterval),
+					Phase:     types.Phase(assets.Phases[i]),
+				}
+
+			// This value is static
+			case assets.EnergyReactiveImportInterval:
+				sp = types.SampledValue{
+					Value:     assets.DefReactiveEnergy,
+					Unit:      types.UnitOfMeasureVarh,
+					Format:    types.ValueFormatRaw,
+					Measurand: types.Measurand(assets.EnergyReactiveImportInterval),
+					Phase:     types.Phase(assets.Phases[i]),
+				}
+
+			case assets.Frequency:
+				sp = types.SampledValue{
+					Value:     assets.DefFrequency,
+					Format:    types.ValueFormatRaw,
+					Measurand: types.Measurand(assets.Frequency),
+					Phase:     types.Phase(assets.Phases[i]),
+				}
+
+			case assets.PowerActiveExport:
+				sp = types.SampledValue{
+					Value:     strconv.FormatFloat(float64(o.Asset.Evses[ie].Connectors[ic].Data[cdp].PowerExport), 'f', 4, 64),
+					Unit:      types.UnitOfMeasureW,
+					Format:    types.ValueFormatRaw,
+					Measurand: types.Measurand(assets.PowerActiveExport),
+					Phase:     types.Phase(assets.Phases[i]),
+				}
+
 			case assets.PowerActiveImport:
 				sp = types.SampledValue{
 					Value:     strconv.FormatFloat(float64(o.Asset.Evses[ie].Connectors[ic].Data[cdp].Power), 'f', 4, 64),
 					Unit:      types.UnitOfMeasureW,
 					Format:    types.ValueFormatRaw,
 					Measurand: types.Measurand(assets.PowerActiveImport),
+					Phase:     types.Phase(assets.Phases[i]),
+				}
+
+			case assets.PowerFactor:
+				sp = types.SampledValue{
+					Value:     strconv.FormatInt(o.Asset.Evses[ie].Connectors[ic].Data[cdp].PowerFactor, 10),
+					Unit:      types.UnitOfMeasurePercent,
+					Format:    types.ValueFormatRaw,
+					Measurand: types.Measurand(assets.PowerFactor),
+					Phase:     types.Phase(assets.Phases[i]),
+				}
+
+			case assets.PowerOffered:
+				sp = types.SampledValue{
+					Value:     strconv.FormatInt(assets.GetConnectorMaxPower(&o.Asset.Evses[ie].Connectors[ic]), 10),
+					Unit:      types.UnitOfMeasureW,
+					Format:    types.ValueFormatRaw,
+					Measurand: types.Measurand(assets.PowerOffered),
+					Phase:     types.Phase(assets.Phases[i]),
+				}
+
+			case assets.PowerReactiveExport:
+				sp = types.SampledValue{
+					Value:     assets.DefReactivePower,
+					Unit:      types.UnitOfMeasureVar,
+					Format:    types.ValueFormatRaw,
+					Measurand: types.Measurand(assets.PowerReactiveExport),
+					Phase:     types.Phase(assets.Phases[i]),
+				}
+
+			case assets.PowerReactiveImport:
+				sp = types.SampledValue{
+					Value:     assets.DefReactivePower,
+					Unit:      types.UnitOfMeasureVar,
+					Format:    types.ValueFormatRaw,
+					Measurand: types.Measurand(assets.PowerReactiveImport),
+					Phase:     types.Phase(assets.Phases[i]),
+				}
+
+			case assets.RPM:
+				sp = types.SampledValue{
+					Value:     assets.DefRPM,
+					Format:    types.ValueFormatRaw,
+					Measurand: types.Measurand(assets.RPM),
+					Phase:     types.Phase(assets.Phases[i]),
+				}
+
+			case assets.SoC:
+				sp = types.SampledValue{
+					Value:     strconv.FormatFloat(o.Asset.Evses[ie].Connectors[ic].CurrentSoC, 'f', 4, 64),
+					Unit:      types.UnitOfMeasurePercent,
+					Format:    types.ValueFormatRaw,
+					Measurand: types.Measurand(assets.SoC),
+					Phase:     types.Phase(assets.Phases[i]),
+				}
+
+			case assets.Voltage:
+				sp = types.SampledValue{
+					Value:     strconv.FormatInt(o.Asset.Evses[ie].Connectors[ic].Data[cdp].Voltage[i], 10),
+					Unit:      types.UnitOfMeasureV,
+					Format:    types.ValueFormatRaw,
+					Measurand: types.Measurand(assets.Voltage),
 					Phase:     types.Phase(assets.Phases[i]),
 				}
 			}
@@ -770,9 +947,17 @@ confL	-	Configuration list with the data needed to the request ([]string)
 */
 // TODO: some more research is needed to this functionality
 func (o *Ocpp16) meterValuesAlignedData(confL []string) []types.MeterValue {
+	var lm = map[string]string{
+		"protocol":  string(o.Asset.Protocol),
+		"function":  "meterValuesAlignedData",
+		"simulator": o.Asset.Name,
+	}
+
 	var spl = []types.SampledValue{}
 
 	var tp = assets.CalculateCPPower(o.Asset.Evses)
+
+	var tpe = assets.CalculateCPPowerExport(o.Asset.Evses)
 
 	for _, conf := range confL {
 		var confT = strings.TrimSpace(conf)
@@ -780,12 +965,46 @@ func (o *Ocpp16) meterValuesAlignedData(confL []string) []types.MeterValue {
 		var sp types.SampledValue
 
 		switch confT {
+		// TODO: this is only using the evse index 0 to calculate the max current, since didn't found a way to control multiple evses
+		case assets.CurrentOffered:
+			sp = types.SampledValue{
+				Value:     strconv.FormatFloat(assets.CalculateMaxCurrent(&o.Asset.Evses[0], int(o.Asset.Phases)), 'f', 4, 64),
+				Unit:      types.UnitOfMeasureA,
+				Format:    types.ValueFormatRaw,
+				Measurand: types.Measurand(assets.CurrentOffered),
+			}
+
+		case assets.EnergyActiveExportRegister:
+			var eet float64
+
+			for _, e := range o.Asset.Evses {
+				for _, c := range e.Connectors {
+					eet += c.EnergyExport
+				}
+			}
+
+			sp = types.SampledValue{
+				Value:     strconv.FormatFloat(eet, 'f', 4, 64),
+				Unit:      types.UnitOfMeasureWh,
+				Format:    types.ValueFormatRaw,
+				Measurand: types.Measurand(assets.EnergyActiveExportRegister),
+			}
+
 		case assets.EnergyActiveImportRegister:
 			sp = types.SampledValue{
 				Value:     strconv.FormatFloat(assets.CalculateCPEnergy(tp, o.st), 'f', 4, 64),
 				Unit:      types.UnitOfMeasureWh,
 				Format:    types.ValueFormatRaw,
 				Measurand: types.Measurand(assets.EnergyActiveImportRegister),
+			}
+
+		// TODO: this is not being calculated and the value is set to 0
+		case assets.EnergyReactiveExportRegister:
+			sp = types.SampledValue{
+				Value:     "0",
+				Unit:      types.UnitOfMeasureVarh,
+				Format:    types.ValueFormatRaw,
+				Measurand: types.Measurand(assets.EnergyReactiveExportRegister),
 			}
 
 		case assets.EnergyReactiveImportRegister:
@@ -796,12 +1015,132 @@ func (o *Ocpp16) meterValuesAlignedData(confL []string) []types.MeterValue {
 				Measurand: types.Measurand(assets.EnergyReactiveImportRegister),
 			}
 
+		case assets.EnergyActiveExportInterval:
+			var t, err = strconv.ParseInt(*o.Conf["ClockAlignedDataInterval"].Value, 10, 64)
+			if err != nil {
+				o.logger.log(lm, err, assets.Fatal)
+
+				return nil
+			}
+
+			sp = alignedEnergyActiveInterval(tpe, t, assets.EnergyActiveExportInterval)
+
+		case assets.EnergyActiveImportInterval:
+			var t, err = strconv.ParseInt(*o.Conf["ClockAlignedDataInterval"].Value, 10, 64)
+			if err != nil {
+				o.logger.log(lm, err, assets.Fatal)
+
+				return nil
+			}
+
+			sp = alignedEnergyActiveInterval(tp, t, assets.EnergyActiveImportInterval)
+
+		// This value is static
+		case assets.EnergyReactiveExportInterval:
+			sp = types.SampledValue{
+				Value:     "0",
+				Unit:      types.UnitOfMeasureVarh,
+				Format:    types.ValueFormatRaw,
+				Measurand: types.Measurand(assets.EnergyReactiveExportInterval),
+			}
+
+		// This value is static
+		case assets.EnergyReactiveImportInterval:
+			sp = types.SampledValue{
+				Value:     "0",
+				Unit:      types.UnitOfMeasureVarh,
+				Format:    types.ValueFormatRaw,
+				Measurand: types.Measurand(assets.EnergyReactiveImportInterval),
+			}
+
+		case assets.Frequency:
+			sp = types.SampledValue{
+				Value:     assets.DefFrequency,
+				Format:    types.ValueFormatRaw,
+				Measurand: types.Measurand(assets.Frequency),
+			}
+
+		case assets.PowerActiveExport:
+			sp = types.SampledValue{
+				Value:     strconv.FormatFloat(tpe, 'f', 4, 64),
+				Unit:      types.UnitOfMeasureW,
+				Format:    types.ValueFormatRaw,
+				Measurand: types.Measurand(assets.PowerActiveExport),
+			}
+
 		case assets.PowerActiveImport:
 			sp = types.SampledValue{
 				Value:     strconv.FormatFloat(tp, 'f', 4, 64),
 				Unit:      types.UnitOfMeasureW,
 				Format:    types.ValueFormatRaw,
 				Measurand: types.Measurand(assets.PowerActiveImport),
+			}
+
+		case assets.PowerFactor:
+			var tpf int64
+
+			for _, e := range o.Asset.Evses {
+				for _, c := range e.Connectors {
+					tpf += c.Data[c.DP.Position].PowerFactor
+				}
+			}
+
+			sp = types.SampledValue{
+				Value:     strconv.FormatInt(tpf, 10),
+				Unit:      types.UnitOfMeasurePercent,
+				Format:    types.ValueFormatRaw,
+				Measurand: types.Measurand(assets.PowerFactor),
+			}
+
+		case assets.PowerOffered:
+			sp = types.SampledValue{
+				Value:     strconv.FormatInt(assets.GetMaxPower(&o.Asset.Evses[0]), 10),
+				Unit:      types.UnitOfMeasureW,
+				Format:    types.ValueFormatRaw,
+				Measurand: types.Measurand(assets.PowerOffered),
+			}
+
+		case assets.PowerReactiveExport:
+			sp = types.SampledValue{
+				Value:     assets.DefReactivePower,
+				Unit:      types.UnitOfMeasureVar,
+				Format:    types.ValueFormatRaw,
+				Measurand: types.Measurand(assets.PowerReactiveExport),
+			}
+
+		case assets.PowerReactiveImport:
+			sp = types.SampledValue{
+				Value:     assets.DefReactivePower,
+				Unit:      types.UnitOfMeasureVar,
+				Format:    types.ValueFormatRaw,
+				Measurand: types.Measurand(assets.PowerReactiveImport),
+			}
+
+		case assets.RPM:
+			sp = types.SampledValue{
+				Value:     assets.DefRPM,
+				Format:    types.ValueFormatRaw,
+				Measurand: types.Measurand(assets.RPM),
+			}
+
+		case assets.SoC:
+			var csoc = getAlignedDataSoC(o.Asset.Evses)
+
+			sp = types.SampledValue{
+				Value:     strconv.FormatInt(int64(csoc), 10),
+				Unit:      types.UnitOfMeasurePercent,
+				Format:    types.ValueFormatRaw,
+				Measurand: types.Measurand(assets.SoC),
+			}
+
+		case assets.Voltage:
+			var cv = getAlignedDataVoltage(o.Asset.Evses)
+
+			sp = types.SampledValue{
+				Value:     strconv.FormatInt(cv, 10),
+				Unit:      types.UnitOfMeasureV,
+				Format:    types.ValueFormatRaw,
+				Measurand: types.Measurand(assets.Voltage),
 			}
 		}
 
@@ -850,6 +1189,12 @@ func (o *Ocpp16) updateData() {
 
 					if c.DP.Ticker < c.Data[c.DP.Position].Duration {
 						o.Asset.Evses[x].Connectors[y].DP.Ticker++
+						o.Asset.Evses[x].Connectors[y].CurrentSoC = calculateSoC(
+							o.Asset.Evses[x].Connectors[y].CurrentSoC,
+							c.Data[o.Asset.Evses[x].Connectors[y].DP.Position].StartSoC,
+							c.Data[o.Asset.Evses[x].Connectors[y].DP.Position].EndSoC,
+							c.Data[o.Asset.Evses[x].Connectors[y].DP.Position].Duration,
+						)
 					} else {
 						o.Asset.Evses[x].Connectors[y].DP.Ticker = 0
 
@@ -858,6 +1203,10 @@ func (o *Ocpp16) updateData() {
 						} else {
 							o.Asset.Evses[x].Connectors[y].DP.Position = 0
 						}
+
+						// reset the current soc when the position changes
+						o.Asset.Evses[x].Connectors[y].CurrentSoC =
+							o.Asset.Evses[x].Connectors[y].Data[o.Asset.Evses[x].Connectors[y].DP.Position].StartSoC
 					}
 
 					if cs != c.Data[o.Asset.Evses[x].Connectors[y].DP.Position].ChargingState {
@@ -898,6 +1247,9 @@ func (o *Ocpp16) updateData() {
 										if c.Data[i].ChargingState == int64(assets.Finishing) {
 											o.Asset.Evses[x].Connectors[y].DP.Position = i
 											o.Asset.Evses[x].Connectors[y].DP.Ticker = 0
+											// reset the current soc when the position changes
+											o.Asset.Evses[x].Connectors[y].CurrentSoC =
+												o.Asset.Evses[x].Connectors[y].Data[o.Asset.Evses[x].Connectors[y].DP.Position].StartSoC
 
 											break
 										}
@@ -909,16 +1261,24 @@ func (o *Ocpp16) updateData() {
 				} else {
 					o.Asset.Evses[x].Connectors[y].DP.Position = 0
 					o.Asset.Evses[x].Connectors[y].DP.Ticker = 0
+					o.Asset.Evses[x].Connectors[y].CurrentSoC = 0
 				}
 			} else {
 				o.notAutoChargePoint(&o.Asset.Evses[x].Connectors[y], x, y)
 			}
 
 			o.Asset.Evses[x].Connectors[y].TPower = assets.CalculateTotalPower(c.TPower, c.Data[c.DP.Position].Power)
+			o.Asset.Evses[x].Connectors[y].TPowerExport = assets.CalculateTotalPower(c.TPowerExport, c.Data[c.DP.Position].PowerExport)
 			o.Asset.Evses[x].Connectors[y].Energy = assets.CalculateEnergy(
 				o.Asset.Evses[x].Connectors[y].TPower,
 				o.Asset.Evses[x].Connectors[y].Energy,
 				c.Data[c.DP.Position].Power,
+				o.st,
+			)
+			o.Asset.Evses[x].Connectors[y].EnergyExport = assets.CalculateEnergy(
+				o.Asset.Evses[x].Connectors[y].TPowerExport,
+				o.Asset.Evses[x].Connectors[y].EnergyExport,
+				c.Data[c.DP.Position].PowerExport,
 				o.st,
 			)
 		}
@@ -1349,6 +1709,12 @@ func (o *Ocpp16) notAutoChargePoint(c *simulator.Connector, x, y int) {
 	if c.Enabled {
 		if c.DP.Ticker < c.Data[c.DP.Position].Duration {
 			o.Asset.Evses[x].Connectors[y].DP.Ticker++
+			o.Asset.Evses[x].Connectors[y].CurrentSoC = calculateSoC(
+				o.Asset.Evses[x].Connectors[y].CurrentSoC,
+				c.Data[o.Asset.Evses[x].Connectors[y].DP.Position].StartSoC,
+				c.Data[o.Asset.Evses[x].Connectors[y].DP.Position].EndSoC,
+				c.Data[o.Asset.Evses[x].Connectors[y].DP.Position].Duration,
+			)
 		} else {
 			o.Asset.Evses[x].Connectors[y].DP.Ticker = 0
 
@@ -1357,6 +1723,7 @@ func (o *Ocpp16) notAutoChargePoint(c *simulator.Connector, x, y int) {
 			if assets.Status[c.Data[c.DP.Position].ChargingState] == assets.Status[assets.Finishing] {
 				o.Asset.Evses[x].Connectors[y].DP.Position = 0
 				o.Asset.Evses[x].Connectors[y].Enabled = false
+				o.Asset.Evses[x].Connectors[y].CurrentSoC = 0
 				o.txnAlignedData = []types.MeterValue{}
 				o.txnSampledData = []types.MeterValue{}
 
@@ -1375,11 +1742,16 @@ func (o *Ocpp16) notAutoChargePoint(c *simulator.Connector, x, y int) {
 				return
 			}
 
+			// change array data position
 			if c.DP.Position < int64(len(c.Data)-1) {
 				o.Asset.Evses[x].Connectors[y].DP.Position++
 			} else {
 				o.Asset.Evses[x].Connectors[y].DP.Position = 0
 			}
+
+			// reset the current soc when the position changes
+			o.Asset.Evses[x].Connectors[y].CurrentSoC =
+				o.Asset.Evses[x].Connectors[y].Data[o.Asset.Evses[x].Connectors[y].DP.Position].StartSoC
 
 			for {
 				if c.Data[c.DP.Position].ChargingState == int64(assets.Charging) {
@@ -1391,6 +1763,10 @@ func (o *Ocpp16) notAutoChargePoint(c *simulator.Connector, x, y int) {
 				} else {
 					o.Asset.Evses[x].Connectors[y].DP.Position = 0
 				}
+
+				// reset the current soc when the position changes
+				o.Asset.Evses[x].Connectors[y].CurrentSoC =
+					o.Asset.Evses[x].Connectors[y].Data[o.Asset.Evses[x].Connectors[y].DP.Position].StartSoC
 			}
 
 			if cs != c.Data[o.Asset.Evses[x].Connectors[y].DP.Position].ChargingState {
@@ -1404,6 +1780,7 @@ func (o *Ocpp16) notAutoChargePoint(c *simulator.Connector, x, y int) {
 	} else {
 		o.Asset.Evses[x].Connectors[y].DP.Position = 0
 		o.Asset.Evses[x].Connectors[y].DP.Ticker = 0
+		o.Asset.Evses[x].Connectors[y].CurrentSoC = 0
 		o.Asset.Evses[x].Connectors[y].Enabled = false
 		o.txnAlignedData = []types.MeterValue{}
 		o.txnSampledData = []types.MeterValue{}
@@ -1458,4 +1835,130 @@ func getActiveConnector(e simulator.Evse) (i int, c *simulator.Connector) {
 	}
 
 	return -1, nil
+}
+
+/*
+Create and return the energy active export and import interval message for the sampled data
+(types.SampledValue). This function is created only to not have duplicated code.
+
+tp	-	Total power (float64)
+
+e	-	Energy (float64)
+
+p	-	Current power (int64)
+
+t	-	Time interval (int64)
+
+m	-	Measurand name (string)
+*/
+func sampledEnergyActiveInterval(tp, e float64, p, t int64, m string) types.SampledValue {
+	var sp = types.SampledValue{
+		Value: strconv.FormatFloat(assets.CalculateEnergy(
+			tp,
+			e,
+			p,
+			time.Now().Add(-time.Second*time.Duration(t)),
+		), 'f', 4, 64),
+		Unit:      types.UnitOfMeasureWh,
+		Format:    types.ValueFormatRaw,
+		Measurand: types.Measurand(m),
+	}
+
+	return sp
+}
+
+/*
+Create and return the energy active export and import interval message for the aligned data
+(types.SampledValue). This function is created only to not have duplicated code.
+
+p	-	Power of the cp (float64)
+
+t	-	Time interval (int64)
+
+m	-	Measurand name (string)
+*/
+func alignedEnergyActiveInterval(p float64, t int64, m string) types.SampledValue {
+	var sp = types.SampledValue{
+		Value:     strconv.FormatFloat(assets.CalculateCPEnergy(p, time.Now().Add(-time.Second*time.Duration(t))), 'f', 4, 64),
+		Unit:      types.UnitOfMeasureWh,
+		Format:    types.ValueFormatRaw,
+		Measurand: types.Measurand(m),
+	}
+
+	return sp
+}
+
+/*
+Calculate the SoC increment to apply, and increment it to the current SoC. It returns the current
+SoC result.
+
+c	-	Current SoC
+
+s	-	Data position start SoC
+
+e	-	Data position end SoC
+
+d	-	Data position duration
+*/
+// TODO: being a percentage the current soc should be converted into int64, not sure if here is the best location to do it
+func calculateSoC(c, s, e float64, d int64) float64 {
+	var diff = e - s
+
+	var inc = diff / float64(d)
+
+	c += inc
+
+	return c
+}
+
+/*
+Get the SoC from the active connector. Loop the evse list, get the active connector and
+return the current SoC for that connector (float64).
+
+el	-	Evses list of the asset ([]simulator.Evse)
+*/
+// TODO: this needs to be reviwed don't think that with the ocpp 1.6 a cp can have multiple evses
+func getAlignedDataSoC(el []simulator.Evse) float64 {
+	var csoc float64
+
+	for _, e := range el {
+		var i, c = getActiveConnector(e)
+
+		if i == -1 {
+			continue
+		}
+
+		csoc = c.CurrentSoC
+	}
+
+	return csoc
+}
+
+/*
+Get the Voltage from the active connector. Loop the evse list, get the active connector, loop the
+the phases and return the current voltage for that connector (int64).
+
+el	-	Evses list of the asset ([]simulator.Evse)
+*/
+// TODO: this needs to be reviwed don't think that with the ocpp 1.6 a cp can have multiple evses
+func getAlignedDataVoltage(el []simulator.Evse) int64 {
+	var cv int64
+
+	for _, e := range el {
+		var i, c = getActiveConnector(e)
+
+		if i == -1 {
+			continue
+		}
+
+		for _, v := range c.Data[c.DP.Position].Voltage {
+			if v <= 0 {
+				continue
+			}
+
+			cv = v
+		}
+	}
+
+	return cv
 }
