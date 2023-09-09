@@ -74,4 +74,4 @@ jobs:
           allowUpdates: true
           replacesArtifacts: true
           bodyFile: 'changelog.md'
-          artifacts: 'ev-chargers-simulator-linux-amd64,ev-chargers-simulator-linux-arm64,changelog.md'
+          artifacts: 'ev-chargers-simulator-linux-amd64,ev-chargers-simulator-linux-arm64,changelog.md,user_manual.pdf'
