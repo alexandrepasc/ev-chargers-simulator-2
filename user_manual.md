@@ -19,10 +19,11 @@
       - [Manage Simulator](#manage-simulator)
         - [/simulators](#simulators)
         - [/simulators/:id](#simulatorsid)
-      - [Run The Simulators](#run-the-simulators)
-        - [/simulators/run](#simulatorsrun)
-        - [/simulators/stop](#simulatorsstop)
-        - [/simulators/status](#simulatorsstatus)
+    - [Run The Simulators](#run-the-simulators)
+      - [/simulators/run](#simulatorsrun)
+      - [/simulators/stop](#simulatorsstop)
+      - [/simulators/status](#simulatorsstatus)
+    - [Health Check](#health-check)
   - [Appendix](#appendix)
     - [Flags](#flags)
     - [Asset Type (type)](#asset-type-type)
@@ -441,24 +442,24 @@ To delete a simulator use the *delete* method:
 DELETE http://{apiAddr}:{apiPort}/simulators/{simulator-identifier-here}
 ```
 
-#### Run The Simulators
+### Run The Simulators
 After setting all up following the previous sections of the manual tha application can now be used to perform intended action. There are some endpoints that are available and described down that will start, stop, and show the status of the emulators.
 
-##### /simulators/run
+#### /simulators/run
 To start all the *emulators* assets execute a request to the endpoint described bellow, this endpoint will start all the emulators created following the configurations defined.
 
 ```
 POST http://{apiAddr}:{apiPort}/simulators/run
 ```
 
-##### /simulators/stop
+#### /simulators/stop
 To stop the *emulators* execute the following request, that will stop all the running assets.
 
 ```
 POST http://{apiAddr}:{apiPort}/simulators/stop
 ```
 
-##### /simulators/status
+#### /simulators/status
 During the assets execution there is a way to retreive some information about the status of all of them. With the following endpoint all the assets are returned in the response body with the state of each.
 
 ```
@@ -486,6 +487,21 @@ Bellow is an example of the response body that will be reeturned:
             "energy": 2307.657838991605
         }
     ]
+}
+```
+
+### Health Check
+Since the application can be run as a service, where the *simulators* can be started and stop as needed this endpoint was created to enable the ability to know if the service is running or not. In case the need to know if it is running, the application not the *emulators*, call the following endpoint.
+
+```
+GET http://{apiAddr}:{apiPort}/health
+```
+
+If the application is running will return the following body, in case it is not it will fail since the endpoint is not reachable.
+
+```
+{
+    "message": "OK"
 }
 ```
 
