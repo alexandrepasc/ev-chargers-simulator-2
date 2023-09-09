@@ -29,8 +29,12 @@
     - [Charging States (chargingState)](#charging-states-chargingstate)
     - [Error Code (errorCode)](#error-code-errorcode)
 
+|         |             |
+| ------- | ----------- |
+| Product | **v0.14.7** |
+| Manual  | **Rev1**    |
+
 ## Introduction
-*v0.14.7 - Rev1*
 
 ## Installation
 There are no installation file the application will do the necessery acions in the first execution to setup. There are a some files and folders that need to be in place to execute the application, for them to be created the user that executes the application need to have write permissions to the folder where the application file is located, and to the folder(s) where we want to locate the other files.
