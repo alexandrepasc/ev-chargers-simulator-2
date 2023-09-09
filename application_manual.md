@@ -22,9 +22,15 @@
       - [Run The Simulators](#run-the-simulators)
   - [Appendix](#appendix)
     - [Flags](#flags)
+    - [Asset Type (type)](#asset-type-type)
+    - [Protocols (protocol)](#protocols-protocol)
+    - [Phase Rotation (phaseRotation)](#phase-rotation-phaserotation)
+    - [Current Type (curentType)](#current-type-curenttype)
+    - [Charging States (chargingState)](#charging-states-chargingstate)
+    - [Error Code (errorCode)](#error-code-errorcode)
 
 ## Introduction
-*v0.14.7*
+*v0.14.7 - Rev1*
 
 ## Installation
 There are no installation file the application will do the necessery acions in the first execution to setup. There are a some files and folders that need to be in place to execute the application, for them to be created the user that executes the application need to have write permissions to the folder where the application file is located, and to the folder(s) where we want to locate the other files.
@@ -325,7 +331,7 @@ It will return the total number of number of existing *simulators* and their lis
 }
 ```
 
-To create a new *simulator* use the same endpoint but with a new method and sending the body described down:
+To create a new *simulator* use the same endpoint but with a new method and sending the body described down. There are a couple of rules that are required to be followed so the application can work normally, the `data` array field in the configuration needs to have the 1st position with the `Available` (1) state and the last position with `Finishing` (6). The `chargingState` available values are exposed in the [Charging States appendix](#charging-states). 
 ```
 POST http://{apiAddr}:{apiPort}/simulators
 {
@@ -464,3 +470,55 @@ to update any configuation using the API the full body needs to be sent in the r
     	Connection timeout (seconds) (default 70)
   -v	Return the current application version
 ```
+
+### Asset Type (type)
+- `evc`: Type electric vehicle charger
+- `pm`: Type power meter (not supported)
+
+### Protocols (protocol)
+- `ocpp16`: Ocpp version 1.6
+- `ocpp201`: Ocpp version 2.0.1 (not supported)
+- `modbus`: Modbus protocol (not supported)
+
+### Phase Rotation (phaseRotation)
+- `NotApplicable`: Not applicable for dc chargers
+- `Unknown`: Not able to retrieve the rotation
+- `RST`: L1 L2 L3
+- `RTS`: L1 L3 L2
+- `SRT`: L2 L1 L3
+- `STR`: L2 L3 L1
+- `TRS`: L3 L1 L2
+- `TSR`: L3 L2 L1
+
+### Current Type (curentType)
+- `ac`: Alternating current
+- `dc`: Direct current
+
+### Charging States (chargingState)
+- `1`: Available
+- `2`: Preparing
+- `3`: Charging
+- `4`: SuspendedEV
+- `5`: SuspendedEVSE
+- `6`: Finishing
+- `7`: Reserved
+- `8`: Unavailable
+- `9`: Faulted
+
+### Error Code (errorCode)
+- `0`: NoError
+- `1`: ConnectorLockFailure
+- `2`: EVCommunicationError
+- `3`: GroundFailure
+- `4`: HighTemperature
+- `5`: InternalError
+- `6`: LocalListConflict
+- `7`: OtherError
+- `8`: OverCurrentFailure
+- `9`: OverVoltage
+- `10`: PowerMeterFailure
+- `11`: PowerSwitchFailure
+- `12`: ReaderFailure
+- `13`: ResetFailure
+- `14`: UnderVoltage
+- `15`: WeakSignal
