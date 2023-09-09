@@ -35,6 +35,7 @@
 | Manual  | **Rev1**    |
 
 ## Introduction
+The Application Manual contains all the essencial information for the user to make full use of the system. This document contains the description of the application functions and capabilities, installation, modes of operation, and how to use it. The manual format and steps may be altered during the development of the application.
 
 ## Installation
 There are no installation file the application will do the necessery acions in the first execution to setup. There are a some files and folders that need to be in place to execute the application, for them to be created the user that executes the application need to have write permissions to the folder where the application file is located, and to the folder(s) where we want to locate the other files.
