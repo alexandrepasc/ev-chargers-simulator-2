@@ -1,6 +1,6 @@
-# Electric Vehicle Charging Simulator Manual
+# Electric Vehicle Charging Simulator User Manual
 
-- [Electric Vehicle Charging Simulator Manual](#electric-vehicle-charging-simulator-manual)
+- [Electric Vehicle Charging Simulator User Manual](#electric-vehicle-charging-simulator-user-manual)
   - [Introduction](#introduction)
   - [Installation](#installation)
     - [First Run Default Configurations](#first-run-default-configurations)
