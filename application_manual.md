@@ -18,11 +18,13 @@
         - [/simulators/models/:id](#simulatorsmodelsid)
       - [Manage Simulator](#manage-simulator)
         - [/simulators](#simulators)
+        - [/simulators/:id](#simulatorsid)
       - [Run The Simulators](#run-the-simulators)
   - [Appendix](#appendix)
     - [Flags](#flags)
 
 ## Introduction
+*v0.14.7*
 
 ## Installation
 There are no installation file the application will do the necessery acions in the first execution to setup. There are a some files and folders that need to be in place to execute the application, for them to be created the user that executes the application need to have write permissions to the folder where the application file is located, and to the folder(s) where we want to locate the other files.
@@ -367,6 +369,62 @@ POST http://{apiAddr}:{apiPort}/simulators
         }
     ]
 }
+```
+
+It will return the created simulator information as response.
+
+##### /simulators/:id
+With this endpoint we are able to edit the configuration of one simulator as able to delete one. To use it replace the `:id` by the identifier of the *simulator* that is present in the property `simId`.
+
+To update a simulator use the following example, to update any of the properties the full *simulator* body.
+```
+PUT http://{apiAddr}:{apiPort}/simulators/{simulator-identifier-here}
+{
+    "name": "sim1",
+    "type": "evc",
+    "protocol": "ocpp16",
+    "model": "00000000-0000-0000-0000-000000000000",
+    "cPId": "123789",
+    "startCharging": false,
+    "phases": 1,
+    "phaseRotation": "NotApplicable",
+    "curentType": "dc",
+    "authorizeRemote": true,
+    "authList": true,
+    "evses": [
+        {
+            "id": 1,
+            "connectors": [
+                {
+                    "id": 1,
+                    "omitempty": false,
+                    "data": [
+                        {
+                            "duration": 10,
+                            "chargingState": 1,
+                            "errorCode": 0,
+                            "powerFactor": 900,
+                            "power": 0,
+                            "powerExport": 0,
+                            "voltage": [
+                                230,
+                                0,
+                                0
+                            ],
+                            "startSoC": 0,
+                            "endSoC": 0
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}
+```
+
+To delete a simulator use the *delete* method:
+```
+DELETE http://{apiAddr}:{apiPort}/simulators/{simulator-identifier-here}
 ```
 
 NOTE: the simulator data needs to have the Available state in the 1st item and Finishing in the last item
