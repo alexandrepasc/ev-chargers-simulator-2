@@ -5,6 +5,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/alexandrepasc/ev-chargers-simulator-2/assets"
+	"github.com/alexandrepasc/ev-chargers-simulator-2/assets/modbus"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/assets/ocpp16"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/common"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/simulator"
@@ -21,8 +23,9 @@ type Handler struct {
 	Port    string                  // Central system port
 	Tout    int64                   // Timeout configuration
 	Channel []chan common.Channel   // Channel that will enable the communication between the sims
-	Info    []info                  // Running assets information
+	Info    []assets.DataInfo       // Running assets information
 	Quit    []chan bool             // Channel that is used to stop the routines
+	stop    chan bool
 }
 
 // TODO: add logic to handle the models
@@ -33,7 +36,7 @@ It returns an array of boolean channels ([]chan bool), one for each simulator ru
 */
 func (h *Handler) Start() []chan bool {
 	h.Channel = make([]chan common.Channel, len(h.Al))
-	h.Info = make([]info, len(h.Al))
+	h.Info = make([]assets.DataInfo, len(h.Al))
 	h.Quit = make([]chan bool, len(h.Al))
 
 	for i, a := range h.Al {
@@ -66,7 +69,24 @@ func (h *Handler) Start() []chan bool {
 		}
 	}
 
-	go h.receiver(h.Channel, h.Quit)
+	if getPmIndex(h.Al) != -1 {
+		var i = getPmIndex(h.Al)
+
+		var m = getModel(h.Al[i].Model, h.Al[i].Protocol, h.Ml)
+
+		var s = modbus.Modbus{
+			L:       h.L,
+			Timeout: h.Tout,
+			Asset:   h.Al[i],
+			Mod:     m,
+			Info:    &h.Info,
+		}
+
+		go s.Start(h.Channel, h.Quit[i])
+	} else {
+		h.stop = make(chan bool)
+		go h.receiver(h.Channel, h.stop)
+	}
 
 	return h.Quit
 }
@@ -75,8 +95,18 @@ func (h *Handler) Start() []chan bool {
 Stops all the simulators routines using the Quit channel array.
 */
 func (h *Handler) Stop() {
-	for i := range h.Al {
+	for i := range h.Quit {
 		h.Quit[i] <- true
+	}
+
+	if getPmIndex(h.Al) == -1 {
+		h.stop <- true
+	}
+
+	for i := range h.Al {
+		h.Info[i].Status = assets.Inactive
+		h.Info[i].Power = 0
+		h.Info[i].Energy = 0
 	}
 }
 
@@ -107,20 +137,20 @@ func (h *Handler) GetStatus() Status {
 /*
 Mock a receiver to test the channel communication.
 */
-func (h *Handler) receiver(cl []chan common.Channel, ql []chan bool) {
+func (h *Handler) receiver(cl []chan common.Channel, s chan bool) {
 	var keepOn = true
 
 	for keepOn {
 		for i := range cl {
 			select {
-			case <-ql[i]:
+			case <-s:
 				keepOn = false
 			case <-cl[i]:
 				msg := <-cl[i]
-				h.Info[i] = info{
+				h.Info[i] = assets.DataInfo{
 					UUID:   msg.UUID,
 					Name:   msg.Name,
-					Status: active,
+					Status: assets.Active,
 					Power:  msg.Power,
 					Energy: msg.Energy,
 				}
@@ -132,15 +162,6 @@ func (h *Handler) receiver(cl []chan common.Channel, ql []chan bool) {
 		}
 
 		time.Sleep(1 * time.Second)
-	}
-
-	for i := range cl {
-		close(ql[i])
-		close(cl[i])
-
-		h.Info[i].Status = inactive
-		h.Info[i].Power = 0
-		h.Info[i].Energy = 0
 	}
 }
 
@@ -165,4 +186,14 @@ func getModel(id uuid.UUID, p simulator.Protocol, al []*model.Struct) *model.Str
 	default:
 		return nil
 	}
+}
+
+func getPmIndex(al []*simulator.Asset) int {
+	for i, a := range al {
+		if a.Type == simulator.Pm {
+			return i
+		}
+	}
+
+	return -1
 }
