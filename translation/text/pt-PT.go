@@ -36,4 +36,6 @@ var PtPT = map[Key]string{
 	InternalServerError:           "Algo correu muito mal.",
 	RequestBodyDoesntMatch:        "O corpo do pedido está mal formado.",
 	UUIDParsingError:              "O id não pôde ser convertido para UUID.",
+	ModbusServerStarted:           "O servidor de modbus iniciou.",
+	ModbusServerStopped:           "O servidor de modbus parou.",
 }
