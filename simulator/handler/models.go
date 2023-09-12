@@ -12,14 +12,6 @@ import "github.com/google/uuid"
 // 	uuid uuid.UUID // Identifier of the asset
 // }
 
-type info struct {
-	UUID   uuid.UUID   // Identifier of the asset
-	Name   string      // Name of the asset
-	Status assetStatus // Status of the asset
-	Power  float64     // Charge point consumption power
-	Energy float64     // Charge point energy
-}
-
 type Status struct {
 	Total  int64    `json:"total"`
 	Assets []Assets `json:"assets"`
