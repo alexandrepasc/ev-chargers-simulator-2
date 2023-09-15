@@ -20,10 +20,17 @@ type Modbus struct {
 	Timeout int64                   // Connection timeout
 	Asset   *simulator.Asset        // Asset data for the simulator
 	Mod     *model.Struct           // Model data for the asset
-	Info    *[]assets.DataInfo
+	Info    *[]assets.DataInfo      // Model with the assets information
 }
 
-/**/
+/*
+The start and stop function for the modbus server. It is here that all the logic will be directly
+or indirectly be called.
+
+c	-	List of channels from the other assets in PM case, or single channel in EVC case ([]chan common.Channel)
+
+q	-	Quit channel to be able to stop the routine from the main application (chan bool)
+*/
 func (m *Modbus) Start(c []chan common.Channel, q chan bool) {
 	m.lock.Lock()
 
@@ -62,7 +69,12 @@ func (m *Modbus) Start(c []chan common.Channel, q chan bool) {
 	}
 }
 
-/**/
+/*
+Have all the logic dedicated to the PM asset type. This will be called when the asset has the
+PM type and will have all the logic for this asset type.
+
+c	-	List of channels from the other assets ([]chan common.Channel)
+*/
 func (m *Modbus) pmCycle(c []chan common.Channel) {
 	for i := range c {
 		select {
