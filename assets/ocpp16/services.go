@@ -965,6 +965,18 @@ func (o *Ocpp16) meterValuesAlignedData(confL []string) []types.MeterValue {
 		var sp types.SampledValue
 
 		switch confT {
+		// TODO: this is only using the evse index 0 to calculate the instantaneous current, since didn't found a way to control multiple evses
+		case assets.CurrentImport:
+			sp = types.SampledValue{
+				Value: strconv.FormatFloat(getAlignedDataCurrent(
+					&o.Asset.Evses[0],
+					int(o.Asset.Phases),
+				), 'f', 4, 64),
+				Unit:      types.UnitOfMeasureA,
+				Format:    types.ValueFormatRaw,
+				Measurand: types.Measurand(assets.CurrentImport),
+			}
+
 		// TODO: this is only using the evse index 0 to calculate the max current, since didn't found a way to control multiple evses
 		case assets.CurrentOffered:
 			sp = types.SampledValue{
@@ -1961,4 +1973,39 @@ func getAlignedDataVoltage(el []simulator.Evse) int64 {
 	}
 
 	return cv
+}
+
+/*
+Get the Evse structure, get the active connector, and calculate the instantaneous current (float64). In
+case no active connectors it will return 0.
+
+e	-	The Evse to calculate the current (*simulator.Evse)
+
+ph	-	The asset number of phases (int)
+*/
+func getAlignedDataCurrent(e *simulator.Evse, ph int) float64 {
+	var ci, c = getActiveConnector(*e)
+
+	var cc float64
+
+	if ci > -1 {
+		var vi int64
+
+		for _, v := range c.Data[c.DP.Position].Voltage {
+			if v > 0 {
+				vi = v
+
+				break
+			}
+		}
+
+		cc = assets.CalculateCurrent(
+			c.Data[c.DP.Position].Power,
+			c.Data[c.DP.Position].PowerFactor,
+			vi,
+			int64(ph),
+		)
+	}
+
+	return cc
 }
