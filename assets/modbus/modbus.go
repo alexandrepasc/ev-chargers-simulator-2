@@ -24,13 +24,9 @@ type Modbus struct {
 	Mod     *model.Struct           // Model data for the asset
 	Info    *[]assets.DataInfo      // Model with the assets information
 	s       *modbus.ModbusServer    // Modbus server
-	// simple uptime counter, incremented in the main() above and exposed
-	// as a 32-bit input register (2 consecutive 16-bit modbus registers).
-	uptime uint32
 
 	// these are here to hold client-provided (written) values, for both coils and
 	// holding registers
-	coils       [100]bool
 	holdingReg1 uint16
 	holdingReg2 uint16
 
