@@ -27,6 +27,7 @@ linters-settings:
           - github.com/lorenzodonini/ocpp-go
           - github.com/stretchr/testify/assert
           - github.com/alexandrepasc/ev-chargers-simulator-2
+          - github.com/simonvetter/modbus
 
 linters:
   disable-all: true

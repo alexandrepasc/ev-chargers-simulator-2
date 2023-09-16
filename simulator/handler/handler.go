@@ -21,6 +21,7 @@ type Handler struct {
 	Ml      []*model.Struct         // Ocpp models list
 	Addr    string                  // Central system ip address
 	Port    string                  // Central system port
+	HostIP  string                  // Application host ip address
 	Tout    int64                   // Timeout configuration
 	Channel []chan common.Channel   // Channel that will enable the communication between the sims
 	Info    []assets.DataInfo       // Running assets information
@@ -76,6 +77,7 @@ func (h *Handler) Start() []chan bool {
 
 		var s = modbus.Modbus{
 			L:       h.L,
+			HostIP:  h.HostIP,
 			Timeout: h.Tout,
 			Asset:   h.Al[i],
 			Mod:     m,
@@ -104,6 +106,8 @@ func (h *Handler) Stop() {
 	}
 
 	for i := range h.Al {
+		h.Info[i].UUID = h.Al[i].SimID
+		h.Info[i].Name = h.Al[i].Name
 		h.Info[i].Status = assets.Inactive
 		h.Info[i].Power = 0
 		h.Info[i].Energy = 0
