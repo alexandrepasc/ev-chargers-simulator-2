@@ -384,8 +384,10 @@ c	-	request  context (*gin.context)
 */
 func (s *Simulators) postRun(c *gin.Context) {
 	s.Sim.GetSimulators()
+	s.Mod.GetModels()
 
 	s.H.Al = s.Sim.Al
+	s.H.Ml = s.Mod.Ml
 
 	s.H.Quit = s.H.Start()
 

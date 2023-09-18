@@ -65,17 +65,6 @@ func (o *Ocpp16) Start(c chan common.Channel, q chan bool) {
 	go o.sendBootNotification()
 
 	for {
-		select {
-		case <-q:
-			o.logger.log(map[string]string{"protocol": "ocpp1.6", "function": "Start", "simulator": o.Asset.Name}, "Ocpp 1.6 server stop", assets.Info)
-
-			o.s.Stop()
-
-			return
-		default:
-			break
-		}
-
 		go o.updateData()
 
 		go o.processSampledData()
@@ -85,11 +74,24 @@ func (o *Ocpp16) Start(c chan common.Channel, q chan bool) {
 			go o.heartbeat()
 		}
 
-		channelComm(c, o.Asset.Evses, o.st, o.Asset.Name, o.Asset.SimID)
-
 		o.processAlignedData()
 
 		o.handleTick()
+
+		select {
+		case <-q:
+			o.logger.log(map[string]string{"protocol": "ocpp1.6", "function": "Start", "simulator": o.Asset.Name}, "Ocpp 1.6 server stop", assets.Info)
+
+			o.s.Stop()
+
+			close(q)
+			close(c)
+
+			return
+		default:
+			channelComm(c, o.Asset.Evses, o.st, o.Asset.Name, o.Asset.SimID)
+			break
+		}
 
 		time.Sleep(1 * time.Second)
 	}

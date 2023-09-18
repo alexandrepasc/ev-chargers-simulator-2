@@ -33,10 +33,11 @@ func main() {
 	}
 
 	h := handler.Handler{
-		L:    t,
-		Addr: g.CSAddr,
-		Port: g.CSPort,
-		Tout: g.ConnTimeout,
+		L:      t,
+		Addr:   g.CSAddr,
+		Port:   g.CSPort,
+		HostIP: g.HostIP,
+		Tout:   g.ConnTimeout,
 	}
 
 	var a = api.API{

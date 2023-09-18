@@ -1,6 +1,9 @@
 package assets
 
 const (
+	Active   AssetStatus = "active"
+	Inactive AssetStatus = "inactive"
+
 	Info  Severity = "info"
 	Error Severity = "error"
 	Warn  Severity = "warn"

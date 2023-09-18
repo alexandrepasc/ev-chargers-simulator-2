@@ -45,4 +45,6 @@ var EnGB = map[Key]string{
 	InternalServerError:           "Something went very wrong.",
 	RequestBodyDoesntMatch:        "The request body is malformed.",
 	UUIDParsingError:              "The id could not be parsed to UUID.",
+	ModbusServerStarted:           "Modbus server started.",
+	ModbusServerStopped:           "Modbus server stopped.",
 }

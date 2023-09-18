@@ -6,8 +6,8 @@ type Struct struct {
 	ID     uuid.UUID   `json:"id" validate:"required"`   // Model identifier
 	Name   string      `json:"name" validate:"required"` // Model name
 	Type   Type        `json:"type" validate:"required"` // Type of asset that this config can be used (ocpp, modbus)
-	Ocpp   OcppModel   `json:"ocpp"`                     // Ocpp structure
-	Modbus ModbusModel `json:"modbus"`                   // Modbus structure
+	Ocpp   OcppModel   `json:"ocpp,omitempty"`           // Ocpp structure
+	Modbus ModbusModel `json:"modbus,omitempty"`         // Modbus structure
 }
 
 type OcppModel struct {
@@ -26,4 +26,19 @@ type OcppModem struct {
 }
 
 // TODO: to be done
-type ModbusModel struct{}
+type ModbusModel struct {
+	Coils            Coils            `json:"coils,omitempty"`            // Coils mapping
+	Discrete         Discrete         `json:"discrete,omitempty"`         // Descrete inputs mapping
+	HoldingRegisters HoldingRegisters `json:"holdingRegisters,omitempty"` // Holding registers mapping
+	InputRegisters   InputRegisters   `json:"inputRegisters,omitempty"`   // Input registers mapping
+}
+
+type Coils struct{}
+
+type Discrete struct{}
+
+type HoldingRegisters struct {
+	Addresses map[int]string `json:"addresses"`
+}
+
+type InputRegisters struct{}

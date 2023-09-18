@@ -47,4 +47,6 @@ const (
 	InternalServerError           Key = "InternalServerError"           // API message returned when something breaks
 	RequestBodyDoesntMatch        Key = "RequestBodyDoesntMatch"        // API message returned when the request body doesn't bind to the model
 	UUIDParsingError              Key = "UUIDParsingError"              // API message returned when couldn't parse the id to uuid
+	ModbusServerStarted           Key = "ModbusServerStarted"           // Simulator modbus server started
+	ModbusServerStopped           Key = "ModbusServerStopped"           // Simulator modbus server stopped
 )
