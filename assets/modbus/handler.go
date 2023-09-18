@@ -2,8 +2,6 @@
 package modbus
 
 import (
-	"fmt"
-
 	"github.com/alexandrepasc/ev-chargers-simulator-2/assets"
 	"github.com/simonvetter/modbus"
 )
@@ -57,104 +55,40 @@ This method gets called whenever a valid modbus request asking for a holding reg
 (either read or write) received by the server.
 */
 func (m *Modbus) HandleHoldingRegisters(req *modbus.HoldingRegistersRequest) (res []uint16, err error) {
-	var regAddr uint16
+	var lm = map[string]string{
+		"protocol":  string(m.Asset.Protocol),
+		"function":  "HandleHoldingRegisters",
+		"feature":   "HoldingRegisters",
+		"simulator": m.Asset.Name,
+		"sender":    assets.CS,
+		"type":      assets.Request,
+	}
 
-	if req.UnitId != 1 {
-		// only accept unit ID #1
-		err = modbus.ErrIllegalFunction
+	m.logger.log(lm, req, assets.Info)
+
+	switch req.Addr {
+	case 2816:
+		var ms = m.Mod.Modbus.HoldingRegisters.Addresses[int(req.Addr)]
+
+		var v = intTo16bitArray(int(functionMap[ms].(func(*Modbus) float64)(m)))
+
+		for _, vi := range v {
+			res = append(res, vi)
+		}
+
+	// any other address is unknown
+	default:
+		err = modbus.ErrIllegalDataAddress
+
+		m.logger.log(lm, err, assets.Error)
+
 		return nil, err
 	}
 
-	fmt.Println("___________________________________________________________")
-	fmt.Println("HandleHoldingRegisters")
-	fmt.Println(req)
+	lm["sender"] = assets.CP
+	lm["type"] = assets.Response
 
-	// since we're manipulating variables shared between multiple goroutines,
-	// acquire a lock to avoid concurrency issues.
-	m.lock.Lock()
-	// release the lock upon return
-	defer m.lock.Unlock()
-
-	// loop through `quantity` registers
-	for i := 0; i < int(req.Quantity); i++ {
-		// compute the target register address
-		regAddr = req.Addr + uint16(i)
-
-		switch regAddr {
-		// expose the static, read-only value of 0xff00 in register 100
-		case 100:
-			res = append(res, 0xff00)
-
-		// expose holdingReg1 in register 101 (RW)
-		case 101:
-			if req.IsWrite {
-				m.holdingReg1 = req.Args[i]
-			}
-
-			res = append(res, m.holdingReg1)
-
-		// expose holdingReg2 in register 102 (RW)
-		case 102:
-			if req.IsWrite {
-				// only accept values 2 and 4
-				switch req.Args[i] {
-				case 2, 4:
-					m.holdingReg2 = req.Args[i]
-
-					// make note of the change (e.g. for auditing purposes)
-					fmt.Printf("%s set reg#102 to %v\n", req.ClientAddr, m.holdingReg2)
-				default:
-					// if the written value is neither 2 nor 4,
-					// return a modbus "illegal data value" to
-					// let the client know that the value is
-					// not acceptable.
-					err = modbus.ErrIllegalDataValue
-					return nil, err
-				}
-			}
-
-			res = append(res, m.holdingReg2)
-
-		// expose eh.holdingReg3 in register 103 (RW)
-		// note: eh.holdingReg3 is a signed 16-bit integer
-		case 103:
-			if req.IsWrite {
-				// cast the 16-bit unsigned integer passed by the server
-				// to a 16-bit signed integer when writing
-				m.holdingReg3 = int16(req.Args[i])
-			}
-			// cast the 16-bit signed integer from the handler to a 16-bit unsigned
-			// integer so that we can append it to `res`.
-			res = append(res, uint16(m.holdingReg3))
-
-		// expose the 16 most-significant bits of eh.holdingReg4 in register 200
-		case 200:
-			if req.IsWrite {
-				m.holdingReg4 =
-					((uint32(req.Args[i])<<16)&0xffff0000 |
-						(m.holdingReg4 & 0x0000ffff))
-			}
-
-			res = append(res, uint16((m.holdingReg4>>16)&0x0000ffff))
-
-		// expose the 16 least-significant bits of eh.holdingReg4 in register 201
-		case 201:
-			if req.IsWrite {
-				m.holdingReg4 =
-					(uint32(req.Args[i])&0x0000ffff |
-						(m.holdingReg4 & 0xffff0000))
-			}
-
-			res = append(res, uint16(m.holdingReg4&0x0000ffff))
-
-		// any other address is unknown
-		default:
-			err = modbus.ErrIllegalDataAddress
-			return nil, err
-		}
-	}
-	fmt.Println("___________________________________________________________")
-	fmt.Println(res)
+	m.logger.log(lm, res, assets.Info)
 
 	return res, nil
 }

@@ -24,17 +24,6 @@ type Modbus struct {
 	Mod     *model.Struct           // Model data for the asset
 	Info    *[]assets.DataInfo      // Model with the assets information
 	s       *modbus.ModbusServer    // Modbus server
-
-	// these are here to hold client-provided (written) values, for both coils and
-	// holding registers
-	holdingReg1 uint16
-	holdingReg2 uint16
-
-	// this is a 16-bit signed integer
-	holdingReg3 int16
-
-	// this is a 32-bit unsigned integer
-	holdingReg4 uint32
 }
 
 /*
@@ -78,6 +67,12 @@ func (m *Modbus) Start(c []chan common.Channel, q chan bool) {
 
 		select {
 		case <-q:
+			var errS = m.s.Stop()
+
+			if errS != nil {
+				m.logger.log(lm, errS, assets.Fatal)
+			}
+
 			m.logger.log(lm, m.L.Get(text.ModbusServerStopped), assets.Info)
 
 			close(q)
