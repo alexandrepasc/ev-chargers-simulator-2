@@ -2,6 +2,8 @@
 package modbus
 
 import (
+	"strconv"
+
 	"github.com/alexandrepasc/ev-chargers-simulator-2/assets"
 	"github.com/simonvetter/modbus"
 )
@@ -71,6 +73,31 @@ func (m *Modbus) HandleHoldingRegisters(req *modbus.HoldingRegistersRequest) (re
 		var ms = m.Mod.Modbus.HoldingRegisters.Addresses[int(req.Addr)]
 
 		var v = intTo16bitArray(functionMap[ms].(func(*Modbus) int)(m))
+
+		for _, vi := range v {
+			res = append(res, vi)
+		}
+
+	case 3590:
+		var ms = m.Mod.Modbus.HoldingRegisters.Addresses[int(req.Addr)]
+
+		var _, ok = functionMap[ms]
+
+		var v [2]uint16
+
+		if ok {
+			v = intTo16bitArray(int(functionMap[ms].(func(*Modbus) float64)(m)))
+		} else {
+			var av, errC = strconv.ParseInt(m.Mod.Modbus.HoldingRegisters.Addresses[int(req.Addr)], 10, 64)
+
+			if errC != nil {
+				m.logger.log(lm, errC, assets.Error)
+
+				return nil, modbus.ErrIllegalDataValue
+			}
+
+			v = intTo16bitArray(int(av))
+		}
 
 		for _, vi := range v {
 			res = append(res, vi)
