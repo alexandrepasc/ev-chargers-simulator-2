@@ -70,7 +70,7 @@ func (m *Modbus) HandleHoldingRegisters(req *modbus.HoldingRegistersRequest) (re
 	case 2816:
 		var ms = m.Mod.Modbus.HoldingRegisters.Addresses[int(req.Addr)]
 
-		var v = intTo16bitArray(int(functionMap[ms].(func(*Modbus) float64)(m)))
+		var v = intTo16bitArray(functionMap[ms].(func(*Modbus) int)(m))
 
 		for _, vi := range v {
 			res = append(res, vi)

@@ -5,7 +5,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func (m *Modbus) powerImport() float64 {
+func (m *Modbus) powerImport() int {
 	var lm = map[string]string{
 		"protocol":  string(m.Asset.Protocol),
 		"function":  "powerImport",
@@ -28,7 +28,7 @@ func (m *Modbus) powerImport() float64 {
 		t += i.Power
 	}
 
-	return t
+	return int(t)
 }
 
 func intTo16bitArray(v int) [2]uint16 {
