@@ -1,4 +1,3 @@
-//nolint:gomnd // because its a draft
 package modbus
 
 import (
@@ -68,48 +67,48 @@ func (m *Modbus) HandleHoldingRegisters(req *modbus.HoldingRegistersRequest) (re
 
 	m.logger.log(lm, req, assets.Info)
 
-	switch req.Addr {
-	case 2816:
-		var ms = m.Mod.Modbus.HoldingRegisters.Addresses[int(req.Addr)]
+	for i := 0; i < int(req.Quantity); i++ {
+		var reqAddr = req.Addr + uint16(i)
 
-		var v = intTo16bitArray(functionMap[ms].(func(*Modbus) int)(m))
+		switch reqAddr {
+		case addr2816:
+			var ms = m.Mod.Modbus.HoldingRegisters.Addresses[int(req.Addr)]
 
-		for _, vi := range v {
-			res = append(res, vi)
-		}
+			var v = functionMap[ms].(func(*Modbus) int)(m)
 
-	case 3590:
-		var ms = m.Mod.Modbus.HoldingRegisters.Addresses[int(req.Addr)]
+			res = append(res, uint16(v))
 
-		var _, ok = functionMap[ms]
+		case addr3590:
+			var ms = m.Mod.Modbus.HoldingRegisters.Addresses[int(req.Addr)]
 
-		var v [2]uint16
+			var _, ok = functionMap[ms]
 
-		if ok {
-			v = intTo16bitArray(int(functionMap[ms].(func(*Modbus) float64)(m)))
-		} else {
-			var av, errC = strconv.ParseInt(m.Mod.Modbus.HoldingRegisters.Addresses[int(req.Addr)], 10, 64)
+			var v uint16
 
-			if errC != nil {
-				m.logger.log(lm, errC, assets.Error)
+			if ok {
+				v = uint16(functionMap[ms].(func(*Modbus) float64)(m))
+			} else {
+				var av, errC = strconv.ParseInt(m.Mod.Modbus.HoldingRegisters.Addresses[int(req.Addr)], 10, 64)
 
-				return nil, modbus.ErrIllegalDataValue
+				if errC != nil {
+					m.logger.log(lm, errC, assets.Error)
+
+					return nil, modbus.ErrIllegalDataValue
+				}
+
+				v = uint16(av)
 			}
 
-			v = intTo16bitArray(int(av))
+			res = append(res, v)
+
+		// any other address is unknown
+		default:
+			err = modbus.ErrIllegalDataAddress
+
+			m.logger.log(lm, err, assets.Error)
+
+			res = append(res, uint16(0))
 		}
-
-		for _, vi := range v {
-			res = append(res, vi)
-		}
-
-	// any other address is unknown
-	default:
-		err = modbus.ErrIllegalDataAddress
-
-		m.logger.log(lm, err, assets.Error)
-
-		return nil, err
 	}
 
 	lm["sender"] = assets.CP
