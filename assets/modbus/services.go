@@ -65,6 +65,64 @@ func (m *Modbus) powerImportKw() int {
 	return int(t)
 }
 
+/*
+Calculate the voltage ampere import and return it in VA (int).
+*/
+func (m *Modbus) importVa() int {
+	var lm = map[string]string{
+		"protocol":  string(m.Asset.Protocol),
+		"function":  "importVa",
+		"simulator": m.Asset.Name,
+	}
+
+	var t float64
+
+	var id, err = uuid.Parse("00000000-0000-0000-0000-000000000000")
+
+	if err != nil {
+		m.logger.log(lm, err, assets.Fatal)
+	}
+
+	for _, i := range *m.Info {
+		if i.UUID == id {
+			continue
+		}
+
+		t += i.Power / (float64(i.PowerFactor) / conversion)
+	}
+
+	return int(t)
+}
+
+/*
+Calculate the voltage ampere import and return it in kVA (int).
+*/
+func (m *Modbus) importKvA() int {
+	var lm = map[string]string{
+		"protocol":  string(m.Asset.Protocol),
+		"function":  "importKvA",
+		"simulator": m.Asset.Name,
+	}
+
+	var t float64
+
+	var id, err = uuid.Parse("00000000-0000-0000-0000-000000000000")
+
+	if err != nil {
+		m.logger.log(lm, err, assets.Fatal)
+	}
+
+	for _, i := range *m.Info {
+		if i.UUID == id {
+			continue
+		}
+
+		t += (i.Power / conversion) / (float64(i.PowerFactor) / conversion)
+	}
+
+	return int(t)
+}
+
 // func intTo16bitArray(v int) [2]uint16 {
 // 	var a16 [2]uint16
 

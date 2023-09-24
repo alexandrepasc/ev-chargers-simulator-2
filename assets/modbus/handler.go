@@ -72,23 +72,46 @@ func (m *Modbus) HandleHoldingRegisters(req *modbus.HoldingRegistersRequest) (re
 
 		switch reqAddr {
 		case addr2816:
-			var ms = m.Mod.Modbus.HoldingRegisters.Addresses[int(req.Addr)]
+			var ms = m.Mod.Modbus.HoldingRegisters.Addresses[int(reqAddr)]
 
 			var v = functionMap[ms].(func(*Modbus) int)(m)
 
 			res = append(res, uint16(v))
 
-		case addr3590:
-			var ms = m.Mod.Modbus.HoldingRegisters.Addresses[int(req.Addr)]
+		case addr2817:
+			var ms = m.Mod.Modbus.HoldingRegisters.Addresses[int(reqAddr)]
 
 			var _, ok = functionMap[ms]
 
 			var v uint16
 
 			if ok {
-				v = uint16(functionMap[ms].(func(*Modbus) float64)(m))
+				v = uint16(functionMap[ms].(func(*Modbus) int)(m))
 			} else {
-				var av, errC = strconv.ParseInt(m.Mod.Modbus.HoldingRegisters.Addresses[int(req.Addr)], 10, 64)
+				var av, errC = strconv.ParseInt(m.Mod.Modbus.HoldingRegisters.Addresses[int(reqAddr)], 10, 64)
+
+				if errC != nil {
+					m.logger.log(lm, errC, assets.Error)
+
+					return nil, modbus.ErrIllegalDataValue
+				}
+
+				v = uint16(av)
+			}
+
+			res = append(res, v)
+
+		case addr3590:
+			var ms = m.Mod.Modbus.HoldingRegisters.Addresses[int(reqAddr)]
+
+			var _, ok = functionMap[ms]
+
+			var v uint16
+
+			if ok {
+				v = uint16(functionMap[ms].(func(*Modbus) int)(m))
+			} else {
+				var av, errC = strconv.ParseInt(m.Mod.Modbus.HoldingRegisters.Addresses[int(reqAddr)], 10, 64)
 
 				if errC != nil {
 					m.logger.log(lm, errC, assets.Error)
