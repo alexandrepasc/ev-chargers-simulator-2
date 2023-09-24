@@ -24,8 +24,9 @@ var (
 )
 
 type Channel struct {
-	Name   string    // Name of the asset
-	UUID   uuid.UUID // Identifier of the asset
-	Power  float64   // Charge point consumption power
-	Energy float64   // Charge point energy
+	Name        string    // Name of the asset
+	UUID        uuid.UUID // Identifier of the asset
+	Power       float64   // Charge point consumption power
+	PowerFactor int64     // Power factor
+	Energy      float64   // Charge point energy
 }
