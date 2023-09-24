@@ -99,11 +99,12 @@ func (m *Modbus) pmCycle(c []chan common.Channel) {
 			var msg = <-c[i]
 
 			var aux = assets.DataInfo{
-				UUID:   msg.UUID,
-				Name:   msg.Name,
-				Status: assets.Active,
-				Power:  msg.Power,
-				Energy: msg.Energy,
+				UUID:        msg.UUID,
+				Name:        msg.Name,
+				Status:      assets.Active,
+				Power:       msg.Power,
+				PowerFactor: msg.PowerFactor,
+				Energy:      msg.Energy,
 			}
 
 			(*m.Info)[i] = aux

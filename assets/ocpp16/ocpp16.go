@@ -141,10 +141,24 @@ i	-	Simulator identifier (uuid.UUID)
 func channelComm(c chan common.Channel, e []simulator.Evse, st time.Time, n string, i uuid.UUID) {
 	var tp = assets.CalculateCPPower(e)
 
+	// TODO: the way to find the power factor is not done correctly
+	var pf int64
+
+	for _, ei := range e {
+		for _, ci := range ei.Connectors {
+			if !ci.Enabled {
+				continue
+			}
+
+			pf = ci.Data[ci.DP.Position].PowerFactor
+		}
+	}
+
 	c <- common.Channel{
-		Name:   n,
-		UUID:   i,
-		Power:  tp,
-		Energy: assets.CalculateCPEnergy(tp, st),
+		Name:        n,
+		UUID:        i,
+		Power:       tp,
+		PowerFactor: pf,
+		Energy:      assets.CalculateCPEnergy(tp, st),
 	}
 }
