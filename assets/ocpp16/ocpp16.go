@@ -157,7 +157,7 @@ func channelComm(c chan common.Channel, e []simulator.Evse, st time.Time, n stri
 	c <- common.Channel{
 		Name:        n,
 		UUID:        i,
-		Power:       tp,
+		Power:       assets.CalculateInstantCPPower(e),
 		PowerFactor: pf,
 		Energy:      assets.CalculateCPEnergy(tp, st),
 	}

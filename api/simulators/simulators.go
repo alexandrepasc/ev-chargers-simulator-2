@@ -1,6 +1,8 @@
 //nolint:dupl // because it needs to be reviewed
 package simulators
 
+// TODO: review no lint
+
 import (
 	"net/http"
 
