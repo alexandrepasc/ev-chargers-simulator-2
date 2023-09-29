@@ -1,8 +1,6 @@
 package modbus
 
 import (
-	"strconv"
-
 	"github.com/alexandrepasc/ev-chargers-simulator-2/assets"
 	"github.com/simonvetter/modbus"
 )
@@ -70,68 +68,7 @@ func (m *Modbus) HandleHoldingRegisters(req *modbus.HoldingRegistersRequest) (re
 	for i := 0; i < int(req.Quantity); i++ {
 		var reqAddr = req.Addr + uint16(i)
 
-		switch reqAddr {
-		case addr2816:
-			var ms = m.Mod.Modbus.HoldingRegisters.Addresses[int(reqAddr)]
-
-			var v = functionMap[ms].(func(*Modbus) int)(m)
-
-			res = append(res, uint16(v))
-
-		case addr2817:
-			var ms = m.Mod.Modbus.HoldingRegisters.Addresses[int(reqAddr)]
-
-			var _, ok = functionMap[ms]
-
-			var v uint16
-
-			if ok {
-				v = uint16(functionMap[ms].(func(*Modbus) int)(m))
-			} else {
-				var av, errC = strconv.ParseInt(m.Mod.Modbus.HoldingRegisters.Addresses[int(reqAddr)], 10, 64)
-
-				if errC != nil {
-					m.logger.log(lm, errC, assets.Error)
-
-					return nil, modbus.ErrIllegalDataValue
-				}
-
-				v = uint16(av)
-			}
-
-			res = append(res, v)
-
-		case addr3590:
-			var ms = m.Mod.Modbus.HoldingRegisters.Addresses[int(reqAddr)]
-
-			var _, ok = functionMap[ms]
-
-			var v uint16
-
-			if ok {
-				v = uint16(functionMap[ms].(func(*Modbus) int)(m))
-			} else {
-				var av, errC = strconv.ParseInt(m.Mod.Modbus.HoldingRegisters.Addresses[int(reqAddr)], 10, 64)
-
-				if errC != nil {
-					m.logger.log(lm, errC, assets.Error)
-
-					return nil, modbus.ErrIllegalDataValue
-				}
-
-				v = uint16(av)
-			}
-
-			res = append(res, v)
-
-		// any other address is unknown
-		default:
-			err = modbus.ErrIllegalDataAddress
-
-			m.logger.log(lm, err, assets.Error)
-
-			res = append(res, uint16(0))
-		}
+		res = append(res, m.getHoldingRegistersAddressValue(reqAddr))
 	}
 
 	lm["sender"] = assets.CP

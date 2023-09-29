@@ -2,9 +2,6 @@ package modbus
 
 const (
 	// bit16 int = 16
-	addr2816   uint16  = 2816
-	addr2817   uint16  = 2817
-	addr3590   uint16  = 3590
 	conversion float64 = 1000
 )
 
