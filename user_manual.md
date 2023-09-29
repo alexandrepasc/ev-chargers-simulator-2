@@ -1,5 +1,12 @@
 # Electric Vehicle Charging Simulator User Manual
 
+|         |             |
+| ------- | ----------- |
+| Product | **v0.16.9** |
+| Manual  | **Rev1**    |
+
+<div class="page"/>
+
 <!-- TOC -->
 
 - [Electric Vehicle Charging Simulator User Manual](#electric-vehicle-charging-simulator-user-manual)
@@ -38,10 +45,7 @@
 
 <!-- /TOC -->
 
-|         |             |
-| ------- | ----------- |
-| Product | **v0.16.9** |
-| Manual  | **Rev1**    |
+<div class="page"/>
 
 ## Introduction
 The Application Manual contains all the essencial information for the user to make full use of the system. This document contains the description of the application functions and capabilities, installation, modes of operation, and how to use it. The manual format and steps may be altered during the development of the application.
@@ -72,6 +76,8 @@ If only part of the *flags* are set in the 1st run the application will set the 
 
 ### First Run
 After the user start the first time the application it will have the same behaviour as the rest of the executions. It will start the *Restful API Server*, load the configurations, look for the the *models* and *simulators* configuration files and load them, and will wait for the user commands using the *API*.
+
+<div class="page"/>
 
 ## Use the Application
 There are a couple of informations that we need to know to be able to be able to use this application to it's full potential, as how to change the configurations, create/edit/remove models and simulators, what is a model, etc... In this section we will dive into explaining how to use it, and the interfaces that are available to the user.
@@ -174,7 +180,7 @@ The **Models** are used to add configurations to the simulators, for example the
 
 To use a *model* it needs to be configured in the *simulator* configuration. One simulator can be associated with one *model* but one *model* can have multiple *simulators*.
 
-When creating a model for the `modbus` type the mapping defined in the `addresses` property, the mapping should be a string with the address and a string with the value to be returned. There are some *keys* that can be used to set in the mapping, that instead of returning a static value it will call a function that will generate the response. The *keys* list can be found in the [Modbus Keys appendix](#modbus-keys)
+When creating a model for the `modbus` type the mapping defined in the `addresses` property, should be a string with the address and a string with the value to be returned. There are some *keys* that can be used to set in the mapping that instead of returning a static value will call a function that will generate the response value. The *keys* list can be found in the [Modbus Keys appendix](#modbus-keys).
 
 ##### /simulators/models
 This endpoint gives the ability to list and create *models*.
@@ -512,6 +518,8 @@ If the application is running will return the following body, in case it is not 
     "message": "OK"
 }
 ```
+
+<div class="page"/>
 
 ## Appendix
 
