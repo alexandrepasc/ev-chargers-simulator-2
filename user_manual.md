@@ -1,41 +1,46 @@
 # Electric Vehicle Charging Simulator User Manual
 
+<!-- TOC -->
+
 - [Electric Vehicle Charging Simulator User Manual](#electric-vehicle-charging-simulator-user-manual)
-  - [Introduction](#introduction)
-  - [Installation](#installation)
-    - [First Run Default Configurations](#first-run-default-configurations)
-    - [First Run Define Configurations](#first-run-define-configurations)
-    - [First Run](#first-run)
-  - [Use the Application](#use-the-application)
-    - [Change Configurations](#change-configurations)
-      - [By Flags](#by-flags)
-      - [By Restful API](#by-restful-api)
-        - [/configs/general](#configsgeneral)
-        - [/configs/simulators](#configssimulators)
-    - [Setup Simulators](#setup-simulators)
-      - [Manage Models](#manage-models)
-        - [/simulators/models](#simulatorsmodels)
-        - [/simulators/models/:id](#simulatorsmodelsid)
-      - [Manage Simulator](#manage-simulator)
-        - [/simulators](#simulators)
-        - [/simulators/:id](#simulatorsid)
-    - [Run The Simulators](#run-the-simulators)
-      - [/simulators/run](#simulatorsrun)
-      - [/simulators/stop](#simulatorsstop)
-      - [/simulators/status](#simulatorsstatus)
-    - [Health Check](#health-check)
-  - [Appendix](#appendix)
-    - [Flags](#flags)
-    - [Asset Type (type)](#asset-type-type)
-    - [Protocols (protocol)](#protocols-protocol)
-    - [Phase Rotation (phaseRotation)](#phase-rotation-phaserotation)
-    - [Current Type (curentType)](#current-type-curenttype)
-    - [Charging States (chargingState)](#charging-states-chargingstate)
-    - [Error Code (errorCode)](#error-code-errorcode)
+	- [Introduction](#introduction)
+	- [Installation](#installation)
+		- [First Run Default Configurations](#first-run-default-configurations)
+		- [First Run Define Configurations](#first-run-define-configurations)
+		- [First Run](#first-run)
+	- [Use the Application](#use-the-application)
+		- [Change Configurations](#change-configurations)
+			- [By Flags](#by-flags)
+			- [By Restful API](#by-restful-api)
+				- [/configs/general](#configsgeneral)
+				- [/configs/simulators](#configssimulators)
+		- [Setup Simulators](#setup-simulators)
+			- [Manage Models](#manage-models)
+				- [/simulators/models](#simulatorsmodels)
+				- [/simulators/models/:id](#simulatorsmodelsid)
+			- [Manage Simulator](#manage-simulator)
+				- [/simulators](#simulators)
+				- [/simulators/:id](#simulatorsid)
+		- [Run The Simulators](#run-the-simulators)
+			- [/simulators/run](#simulatorsrun)
+			- [/simulators/stop](#simulatorsstop)
+			- [/simulators/status](#simulatorsstatus)
+		- [Health Check](#health-check)
+	- [Appendix](#appendix)
+		- [Flags](#flags)
+		- [Asset Type <type>](#asset-type-type)
+		- [Protocols <protocol>](#protocols-protocol)
+		- [Phase Rotation <phaseRotation>](#phase-rotation-phaserotation)
+		- [Current Type <curentType>](#current-type-curenttype)
+		- [Charging States <chargingState>](#charging-states-chargingstate)
+		- [Error Code <errorCode>](#error-code-errorcode)
+		- [Modbus Keys](#modbus-keys)
+
+<!-- /TOC -->
 
 |         |             |
 | ------- | ----------- |
-| Product | **v0.14.7** |
+| Product | **v0.16.9** |
 | Manual  | **Rev1**    |
 
 ## Introduction
@@ -161,8 +166,15 @@ The **Models** are used to add configurations to the simulators, for example the
     - `iccid`: SIM card identifier
     - `imsi`: International Mobile Subscriber Identity
 - `modbus`: Modbus structure
+  - `coils`: Coils mapping
+  - `discrete`: Descrete inputs mapping
+  - `holdingRegisters`: Holding registers mapping
+  - `inputRegisters`: Input registers mapping
+    - `addresses`: List of modbus addresses mapping
 
 To use a *model* it needs to be configured in the *simulator* configuration. One simulator can be associated with one *model* but one *model* can have multiple *simulators*.
+
+When creating a model for the `modbus` type the mapping defined in the `addresses` property, the mapping should be a string with the address and a string with the value to be returned. There are some *keys* that can be used to set in the mapping, that instead of returning a static value it will call a function that will generate the response. The *keys* list can be found in the [Modbus Keys appendix](#modbus-keys)
 
 ##### /simulators/models
 This endpoint gives the ability to list and create *models*.
@@ -231,17 +243,13 @@ To edit a model get the `ID`, add it to the end of the endpoint path, and the fu
 PUT http://{apiAddr}:{apiPort}/simulators/models/{model-identifier-here}
 {
     "name": "model1",
-    "type": "ocpp",
-    "ocpp": {
-        "serialNumb": "qweqwe",
-        "model": "EV Charger 1",
-        "vendor": "Simulator",
-        "fwVersion": "1.0.0",
-        "meterSerialNumb": "changed-value",
-        "modem": {
-            "iccid": "111111111111",
-            "imsi": "2222222222222"
-        }
+    "type": "modbus",
+    "modbus": {
+        "addresses": {
+			"512": "0",
+			"513": "6",
+			"514": "powerImportKw"
+		}
     }
 }
 ```
@@ -340,7 +348,7 @@ It will return the total number of number of existing *simulators* and their lis
 }
 ```
 
-To create a new *simulator* use the same endpoint but with a new method and sending the body described down. There are a couple of rules that are required to be followed so the application can work normally, the `data` array field in the configuration needs to have the 1st position with the `Available` (1) state and the last position with `Finishing` (6). The `chargingState` available values are exposed in the [Charging States appendix](#charging-states). 
+To create a new *simulator* use the same endpoint but with a new method and sending the body described down. There are a couple of rules that are required to be followed so the application can work normally, the `data` array field in the configuration needs to have the 1st position with the `Available` (1) state and the last position with `Finishing` (6). The `chargingState` available values are exposed in the [Charging States appendix](#charging-states-chargingstate). 
 ```
 POST http://{apiAddr}:{apiPort}/simulators
 {
@@ -531,16 +539,16 @@ If the application is running will return the following body, in case it is not 
   -v	Return the current application version
 ```
 
-### Asset Type (type)
+### Asset Type <type>
 - `evc`: Type electric vehicle charger
-- `pm`: Type power meter (not supported)
+- `pm`: Type power meter (only supported for modbus)
 
-### Protocols (protocol)
+### Protocols <protocol>
 - `ocpp16`: Ocpp version 1.6
 - `ocpp201`: Ocpp version 2.0.1 (not supported)
-- `modbus`: Modbus protocol (not supported)
+- `modbus`: Modbus protocol (only supported for pm)
 
-### Phase Rotation (phaseRotation)
+### Phase Rotation <phaseRotation>
 - `NotApplicable`: Not applicable for dc chargers
 - `Unknown`: Not able to retrieve the rotation
 - `RST`: L1 L2 L3
@@ -550,11 +558,11 @@ If the application is running will return the following body, in case it is not 
 - `TRS`: L3 L1 L2
 - `TSR`: L3 L2 L1
 
-### Current Type (curentType)
+### Current Type <curentType>
 - `ac`: Alternating current
 - `dc`: Direct current
 
-### Charging States (chargingState)
+### Charging States <chargingState>
 - `1`: Available
 - `2`: Preparing
 - `3`: Charging
@@ -565,7 +573,7 @@ If the application is running will return the following body, in case it is not 
 - `8`: Unavailable
 - `9`: Faulted
 
-### Error Code (errorCode)
+### Error Code <errorCode>
 - `0`: NoError
 - `1`: ConnectorLockFailure
 - `2`: EVCommunicationError
@@ -582,3 +590,9 @@ If the application is running will return the following body, in case it is not 
 - `13`: ResetFailure
 - `14`: UnderVoltage
 - `15`: WeakSignal
+
+### Modbus Keys
+- `powerImportW`: Calculate the power import and return it in W
+- `powerImportK`: Calculate the power import and return it in kW
+- `importVa`: Calculate the voltage ampere import and return it in VA
+- `importKvA`: Calculate the voltage ampere import and return it in kVA

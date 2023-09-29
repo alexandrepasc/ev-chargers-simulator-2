@@ -38,7 +38,7 @@ type Coils struct{}
 type Discrete struct{}
 
 type HoldingRegisters struct {
-	Addresses map[int]string `json:"addresses"`
+	Addresses map[int]string `json:"addresses"` // List of modbus addresses mapping
 }
 
 type InputRegisters struct{}
