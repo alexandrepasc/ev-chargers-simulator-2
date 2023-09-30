@@ -3,7 +3,7 @@ package common
 import "github.com/google/uuid"
 
 const (
-	Version           string = "0.15.9"            // Application version
+	Version           string = "0.16.9"            // Application version
 	DefSimIP          string = "84.5.7.64"         // Default simulator ip address from the machine that is running the application
 	DefTimeout        int64  = 70                  // Default simulators timeout
 	DefCSIP           string = "iot-gate-imx8.lan" // Default central system ip address
@@ -24,8 +24,9 @@ var (
 )
 
 type Channel struct {
-	Name   string    // Name of the asset
-	UUID   uuid.UUID // Identifier of the asset
-	Power  float64   // Charge point consumption power
-	Energy float64   // Charge point energy
+	Name        string    // Name of the asset
+	UUID        uuid.UUID // Identifier of the asset
+	Power       float64   // Charge point consumption power
+	PowerFactor int64     // Power factor
+	Energy      float64   // Charge point energy
 }

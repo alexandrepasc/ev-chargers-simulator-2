@@ -152,11 +152,12 @@ func (h *Handler) receiver(cl []chan common.Channel, s chan bool) {
 			case <-cl[i]:
 				msg := <-cl[i]
 				h.Info[i] = assets.DataInfo{
-					UUID:   msg.UUID,
-					Name:   msg.Name,
-					Status: assets.Active,
-					Power:  msg.Power,
-					Energy: msg.Energy,
+					UUID:        msg.UUID,
+					Name:        msg.Name,
+					Status:      assets.Active,
+					Power:       msg.Power,
+					PowerFactor: msg.PowerFactor,
+					Energy:      msg.Energy,
 				}
 
 				fmt.Println(msg)

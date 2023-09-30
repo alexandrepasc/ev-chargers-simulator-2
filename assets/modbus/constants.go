@@ -1,7 +1,16 @@
 package modbus
 
-const bit16 int = 16
+const (
+	// bit16 int = 16
+	conversion float64 = 1000
+)
 
+/*
+Map the key word from the configuration with the function related in the service file.
+*/
 var functionMap = map[string]interface{}{
-	"powerImport": func(m *Modbus) float64 { return m.powerImport() },
+	"powerImportW":  func(m *Modbus) int { return m.powerImportW() },
+	"powerImportKw": func(m *Modbus) int { return m.powerImportKw() },
+	"importVa":      func(m *Modbus) int { return m.importVa() },
+	"importKvA":     func(m *Modbus) int { return m.importKvA() },
 }

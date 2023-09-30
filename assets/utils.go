@@ -89,6 +89,27 @@ func CalculateCPPower(el []simulator.Evse) float64 {
 }
 
 /*
+Sum the power of all the CP EVSEs active connectors and returns the total value (float64).
+
+el	-	The list of evses that the CP has ([]simulator.Evse)
+*/
+func CalculateInstantCPPower(el []simulator.Evse) float64 {
+	var t float64
+
+	for ei, e := range el {
+		for ci, c := range e.Connectors {
+			if !c.Enabled {
+				continue
+			}
+
+			t += float64(el[ei].Connectors[ci].Data[el[ei].Connectors[ci].DP.Position].Power)
+		}
+	}
+
+	return t
+}
+
+/*
 Sum the power export of all the connectors of the CP and returns the calculated value (float64).
 
 el	-	The list of evses that the CP has ([]simulator.Evse)

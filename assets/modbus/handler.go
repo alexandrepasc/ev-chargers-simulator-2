@@ -1,4 +1,3 @@
-//nolint:gomnd // because its a draft
 package modbus
 
 import (
@@ -66,23 +65,10 @@ func (m *Modbus) HandleHoldingRegisters(req *modbus.HoldingRegistersRequest) (re
 
 	m.logger.log(lm, req, assets.Info)
 
-	switch req.Addr {
-	case 2816:
-		var ms = m.Mod.Modbus.HoldingRegisters.Addresses[int(req.Addr)]
+	for i := 0; i < int(req.Quantity); i++ {
+		var reqAddr = req.Addr + uint16(i)
 
-		var v = intTo16bitArray(int(functionMap[ms].(func(*Modbus) float64)(m)))
-
-		for _, vi := range v {
-			res = append(res, vi)
-		}
-
-	// any other address is unknown
-	default:
-		err = modbus.ErrIllegalDataAddress
-
-		m.logger.log(lm, err, assets.Error)
-
-		return nil, err
+		res = append(res, m.getHoldingRegistersAddressValue(reqAddr))
 	}
 
 	lm["sender"] = assets.CP
