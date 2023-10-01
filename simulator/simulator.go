@@ -127,6 +127,12 @@ func (s *Simulator) UpdateSimConf(id uuid.UUID, a *Asset) (ok bool, msg string, 
 			return false, s.L.Get(text.RequestBodyDoesntMatch), http.StatusBadRequest, &Asset{}
 		}
 
+		if a.Protocol == Ocpp16 {
+			if len(a.Evses) > 1 {
+				return false, s.L.Get(text.Ocpp16SimConfFileMoreEvse), http.StatusBadRequest, &Asset{}
+			}
+		}
+
 		common.Log("UpdateSimConf").Info(s.L.Get(text.UpdateSimConfFile))
 
 		_, b := marshalAssetToJSON(na)
