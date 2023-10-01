@@ -42,6 +42,7 @@ const (
 	DeleteSimConfFileNotFound     Key = "DeleteSimConfFileNotFound"     // Configuration ID not found
 	DeleteSimConfFileError        Key = "DeleteSimConfFileError"        // Not able to delete the configuration file
 	DeleteSimConfFile             Key = "DeleteSimConfFile"             // Delete simulator configuration file
+	Ocpp16SimConfFileMoreEvse     Key = "Ocpp16SimConfFileMoreEvse"     // Ocpp 1.6 only can handle 1 evse per charge point error
 	OpenSimConfFileError          Key = "OpenSimConfFileError"          // Error opening the simulator configuration file
 	WriteSimConfFileError         Key = "WriteSimConfFileError"         // Error writing the simulator configuration file
 	InternalServerError           Key = "InternalServerError"           // API message returned when something breaks
