@@ -298,6 +298,75 @@ func TestCanNotCreateSimulatorSameName(t *testing.T) {
 	assert.NotEqual(t, sim, a)
 }
 
+func TestCanNotCreateSimulatorOcpp16MoreThen1Evse(t *testing.T) {
+	tmp := t.TempDir()
+
+	createFolders(tmp)
+
+	s := before(tmp)
+
+	generateAssetConfFiles(1, tmp)
+
+	mID, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0")
+
+	sim := simulator.Asset{
+		Name:            "sim1",
+		Type:            simulator.Evc,
+		Protocol:        simulator.Ocpp16,
+		Model:           mID,
+		StartCharging:   true,
+		Phases:          simulator.Three,
+		PhaseRotation:   simulator.RST,
+		CurrentType:     simulator.Dc,
+		AuthorizeRemote: true,
+		AuthList:        true,
+		Evses: []simulator.Evse{
+			{
+				ID: 1,
+				Connectors: []simulator.Connector{
+					{
+						ID: 1,
+						Data: []simulator.Data{
+							{
+								Duration:      20,
+								ChargingState: 2,
+								ErrorCode:     0,
+								PowerFactor:   900,
+							},
+						},
+					},
+				},
+			},
+			{
+				ID: 2,
+				Connectors: []simulator.Connector{
+					{
+						ID: 1,
+						Data: []simulator.Data{
+							{
+								Duration:      20,
+								ChargingState: 2,
+								ErrorCode:     0,
+								PowerFactor:   900,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	ok, msg, _ := s.CreateSimConf(&sim)
+
+	assert.False(t, ok)
+
+	assert.Equal(t, msg, s.L.Get(text.Ocpp16SimConfFileMoreEvse))
+
+	nf := tmp + defSCFolder + "/" + sim.Name + ".json"
+
+	assert.NoFileExists(t, nf)
+}
+
 func TestUpdateSimulator(t *testing.T) {
 	tmp := t.TempDir()
 

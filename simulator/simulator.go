@@ -59,6 +59,12 @@ func (s *Simulator) CreateSimConf(a *Asset) (ok bool, msg string, na *Asset) {
 		return false, err.Error(), na
 	}
 
+	if a.Protocol == Ocpp16 {
+		if len(a.Evses) > 1 {
+			return false, s.L.Get(text.Ocpp16SimConfFileMoreEvse), na
+		}
+	}
+
 	var al = s.GetSimulators()
 
 	var nm = true
