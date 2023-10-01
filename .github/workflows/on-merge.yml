@@ -35,6 +35,15 @@ jobs:
     runs-on: self-hosted
     steps:
       - uses: actions/checkout@v3
+
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: 'stable'
+          cache: false
+
+      - name: Install dependencies
+        run: go get .
       
       - name: Get version
         run: echo "RELEASE_VERSION=$(go run . -v | cut -d " " -f 2)" >> $GITHUB_ENV
