@@ -40,6 +40,7 @@ var EnGB = map[Key]string{
 	DeleteSimConfFileNotFound:     "Simulator not found.",
 	DeleteSimConfFileError:        "Unexpected error deleting the simulator configuration file.",
 	DeleteSimConfFile:             "Delete simulator configuration file.",
+	Ocpp16SimConfFileMoreEvse:     "The OCPP 1.6 only supports one EVSE per charge points.",
 	OpenSimConfFileError:          "Error opening the simulator configuration file.",
 	WriteSimConfFileError:         "Error writing the simulator configuration file.",
 	InternalServerError:           "Something went very wrong.",

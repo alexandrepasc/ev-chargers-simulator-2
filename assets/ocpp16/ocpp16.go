@@ -138,20 +138,19 @@ n	-	The simulator name (string)
 
 i	-	Simulator identifier (uuid.UUID)
 */
+// TODO: the calculate cp power needs a list of evses and it can be useful to the ocpp 2.0.1
 func channelComm(c chan common.Channel, e []simulator.Evse, st time.Time, n string, i uuid.UUID) {
 	var tp = assets.CalculateCPPower(e)
 
 	// TODO: the way to find the power factor is not done correctly
 	var pf int64
 
-	for _, ei := range e {
-		for _, ci := range ei.Connectors {
-			if !ci.Enabled {
-				continue
-			}
-
-			pf = ci.Data[ci.DP.Position].PowerFactor
+	for _, ci := range e[0].Connectors {
+		if !ci.Enabled {
+			continue
 		}
+
+		pf = ci.Data[ci.DP.Position].PowerFactor
 	}
 
 	c <- common.Channel{

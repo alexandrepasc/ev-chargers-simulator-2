@@ -2,7 +2,7 @@
 
 |         |             |
 | ------- | ----------- |
-| Product | **v0.16.9** |
+| Product | **v0.17.9** |
 | Manual  | **Rev1**    |
 
 <div class="page"/>
@@ -294,6 +294,8 @@ Now looking into the core of this application, the **Simulators**. There is on e
         - `voltage`: Array of voltages each entry for each phase in V
         - `startSoC`: Start ev charge state in percentage
         - `endSoC`: End ev charge state in percentage
+
+The *OCPP v1.6* protocol doesn't support multiple EVSEs in the same charge point. This rule was set in place for the creation and update of the assets with the type `evc` that have the `ocpp16` protocol, when both of this propeties match the asset can only have **one** item in the `evses` list. Trying to create or update an asset with more than **one** EVSE, with the type and protocol matching what was described before, the api will return an error message.
 
 ##### /simulators
 This endpoint can be used to create and list all the *simulators*.

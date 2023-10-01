@@ -31,6 +31,7 @@ var PtPT = map[Key]string{
 	DeleteSimConfFileNotFound:     "Simulador não encontrado.",
 	DeleteSimConfFileError:        "Erro inesperado ao apagar o ficheiro de configuração do simulador.",
 	DeleteSimConfFile:             "Apagar o ficheiro de configuração do simulador.",
+	Ocpp16SimConfFileMoreEvse:     "O OCPP 1.6 apenas suporta um EVSE por ponto de carregamento.",
 	OpenSimConfFileError:          "Erro a abrir o ficheiro de configuração do simulador.",
 	WriteSimConfFileError:         "Erro a escrever no ficheiro de configuração do simulador.",
 	InternalServerError:           "Algo correu muito mal.",

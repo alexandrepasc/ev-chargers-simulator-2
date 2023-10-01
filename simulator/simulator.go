@@ -56,7 +56,13 @@ func (s *Simulator) CreateSimConf(a *Asset) (ok bool, msg string, na *Asset) {
 	if err != nil {
 		common.Log("CreateSimConf").Error(err)
 
-		return false, err.Error(), na
+		return false, err.Error(), &Asset{}
+	}
+
+	if a.Protocol == Ocpp16 {
+		if len(a.Evses) > 1 {
+			return false, s.L.Get(text.Ocpp16SimConfFileMoreEvse), &Asset{}
+		}
 	}
 
 	var al = s.GetSimulators()
@@ -70,17 +76,17 @@ func (s *Simulator) CreateSimConf(a *Asset) (ok bool, msg string, na *Asset) {
 	}
 
 	if !nm {
-		return false, s.L.Get(text.CreateSimConfFileNameExists), na
+		return false, s.L.Get(text.CreateSimConfFileNameExists), &Asset{}
 	}
 
 	ok, f := generateFile(s.Scp, a.Name, s.L)
 
 	if !ok {
-		return ok, s.L.Get(text.CreateSimConfFileError), na
+		return ok, s.L.Get(text.CreateSimConfFileError), &Asset{}
 	}
 
 	if !writeFile(f, a) {
-		return false, s.L.Get(text.CreateSimConfFileError), na
+		return false, s.L.Get(text.CreateSimConfFileError), &Asset{}
 	}
 
 	return true, "", a
@@ -119,6 +125,12 @@ func (s *Simulator) UpdateSimConf(id uuid.UUID, a *Asset) (ok bool, msg string, 
 			common.Log("UpdateSimConf").Error(e)
 
 			return false, s.L.Get(text.RequestBodyDoesntMatch), http.StatusBadRequest, &Asset{}
+		}
+
+		if a.Protocol == Ocpp16 {
+			if len(a.Evses) > 1 {
+				return false, s.L.Get(text.Ocpp16SimConfFileMoreEvse), http.StatusBadRequest, &Asset{}
+			}
 		}
 
 		common.Log("UpdateSimConf").Info(s.L.Get(text.UpdateSimConfFile))

@@ -148,16 +148,14 @@ func (o *Ocpp16) setStartUpConfigurations() {
 
 	o.t = 0
 
-	for x, e := range o.Asset.Evses {
-		for y := range e.Connectors {
-			o.Asset.Evses[x].Connectors[y].DP.Position = 0
-			o.Asset.Evses[x].Connectors[y].DP.Ticker = 0
-			o.Asset.Evses[x].Connectors[y].TPower = 0
-			o.Asset.Evses[x].Connectors[y].Energy = 0
-			o.Asset.Evses[x].Connectors[y].Enabled = false
-			o.Asset.Evses[x].Connectors[y].Availability = string(assets.Operative)
-			o.Asset.Evses[x].Connectors[y].CurrentSoC = 0
-		}
+	for y := range o.Asset.Evses[0].Connectors {
+		o.Asset.Evses[0].Connectors[y].DP.Position = 0
+		o.Asset.Evses[0].Connectors[y].DP.Ticker = 0
+		o.Asset.Evses[0].Connectors[y].TPower = 0
+		o.Asset.Evses[0].Connectors[y].Energy = 0
+		o.Asset.Evses[0].Connectors[y].Enabled = false
+		o.Asset.Evses[0].Connectors[y].Availability = string(assets.Operative)
+		o.Asset.Evses[0].Connectors[y].CurrentSoC = 0
 	}
 
 	o.localAuth.version = 0
@@ -405,36 +403,32 @@ In a hard reset will set all the connectors data and the asset data.
 */
 func (o *Ocpp16) processReset(r *core.ResetRequest) *core.ResetConfirmation {
 	if r.Type == core.ResetType(assets.Soft) {
-		for x, e := range o.Asset.Evses {
-			for y, c := range e.Connectors {
-				if !c.Enabled {
-					continue
-				}
-
-				o.Asset.Evses[x].Connectors[y].Enabled = false
-				o.Asset.Evses[x].Connectors[y].DP.Position = 0
-				o.Asset.Evses[x].Connectors[y].DP.Ticker = 0
-				o.Asset.Evses[x].Connectors[y].CurrentSoC = 0
-				o.txnAlignedData = []types.MeterValue{}
-				o.txnSampledData = []types.MeterValue{}
-
-				go o.stopTransaction(o.Asset.Evses[x].CIDTag, &o.Asset.Evses[x].Connectors[y])
+		for y, c := range o.Asset.Evses[0].Connectors {
+			if !c.Enabled {
+				continue
 			}
+
+			o.Asset.Evses[0].Connectors[y].Enabled = false
+			o.Asset.Evses[0].Connectors[y].DP.Position = 0
+			o.Asset.Evses[0].Connectors[y].DP.Ticker = 0
+			o.Asset.Evses[0].Connectors[y].CurrentSoC = 0
+			o.txnAlignedData = []types.MeterValue{}
+			o.txnSampledData = []types.MeterValue{}
+
+			go o.stopTransaction(o.Asset.Evses[0].CIDTag, &o.Asset.Evses[0].Connectors[y])
 		}
 
 		return &core.ResetConfirmation{Status: core.ResetStatusAccepted}
 	}
 
-	for x, e := range o.Asset.Evses {
-		for y := range e.Connectors {
-			o.Asset.Evses[x].Connectors[y].Enabled = false
-			o.Asset.Evses[x].Connectors[y].DP.Position = 0
-			o.Asset.Evses[x].Connectors[y].DP.Ticker = 0
-			o.Asset.Evses[x].Connectors[y].CurrentSoC = 0
-			o.Asset.Evses[x].Connectors[y].TPower = 0
-			o.Asset.Evses[x].Connectors[y].Energy = 0
-			o.Asset.Evses[x].Connectors[y].Availability = string(assets.Operative)
-		}
+	for y := range o.Asset.Evses[0].Connectors {
+		o.Asset.Evses[0].Connectors[y].Enabled = false
+		o.Asset.Evses[0].Connectors[y].DP.Position = 0
+		o.Asset.Evses[0].Connectors[y].DP.Ticker = 0
+		o.Asset.Evses[0].Connectors[y].CurrentSoC = 0
+		o.Asset.Evses[0].Connectors[y].TPower = 0
+		o.Asset.Evses[0].Connectors[y].Energy = 0
+		o.Asset.Evses[0].Connectors[y].Availability = string(assets.Operative)
 	}
 
 	o.localAuth.version = 0
@@ -563,28 +557,26 @@ func (o *Ocpp16) processSampledData() {
 
 	var conf = strings.Split(*o.Conf["MeterValuesSampledData"].Value, ",")
 
-	for ie, e := range o.Asset.Evses {
-		for ic, c := range e.Connectors {
-			if !c.Enabled {
-				continue
-			}
-
-			if c.Data[c.DP.Position].ChargingState != int64(assets.Charging) {
-				continue
-			}
-
-			var sd = o.meterValuesSampledData(ie, ic, conf)
-
-			var cl = strings.Split(*o.Conf["StopTxnSampledData"].Value, ",")
-
-			if len(cl) != 0 || cl[0] != "" {
-				var tsd = o.meterValuesSampledData(ie, ic, cl)
-
-				o.txnSampledData = append(o.txnSampledData, tsd...)
-			}
-
-			o.meterValues(c.ID, sd)
+	for ic, c := range o.Asset.Evses[0].Connectors {
+		if !c.Enabled {
+			continue
 		}
+
+		if c.Data[c.DP.Position].ChargingState != int64(assets.Charging) {
+			continue
+		}
+
+		var sd = o.meterValuesSampledData(0, ic, conf)
+
+		var cl = strings.Split(*o.Conf["StopTxnSampledData"].Value, ",")
+
+		if len(cl) != 0 || cl[0] != "" {
+			var tsd = o.meterValuesSampledData(0, ic, cl)
+
+			o.txnSampledData = append(o.txnSampledData, tsd...)
+		}
+
+		o.meterValues(c.ID, sd)
 	}
 }
 
@@ -912,24 +904,16 @@ func (o *Ocpp16) processAlignedData() {
 
 	var ad = o.meterValuesAlignedData(conf)
 
-	for _, e := range o.Asset.Evses {
-		if canEnable(e.Connectors) {
-			continue
-		}
+	var _, c = getActiveConnector(o.Asset.Evses[0])
 
-		var _, c = getActiveConnector(e)
-
-		if c.Data[c.DP.Position].ChargingState != int64(assets.Charging) {
-			continue
-		}
-
+	if c.Data[c.DP.Position].ChargingState == int64(assets.Charging) {
 		var cl = strings.Split(*o.Conf["StopTxnAlignedData"].Value, ",")
 
-		if len(cl) == 0 || cl[0] == "" {
-			continue
-		}
+		var tad []types.MeterValue
 
-		var tad = o.meterValuesAlignedData(cl)
+		if len(cl) != 0 || cl[0] != "" {
+			tad = o.meterValuesAlignedData(cl)
+		}
 
 		o.txnAlignedData = append(o.txnAlignedData, tad...)
 	}
@@ -989,10 +973,8 @@ func (o *Ocpp16) meterValuesAlignedData(confL []string) []types.MeterValue {
 		case assets.EnergyActiveExportRegister:
 			var eet float64
 
-			for _, e := range o.Asset.Evses {
-				for _, c := range e.Connectors {
-					eet += c.EnergyExport
-				}
+			for _, c := range o.Asset.Evses[0].Connectors {
+				eet += c.EnergyExport
 			}
 
 			sp = types.SampledValue{
@@ -1091,10 +1073,8 @@ func (o *Ocpp16) meterValuesAlignedData(confL []string) []types.MeterValue {
 		case assets.PowerFactor:
 			var tpf int64
 
-			for _, e := range o.Asset.Evses {
-				for _, c := range e.Connectors {
-					tpf += c.Data[c.DP.Position].PowerFactor
-				}
+			for _, c := range o.Asset.Evses[0].Connectors {
+				tpf += c.Data[c.DP.Position].PowerFactor
 			}
 
 			sp = types.SampledValue{
@@ -1136,7 +1116,7 @@ func (o *Ocpp16) meterValuesAlignedData(confL []string) []types.MeterValue {
 			}
 
 		case assets.SoC:
-			var csoc = getAlignedDataSoC(o.Asset.Evses)
+			var csoc = getAlignedDataSoC(o.Asset.Evses[0])
 
 			sp = types.SampledValue{
 				Value:     strconv.FormatInt(int64(csoc), 10),
@@ -1146,7 +1126,7 @@ func (o *Ocpp16) meterValuesAlignedData(confL []string) []types.MeterValue {
 			}
 
 		case assets.Voltage:
-			var cv = getAlignedDataVoltage(o.Asset.Evses)
+			var cv = getAlignedDataVoltage(o.Asset.Evses[0])
 
 			sp = types.SampledValue{
 				Value:     strconv.FormatInt(cv, 10),
@@ -1183,6 +1163,7 @@ If the start charging in the simulator is false (passive) it will call the notAu
 function to handle the logic.
 */
 // TODO: the total power calculation need to be reviewed, at the moment with 100 w in a couple of secs the result is 0
+// TODO: this function was not updated to remove the loop through the evses list, this func as it is may be relevant to the ocpp 2.0.1
 func (o *Ocpp16) updateData() {
 	for x, e := range o.Asset.Evses {
 		for y, c := range e.Connectors {
@@ -1717,6 +1698,7 @@ x	-	Evse index position (int)
 
 y	-	Evse connector index position (int)
 */
+// TODO: this function was not updated to remove the loop through the evses list, this func as it is may be relevant to the ocpp 2.0.1
 func (o *Ocpp16) notAutoChargePoint(c *simulator.Connector, x, y int) {
 	if c.Enabled {
 		if c.DP.Ticker < c.Data[c.DP.Position].Duration {
@@ -1924,22 +1906,17 @@ func calculateSoC(c, s, e float64, d int64) float64 {
 }
 
 /*
-Get the SoC from the active connector. Loop the evse list, get the active connector and
+Get the SoC from the active connector. Get the active connector and
 return the current SoC for that connector (float64).
 
-el	-	Evses list of the asset ([]simulator.Evse)
+e	-	Evse of the asset (simulator.Evse)
 */
-// TODO: this needs to be reviwed don't think that with the ocpp 1.6 a cp can have multiple evses
-func getAlignedDataSoC(el []simulator.Evse) float64 {
+func getAlignedDataSoC(e simulator.Evse) float64 {
 	var csoc float64
 
-	for _, e := range el {
-		var i, c = getActiveConnector(e)
+	var i, c = getActiveConnector(e)
 
-		if i == -1 {
-			continue
-		}
-
+	if i != -1 {
 		csoc = c.CurrentSoC
 	}
 
@@ -1947,22 +1924,17 @@ func getAlignedDataSoC(el []simulator.Evse) float64 {
 }
 
 /*
-Get the Voltage from the active connector. Loop the evse list, get the active connector, loop the
+Get the Voltage from the active connector. Get the active connector, loop the
 the phases and return the current voltage for that connector (int64).
 
-el	-	Evses list of the asset ([]simulator.Evse)
+e	-	Evse of the asset (simulator.Evse)
 */
-// TODO: this needs to be reviwed don't think that with the ocpp 1.6 a cp can have multiple evses
-func getAlignedDataVoltage(el []simulator.Evse) int64 {
+func getAlignedDataVoltage(e simulator.Evse) int64 {
 	var cv int64
 
-	for _, e := range el {
-		var i, c = getActiveConnector(e)
+	var i, c = getActiveConnector(e)
 
-		if i == -1 {
-			continue
-		}
-
+	if i != -1 {
 		for _, v := range c.Data[c.DP.Position].Voltage {
 			if v <= 0 {
 				continue
