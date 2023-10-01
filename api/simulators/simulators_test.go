@@ -446,6 +446,86 @@ func TestNotAblePostSimulatorsOcpp16MoreThen1Evse(t *testing.T) {
 	assert.NoFileExists(t, tmp+"/simConf/"+body.Name+".json")
 }
 
+func TestPostSimulatorsOcpp201MoreThen1Evse(t *testing.T) {
+	r := gin.Default()
+
+	al := []*simulator.Asset{}
+	ml := []*model.Struct{}
+
+	sim, _, tmp := before(t, al, ml)
+
+	sim.Al = al
+
+	s := simulators.Simulators{
+		Sim: sim,
+	}
+
+	body := simulator.Asset{
+		Name:            "name",
+		Type:            simulator.Evc,
+		Protocol:        simulator.Ocpp201,
+		StartCharging:   true,
+		Phases:          simulator.One,
+		PhaseRotation:   simulator.NotApplicable,
+		CurrentType:     simulator.Ac,
+		AuthorizeRemote: true,
+		AuthList:        true,
+		Evses: []simulator.Evse{
+			{
+				ID: 1,
+				Connectors: []simulator.Connector{
+					{
+						ID: 1,
+					},
+				},
+			},
+			{
+				ID: 2,
+				Connectors: []simulator.Connector{
+					{
+						ID: 1,
+					},
+				},
+			},
+		},
+	}
+
+	j, _ := json.Marshal(body)
+	b := bytes.NewReader(j)
+
+	s.Simulators(r)
+
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest(string(mPost), ep, b)
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusCreated, w.Code)
+
+	a := simulator.Asset{}
+	json.Unmarshal(w.Body.Bytes(), &a)
+
+	_, err := uuid.Parse(a.SimID.String())
+	assert.Nil(t, err)
+
+	assert.Equal(t, body.Name, a.Name)
+
+	assert.Equal(t, body.Type, a.Type)
+
+	assert.Equal(t, body.Protocol, a.Protocol)
+
+	assert.Equal(t, body.Phases, a.Phases)
+
+	assert.Equal(t, body.PhaseRotation, a.PhaseRotation)
+
+	assert.Equal(t, body.CurrentType, a.CurrentType)
+
+	assert.Equal(t, body.Evses, a.Evses)
+
+	assert.FileExists(t, tmp+"/simConf/"+body.Name+".json")
+}
+
 func TestPutSimulators(t *testing.T) {
 	r := gin.Default()
 
@@ -823,6 +903,95 @@ func TestNotAblePutSimulatorsOcpp16MoreThen1Evse(t *testing.T) {
 	json.Unmarshal(w.Body.Bytes(), &a)
 
 	assert.Equal(t, translation.Translation{L: translation.EnGb}.Get(text.Ocpp16SimConfFileMoreEvse), a.Message)
+}
+
+func TestPutSimulatorsOcpp201MoreThen1Evse(t *testing.T) {
+	r := gin.Default()
+
+	al := []*simulator.Asset{
+		{
+			SimID:         uuid.New(),
+			Name:          "test1",
+			Type:          simulator.Evc,
+			Protocol:      simulator.Ocpp16,
+			StartCharging: true,
+			Phases:        simulator.One,
+			PhaseRotation: simulator.NotApplicable,
+			CurrentType:   simulator.Dc,
+			Evses:         []simulator.Evse{},
+		},
+	}
+	ml := []*model.Struct{}
+
+	sim, _, _ := before(t, al, ml)
+
+	sim.Al = al
+
+	s := simulators.Simulators{
+		Sim:  sim,
+		Lang: translation.Translation{L: translation.EnGb},
+	}
+
+	e := simulator.Asset{
+		Type:            simulator.Pm,
+		Protocol:        simulator.Ocpp201,
+		StartCharging:   false,
+		Phases:          simulator.Three,
+		PhaseRotation:   simulator.RST,
+		CurrentType:     simulator.Ac,
+		AuthorizeRemote: true,
+		AuthList:        true,
+		Evses: []simulator.Evse{
+			{
+				ID: 1,
+				Connectors: []simulator.Connector{
+					{
+						ID: 1,
+					},
+				},
+			},
+			{
+				ID: 2,
+				Connectors: []simulator.Connector{
+					{
+						ID: 1,
+					},
+				},
+			},
+		},
+	}
+
+	j, _ := json.Marshal(e)
+	b := bytes.NewReader(j)
+
+	s.Simulators(r)
+
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest(string(mPut), ep+"/"+al[0].SimID.String(), b)
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	a := simulator.Asset{}
+	json.Unmarshal(w.Body.Bytes(), &a)
+
+	assert.Equal(t, al[0].SimID, a.SimID)
+
+	assert.Equal(t, al[0].Name, a.Name)
+
+	assert.Equal(t, e.Type, a.Type)
+
+	assert.Equal(t, e.Protocol, a.Protocol)
+
+	assert.Equal(t, e.StartCharging, a.StartCharging)
+
+	assert.Equal(t, e.Phases, a.Phases)
+
+	assert.Equal(t, e.PhaseRotation, a.PhaseRotation)
+
+	assert.Equal(t, e.CurrentType, a.CurrentType)
 }
 
 func TestDeleteSimulators(t *testing.T) {
