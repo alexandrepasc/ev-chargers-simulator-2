@@ -587,7 +587,7 @@ func TestCanNotUpdateSimulatorOcpp16MoreThen1Evse(t *testing.T) {
 		CurrentType:     simulator.Dc,
 		AuthorizeRemote: true,
 		AuthList:        true,
-		Evses:           []simulator.Evse{
+		Evses: []simulator.Evse{
 			{
 				ID: 1,
 				Connectors: []simulator.Connector{
