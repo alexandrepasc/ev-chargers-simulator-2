@@ -138,7 +138,7 @@ n	-	The simulator name (string)
 
 i	-	Simulator identifier (uuid.UUID)
 */
-// TODO: the calculate cp power needs a list of evses and it can be usefull to the ocpp 2.0.1
+// TODO: the calculate cp power needs a list of evses and it can be useful to the ocpp 2.0.1
 func channelComm(c chan common.Channel, e []simulator.Evse, st time.Time, n string, i uuid.UUID) {
 	var tp = assets.CalculateCPPower(e)
 
