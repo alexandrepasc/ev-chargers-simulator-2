@@ -117,11 +117,24 @@ func (h *Handler) Stop() {
 func (h *Handler) GetStatus() Status {
 	var resp Status
 
-	var a = make([]Assets, len(h.Al))
+	var pmi = getPmIndex(h.Al)
 
-	resp.Total = int64(len(h.Al))
+	var a []Assets
+	if pmi > -1 {
+		a = make([]Assets, len(h.Al)-1)
+
+		resp.Total = int64(len(h.Al) - 1)
+	} else {
+		a = make([]Assets, len(h.Al))
+
+		resp.Total = int64(len(h.Al))
+	}
 
 	for i := range h.Al {
+		if pmi == i {
+			continue
+		}
+
 		var aux = Assets{
 			ID:     h.Info[i].UUID,
 			Name:   h.Info[i].Name,
@@ -130,7 +143,7 @@ func (h *Handler) GetStatus() Status {
 			Energy: h.Info[i].Energy,
 		}
 
-		a[i] = aux
+		a[i-1] = aux
 	}
 
 	resp.Assets = a
