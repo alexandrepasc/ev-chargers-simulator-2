@@ -13,14 +13,14 @@ import "github.com/google/uuid"
 // }
 
 type Status struct {
-	Total  int64    `json:"total"`
-	Assets []Assets `json:"assets"`
+	Total  int64    `json:"total"`  // Total number of assets
+	Assets []Assets `json:"assets"` // List of assets
 }
 
 type Assets struct {
-	ID     uuid.UUID `json:"id"`
-	Name   string    `json:"name"`
-	State  string    `json:"state"`
-	Power  float64   `json:"power"`
-	Energy float64   `json:"energy"`
+	ID     uuid.UUID `json:"id"`     // Asset identifier
+	Name   string    `json:"name"`   // Asset name
+	State  string    `json:"state"`  // State of the asset (acive, inactive)
+	Power  float64   `json:"power"`  // Current asset power
+	Energy float64   `json:"energy"` // Energy consumption of the execution
 }

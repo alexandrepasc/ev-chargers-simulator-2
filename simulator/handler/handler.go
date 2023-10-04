@@ -37,7 +37,6 @@ It returns an array of boolean channels ([]chan bool), one for each simulator ru
 */
 func (h *Handler) Start() []chan bool {
 	h.Channel = make([]chan common.Channel, len(h.Al))
-	h.Info = make([]assets.DataInfo, len(h.Al))
 	h.Quit = make([]chan bool, len(h.Al))
 
 	for i, a := range h.Al {
@@ -117,11 +116,24 @@ func (h *Handler) Stop() {
 func (h *Handler) GetStatus() Status {
 	var resp Status
 
-	var a = make([]Assets, len(h.Al))
+	var pmi = getPmIndex(h.Al)
 
-	resp.Total = int64(len(h.Al))
+	var a []Assets
+	if pmi > -1 {
+		a = make([]Assets, len(h.Al)-1)
+
+		resp.Total = int64(len(h.Al) - 1)
+	} else {
+		a = make([]Assets, len(h.Al))
+
+		resp.Total = int64(len(h.Al))
+	}
 
 	for i := range h.Al {
+		if pmi == i {
+			continue
+		}
+
 		var aux = Assets{
 			ID:     h.Info[i].UUID,
 			Name:   h.Info[i].Name,
@@ -130,7 +142,7 @@ func (h *Handler) GetStatus() Status {
 			Energy: h.Info[i].Energy,
 		}
 
-		a[i] = aux
+		a[i-1] = aux
 	}
 
 	resp.Assets = a
@@ -167,6 +179,23 @@ func (h *Handler) receiver(cl []chan common.Channel, s chan bool) {
 		}
 
 		time.Sleep(1 * time.Second)
+	}
+}
+
+/*
+Initialize the info variable and set the starting values from all the assets loaded to the
+variable.
+*/
+func (h *Handler) SetInfoStartValues() {
+	h.Info = make([]assets.DataInfo, len(h.Al))
+
+	for ai, a := range h.Al {
+		h.Info[ai].UUID = a.SimID
+		h.Info[ai].Name = a.Name
+		h.Info[ai].Status = assets.Inactive
+		h.Info[ai].Power = 0
+		h.Info[ai].PowerFactor = 0
+		h.Info[ai].Energy = 0
 	}
 }
 

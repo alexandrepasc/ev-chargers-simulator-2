@@ -59,12 +59,6 @@ func (m *Modbus) Start(c []chan common.Channel, q chan bool) {
 	m.logger.log(lm, m.L.Get(text.ModbusServerStarted), assets.Info)
 
 	for {
-		switch m.Asset.Type {
-		case simulator.Pm:
-			m.pmCycle(c)
-		case simulator.Evc:
-		}
-
 		select {
 		case <-q:
 			var errS = m.s.Stop()
@@ -80,6 +74,13 @@ func (m *Modbus) Start(c []chan common.Channel, q chan bool) {
 			return
 		default:
 			break
+		}
+
+		switch m.Asset.Type {
+		case simulator.Pm:
+			m.pmCycle(c)
+
+		case simulator.Evc:
 		}
 
 		time.Sleep(1 * time.Second)
