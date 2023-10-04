@@ -37,7 +37,6 @@ It returns an array of boolean channels ([]chan bool), one for each simulator ru
 */
 func (h *Handler) Start() []chan bool {
 	h.Channel = make([]chan common.Channel, len(h.Al))
-	h.Info = make([]assets.DataInfo, len(h.Al))
 	h.Quit = make([]chan bool, len(h.Al))
 
 	for i, a := range h.Al {
@@ -180,6 +179,23 @@ func (h *Handler) receiver(cl []chan common.Channel, s chan bool) {
 		}
 
 		time.Sleep(1 * time.Second)
+	}
+}
+
+/*
+Initialize the info variable and set the starting values from all the assets loaded to the
+variable.
+*/
+func (h *Handler) SetInfoStartValues() {
+	h.Info = make([]assets.DataInfo, len(h.Al))
+
+	for ai, a := range h.Al {
+		h.Info[ai].UUID = a.SimID
+		h.Info[ai].Name = a.Name
+		h.Info[ai].Status = assets.Inactive
+		h.Info[ai].Power = 0
+		h.Info[ai].PowerFactor = 0
+		h.Info[ai].Energy = 0
 	}
 }
 

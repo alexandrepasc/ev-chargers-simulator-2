@@ -34,11 +34,14 @@ func main() {
 
 	h := handler.Handler{
 		L:      t,
+		Al:     s.GetSimulators(),
+		Ml:     m.GetModels(),
 		Addr:   g.CSAddr,
 		Port:   g.CSPort,
 		HostIP: g.HostIP,
 		Tout:   g.ConnTimeout,
 	}
+	h.SetInfoStartValues()
 
 	var a = api.API{
 		Lang:        t,
