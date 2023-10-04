@@ -1,9 +1,9 @@
 # Electric Vehicle Charging Simulator User Manual
 
-|         |             |
-| ------- | ----------- |
-| Product | **v0.17.9** |
-| Manual  | **Rev1**    |
+|         |    Version   |
+| ------- | ------------ |
+| Product | **v0.17.10** |
+| Manual  | **Rev1**     |
 
 <div class="page"/>
 
@@ -476,7 +476,15 @@ POST http://{apiAddr}:{apiPort}/simulators/stop
 ```
 
 #### /simulators/status
-During the assets execution there is a way to retreive some information about the status of all of them. With the following endpoint all the assets are returned in the response body with the state of each.
+During the application execution there is a way to retreive some information about the status of all of the EV Chargers configured. With the following endpoint the assets are returned in the response body with the state of each.
+
+- `total`: Total number of assets
+- `assets`: List of assets
+	- `id`: Asset identifier
+	- `name`: Asset name
+	- `state`: State of the asset (acive, inactive)
+	- `power`: Current asset power
+	- `energy`: Energy consumption of the execution
 
 ```
 GET http://{apiAddr}:{apiPort}/simulators/status
