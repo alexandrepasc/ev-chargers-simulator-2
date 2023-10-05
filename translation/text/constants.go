@@ -43,6 +43,9 @@ const (
 	DeleteSimConfFileError        Key = "DeleteSimConfFileError"        // Not able to delete the configuration file
 	DeleteSimConfFile             Key = "DeleteSimConfFile"             // Delete simulator configuration file
 	Ocpp16SimConfFileMoreEvse     Key = "Ocpp16SimConfFileMoreEvse"     // Ocpp 1.6 only can handle 1 evse per charge point error
+	EvcMissingPhasesError         Key = "EvcMissingPhasesError"         // The phases property is required
+	EvcMissingCurrentTypeError    Key = "EvcMissingCurrentTypeError"    // The current type property is required
+	EvcMissingEvsesError          Key = "EvcMissingEvsesError"          // The evses property is required
 	OpenSimConfFileError          Key = "OpenSimConfFileError"          // Error opening the simulator configuration file
 	WriteSimConfFileError         Key = "WriteSimConfFileError"         // Error writing the simulator configuration file
 	InternalServerError           Key = "InternalServerError"           // API message returned when something breaks
