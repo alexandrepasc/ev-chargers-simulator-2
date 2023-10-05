@@ -79,6 +79,14 @@ func (s *Simulator) CreateSimConf(a *Asset) (ok bool, msg string, na *Asset) {
 		return false, s.L.Get(text.CreateSimConfFileNameExists), &Asset{}
 	}
 
+	if a.Type == Evc {
+		var o, m = validateEvcFields(a, s.L)
+
+		if !o {
+			return false, m, &Asset{}
+		}
+	}
+
 	ok, f := generateFile(s.Scp, a.Name, s.L)
 
 	if !ok {
@@ -320,4 +328,64 @@ func marshalAssetToJSON(a *Asset) (ok bool, b []byte) {
 	}
 
 	return true, b
+}
+
+/*
+Execute the validation to the required properties of the evc asset type. Returns true (bool) and
+an empty string if every validation pass, and returns false and the error message if it fails.
+
+a	-	Asset structure (*Asset)
+
+l	-	Translation module (translation.Translation)
+*/
+func validateEvcFields(a *Asset, l translation.Translation) (ok bool, msg string) {
+	if !containsInt64(PhasesList, int64(a.Phases)) {
+		return false, l.Get(text.EvcMissingPhasesError)
+	}
+
+	if !containsString(CurrentTypeList, string(a.CurrentType)) {
+		return false, l.Get(text.EvcMissingCurrentTypeError)
+	}
+
+	if len(a.Evses) == 0 {
+		return false, l.Get(text.EvcMissingEvsesError)
+	}
+
+	return true, ""
+}
+
+/*
+Runs the list of int64 and checks if the value matches any of the list items, if it match return
+true (bool) if not returns false.
+
+il	-	List of data to validate ([]int64)
+
+c	-	Item to be checked if exists in the list (int64)
+*/
+func containsInt64(il []int64, v int64) bool {
+	for _, i := range il {
+		if i == v {
+			return true
+		}
+	}
+
+	return false
+}
+
+/*
+Runs the list of string and checks if the value matches any of the list items, if it match return
+true (bool) if not returns false.
+
+sl	-	List of data to validate ([]string)
+
+c	-	Item to be checked if exists in the list (string)
+*/
+func containsString(sl []string, v string) bool {
+	for _, s := range sl {
+		if s == v {
+			return true
+		}
+	}
+
+	return false
 }
