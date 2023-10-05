@@ -21,6 +21,6 @@ const (
 )
 
 var (
-	PhasesList      = []int64{1, 3}
-	CurrentTypeList = []string{"ac", "dc"}
+	PhasesList      = []int64{1, 3}        // List of accepted phase values
+	CurrentTypeList = []string{"ac", "dc"} // List of accepted current type values
 )
