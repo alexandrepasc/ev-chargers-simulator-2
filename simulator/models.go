@@ -3,20 +3,20 @@ package simulator
 import "github.com/google/uuid"
 
 type Asset struct {
-	SimID           uuid.UUID     `json:"simId" validate:"required"`                                // Simulator identifier
-	Name            string        `json:"name" validate:"required"`                                 // Simulator name
-	Type            AssetType     `json:"type" validate:"required,oneof=evc pm"`                    // Type of the asset that the configuration will be used to (evc, pm)
-	Protocol        Protocol      `json:"protocol" validate:"required,oneof=ocpp201 ocpp16 modbus"` // Protocol used by the asset
-	Model           uuid.UUID     `json:"model"`                                                    // Id of the configuration file set in the model's folder
-	Port            string        `json:"port,omitempty"`                                           // Communication ip port
-	CPId            string        `json:"cPId,omitempty"`                                           // Charge point id to identify the unit (used in the ocpp protocol)
-	StartCharging   bool          `json:"startCharging" validate:"boolean"`                         // Set the asset to start charging behaviour by itself
-	Phases          Phases        `json:"phases" validate:"required,oneof=1 3"`                     // Phases number
-	PhaseRotation   PhaseRotation `json:"phaseRotation" validate:"required"`                        // The asset phase rotation, if the asset is DC the value should be NotApplicable
-	CurrentType     CurrentType   `json:"curentType" validate:"required,oneof=ac dc"`               // Type of current of the asset (AC or DC)
-	AuthorizeRemote bool          `json:"authorizeRemote" validate:"required,boolean"`              // Configurataion AuthorizeRemoteTxRequests
-	AuthList        bool          `json:"authList" validate:"required,boolean"`                     // Enable or disable authorization local list
-	Evses           []Evse        `json:"evses" validate:"required"`                                // List of evses that the asset has
+	SimID           uuid.UUID     `json:"simId" validate:"required"`                                                             // Simulator identifier
+	Name            string        `json:"name" validate:"required"`                                                              // Simulator name
+	Type            AssetType     `json:"type" validate:"required,oneof=evc pm"`                                                 // Type of the asset that the configuration will be used to (evc, pm)
+	Protocol        Protocol      `json:"protocol" validate:"required,oneof=ocpp201 ocpp16 modbus"`                              // Protocol used by the asset
+	Model           uuid.UUID     `json:"model"`                                                                                 // Id of the configuration file set in the model's folder
+	Port            string        `json:"port,omitempty"`                                                                        // Communication ip port
+	CPId            string        `json:"cPId,omitempty"`                                                                        // Charge point id to identify the unit (used in the ocpp protocol)
+	StartCharging   bool          `json:"startCharging" validate:"boolean"`                                                      // Set the asset to start charging behaviour by itself
+	Phases          Phases        `json:"phases" validate:"oneof=1 3"`                                                           // Phases number
+	PhaseRotation   PhaseRotation `json:"phaseRotation" validate:"required,oneof=NotApplicable Unknown RST RTS SRT STR TRS TSR"` // The asset phase rotation, if the asset is DC the value should be NotApplicable
+	CurrentType     CurrentType   `json:"curentType" validate:"oneof=ac dc"`                                                     // Type of current of the asset (AC or DC)
+	AuthorizeRemote bool          `json:"authorizeRemote" validate:"boolean"`                                                    // Configurataion AuthorizeRemoteTxRequests
+	AuthList        bool          `json:"authList" validate:"boolean"`                                                           // Enable or disable authorization local list
+	Evses           []Evse        `json:"evses" validate:"required"`                                                             // List of evses that the asset has
 }
 
 type Evse struct {
