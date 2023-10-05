@@ -19,3 +19,8 @@ const (
 	TRS           PhaseRotation = "TRS"           // L3 L1 L2
 	TSR           PhaseRotation = "TSR"           // L3 L2 L1
 )
+
+var (
+	PhasesList      = []int64{1, 3}
+	CurrentTypeList = []string{"ac", "dc"}
+)

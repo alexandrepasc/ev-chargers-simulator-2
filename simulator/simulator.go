@@ -79,6 +79,14 @@ func (s *Simulator) CreateSimConf(a *Asset) (ok bool, msg string, na *Asset) {
 		return false, s.L.Get(text.CreateSimConfFileNameExists), &Asset{}
 	}
 
+	if a.Type == Evc {
+		var o, m = validateEvcFields(a, s.L)
+
+		if !o {
+			return false, m, &Asset{}
+		}
+	}
+
 	ok, f := generateFile(s.Scp, a.Name, s.L)
 
 	if !ok {
@@ -320,4 +328,40 @@ func marshalAssetToJSON(a *Asset) (ok bool, b []byte) {
 	}
 
 	return true, b
+}
+
+func validateEvcFields(a *Asset, l translation.Translation) (ok bool, msg string) {
+	if !containsInt64(PhasesList, int64(a.Phases)) {
+		return false, l.Get(text.EvcMissingPhasesError)
+	}
+
+	if !containsString(CurrentTypeList, string(a.CurrentType)) {
+		return false, l.Get(text.EvcMissingCurrentTypeError)
+	}
+
+	if len(a.Evses) == 0 {
+		return false, l.Get(text.EvcMissingEvsesError)
+	}
+
+	return true, ""
+}
+
+func containsInt64(il []int64, v int64) bool {
+	for _, i := range il {
+		if i == v {
+			return true
+		}
+	}
+
+	return false
+}
+
+func containsString(sl []string, v string) bool {
+	for _, s := range sl {
+		if s == v {
+			return true
+		}
+	}
+
+	return false
 }
