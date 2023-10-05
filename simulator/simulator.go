@@ -137,7 +137,7 @@ func (s *Simulator) UpdateSimConf(id uuid.UUID, a *Asset) (ok bool, msg string, 
 
 		if a.Type == Evc {
 			var o, m = validateEvcFields(a, s.L)
-	
+
 			if !o {
 				return false, m, http.StatusBadRequest, &Asset{}
 			}
