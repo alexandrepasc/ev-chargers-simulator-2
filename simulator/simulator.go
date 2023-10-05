@@ -59,6 +59,14 @@ func (s *Simulator) CreateSimConf(a *Asset) (ok bool, msg string, na *Asset) {
 		return false, err.Error(), &Asset{}
 	}
 
+	if a.Type == Evc {
+		var o, m = validateEvcFields(a, s.L)
+
+		if !o {
+			return false, m, &Asset{}
+		}
+	}
+
 	if a.Protocol == Ocpp16 {
 		if len(a.Evses) > 1 {
 			return false, s.L.Get(text.Ocpp16SimConfFileMoreEvse), &Asset{}
@@ -77,14 +85,6 @@ func (s *Simulator) CreateSimConf(a *Asset) (ok bool, msg string, na *Asset) {
 
 	if !nm {
 		return false, s.L.Get(text.CreateSimConfFileNameExists), &Asset{}
-	}
-
-	if a.Type == Evc {
-		var o, m = validateEvcFields(a, s.L)
-
-		if !o {
-			return false, m, &Asset{}
-		}
 	}
 
 	ok, f := generateFile(s.Scp, a.Name, s.L)
@@ -133,6 +133,14 @@ func (s *Simulator) UpdateSimConf(id uuid.UUID, a *Asset) (ok bool, msg string, 
 			common.Log("UpdateSimConf").Error(e)
 
 			return false, s.L.Get(text.RequestBodyDoesntMatch), http.StatusBadRequest, &Asset{}
+		}
+
+		if a.Type == Evc {
+			var o, m = validateEvcFields(a, s.L)
+	
+			if !o {
+				return false, m, http.StatusBadRequest, &Asset{}
+			}
 		}
 
 		if a.Protocol == Ocpp16 {
