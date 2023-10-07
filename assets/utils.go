@@ -7,6 +7,7 @@ import (
 
 	"github.com/alexandrepasc/ev-chargers-simulator-2/common"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/simulator"
+	"github.com/lorenzodonini/ocpp-go/ws"
 )
 
 /*
@@ -251,6 +252,27 @@ func GetMaxPower(e *simulator.Evse) int64 {
 	}
 
 	return p
+}
+
+// TODO: reuse this to all the ocpp models
+/*
+Create a new websocket client with the parameter timeout and returns it (*ws.Client).
+
+t	-	Timeout value (int64)
+*/
+func GetWsClient(t int64) (wsc *ws.Client) {
+	wsc = ws.NewClient()
+
+	var cfg = ws.ClientTimeoutConfig{
+		HandshakeTimeout: time.Second * time.Duration(t),
+		WriteWait:        time.Second * time.Duration(t),
+		PingPeriod:       time.Second * time.Duration(t),
+		PongWait:         time.Second * time.Duration(t),
+	}
+
+	wsc.SetTimeoutConfig(cfg)
+
+	return wsc
 }
 
 func IsDataChanClosed(ch <-chan common.Channel) bool {

@@ -11,17 +11,20 @@ import (
 	"github.com/alexandrepasc/ev-chargers-simulator-2/translation"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/translation/text"
 	"github.com/google/uuid"
+	ocpp201 "github.com/lorenzodonini/ocpp-go/ocpp2.0.1"
 )
 
 type Ocpp201 struct {
-	lock   sync.RWMutex            // Lock goroutine
-	logger logging                 // Logging
-	L      translation.Translation // translation
-	CSAddr string                  // Central system ip address
-	CSPort string                  // Central system port
-	Asset  *simulator.Asset        // Asset data for the simulator
-	Mod    *model.Struct           // Model data for the asset
-	st     time.Time               // Simulator start timestamp
+	lock    sync.RWMutex            // Lock goroutine
+	logger  logging                 // Logging
+	L       translation.Translation // Translation module
+	Timeout int64                   // Connection timeout
+	CSAddr  string                  // Central system ip address
+	CSPort  string                  // Central system port
+	Asset   *simulator.Asset        // Asset data for the simulator
+	Mod     *model.Struct           // Model data for the asset
+	s       ocpp201.ChargingStation // Ocpp charging station server
+	st      time.Time               // Simulator start timestamp
 }
 
 /*
@@ -40,18 +43,29 @@ func (o *Ocpp201) Start(c chan common.Channel, q chan bool) {
 		file:   common.DefGSPath,
 	}
 
+	var lm = map[string]string{
+		"protocol":  string(o.Asset.Protocol),
+		"function":  "Start",
+		"simulator": o.Asset.Name,
+	}
+
+	o.s = setupServer(o.Asset.CPId, o.Timeout, o)
+
+	sErr := o.s.Start("ws://" + o.CSAddr + ":" + o.CSPort)
+
+	if sErr != nil {
+		o.logger.log(lm, sErr.Error(), assets.Error)
+		return
+	}
+
+	o.logger.log(lm, o.L.Get(text.Ocpp201ServerStarted), assets.Info)
+
 	for {
 		select {
 		case <-q:
-			o.logger.log(
-				map[string]string{
-					"protocol":  string(o.Asset.Protocol),
-					"function":  "Start",
-					"simulator": o.Asset.Name,
-				},
-				o.L.Get(text.Ocpp201ServerStopped), assets.Info)
+			o.logger.log(lm, o.L.Get(text.Ocpp201ServerStopped), assets.Info)
 
-			// o.s.Stop()
+			o.s.Stop()
 
 			close(q)
 			close(c)
@@ -62,6 +76,22 @@ func (o *Ocpp201) Start(c chan common.Channel, q chan bool) {
 			channelComm(c, o.Asset.Evses, o.st, o.Asset.Name, o.Asset.SimID)
 		}
 	}
+}
+
+/*
+Create the websocket and the charge station server, define the configurations for the charge
+station and the handler. Returns the server after (ocpp201.ChargingStation).
+
+id	-	Charge station identifier (string)
+
+t	-	Timeout value to set to the server (int64)
+
+h	-	Ocpp201 project structure (*Ocpp201)
+*/
+func setupServer(id string, t int64, _ *Ocpp201) (s ocpp201.ChargingStation) {
+	s = ocpp201.NewChargingStation(id, nil, assets.GetWsClient(t))
+
+	return s
 }
 
 /*
