@@ -41,6 +41,8 @@ var EnGB = map[Key]string{
 	DeleteSimConfFileError:        "Unexpected error deleting the simulator configuration file.",
 	DeleteSimConfFile:             "Delete simulator configuration file.",
 	Ocpp16SimConfFileMoreEvse:     "The OCPP 1.6 only supports one EVSE per charge points.",
+	Ocpp201ServerStarted:          "OCPP 2.0.1 server started.",
+	Ocpp201ServerStopped:          "OCPP 2.0.1 server stopped.",
 	EvcMissingPhasesError:         "The Phases property is required for this asset type and the value must be valid.",
 	EvcMissingCurrentTypeError:    "The Current Type property is required for this asset type and the value must be valid.",
 	EvcMissingEvsesError:          "The Evses property is required for this asset type and the list must not be empty.",
