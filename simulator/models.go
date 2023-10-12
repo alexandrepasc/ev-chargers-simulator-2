@@ -13,7 +13,7 @@ type Asset struct {
 	StartCharging   bool          `json:"startCharging" validate:"boolean"`                                                                 // Set the asset to start charging behaviour by itself
 	Phases          Phases        `json:"phases,omitempty" validate:"omitempty,oneof=1 3"`                                                  // Phases number
 	PhaseRotation   PhaseRotation `json:"phaseRotation,omitempty" validate:"omitempty,oneof=NotApplicable Unknown RST RTS SRT STR TRS TSR"` // The asset phase rotation, if the asset is DC the value should be NotApplicable
-	CurrentType     CurrentType   `json:"curentType,omitempty" validate:"omitempty,oneof=ac dc"`                                            // Type of current of the asset (AC or DC)
+	CurrentType     CurrentType   `json:"currentType,omitempty" validate:"omitempty,oneof=ac dc"`                                           // Type of current of the asset (AC or DC)
 	AuthorizeRemote bool          `json:"authorizeRemote" validate:"boolean"`                                                               // Configurataion AuthorizeRemoteTxRequests
 	AuthList        bool          `json:"authList" validate:"boolean"`                                                                      // Enable or disable authorization local list
 	Evses           []Evse        `json:"evses,omitempty" validate:"omitempty,required"`                                                    // List of evses that the asset has
