@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/alexandrepasc/ev-chargers-simulator-2/common"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/translation"
@@ -64,6 +65,12 @@ func (s *Simulator) CreateSimConf(a *Asset) (ok bool, msg string, na *Asset) {
 
 		if !o {
 			return false, m, &Asset{}
+		}
+	}
+
+	if strings.Contains(string(a.Protocol), "ocpp") {
+		if a.CPId == "" {
+			return false, s.L.Get(text.OcppMissingCPIdError), &Asset{}
 		}
 	}
 
@@ -133,6 +140,12 @@ func (s *Simulator) UpdateSimConf(id uuid.UUID, a *Asset) (ok bool, msg string, 
 			common.Log("UpdateSimConf").Error(e)
 
 			return false, s.L.Get(text.RequestBodyDoesntMatch), http.StatusBadRequest, &Asset{}
+		}
+
+		if strings.Contains(string(a.Protocol), "ocpp") {
+			if a.CPId == "" {
+				return false, s.L.Get(text.OcppMissingCPIdError), http.StatusBadRequest, &Asset{}
+			}
 		}
 
 		if a.Type == Evc {

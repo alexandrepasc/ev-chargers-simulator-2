@@ -48,6 +48,7 @@ const (
 	EvcMissingPhasesError         Key = "EvcMissingPhasesError"         // The phases property is required
 	EvcMissingCurrentTypeError    Key = "EvcMissingCurrentTypeError"    // The current type property is required
 	EvcMissingEvsesError          Key = "EvcMissingEvsesError"          // The evses property is required
+	OcppMissingCPIdError          Key = "OcppMissingCPIdError"          // The CP Id property is required
 	OpenSimConfFileError          Key = "OpenSimConfFileError"          // Error opening the simulator configuration file
 	WriteSimConfFileError         Key = "WriteSimConfFileError"         // Error writing the simulator configuration file
 	InternalServerError           Key = "InternalServerError"           // API message returned when something breaks

@@ -37,6 +37,7 @@ var PtPT = map[Key]string{
 	EvcMissingPhasesError:         "A propriedade Phases (phases) é necessária para este tipo e o valor tem de ser válido.",
 	EvcMissingCurrentTypeError:    "A propriedade Current Type (currentType) é necessária para este tipo e o valor tem de ser válido.",
 	EvcMissingEvsesError:          "A propriedade Evses (evses) é necessária para este tipo e a lista não pode estar vazia.",
+	OcppMissingCPIdError:          "A propriedade CPId (cPId) é obrigatória para este protocolo e o valor tem de ser válido.",
 	OpenSimConfFileError:          "Erro a abrir o ficheiro de configuração do simulador.",
 	WriteSimConfFileError:         "Erro a escrever no ficheiro de configuração do simulador.",
 	InternalServerError:           "Algo correu muito mal.",

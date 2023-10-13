@@ -209,7 +209,7 @@ func TestPostSimulatorsRequiredFields(t *testing.T) {
 		Sim: sim,
 	}
 
-	bn, bt, bp, bst, bph, bc, be := postSimulatorsRequiredFields()
+	bn, bt, bp, bst, bph, bc, be, bci := postSimulatorsRequiredFields()
 
 	// name
 	j, _ := json.Marshal(bn)
@@ -277,6 +277,16 @@ func TestPostSimulatorsRequiredFields(t *testing.T) {
 
 	// evses
 	j, _ = json.Marshal(be)
+	b = bytes.NewReader(j)
+
+	req, _ = http.NewRequest(string(mPost), ep, b)
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+
+	// cpid
+	j, _ = json.Marshal(bci)
 	b = bytes.NewReader(j)
 
 	req, _ = http.NewRequest(string(mPost), ep, b)
@@ -399,6 +409,7 @@ func TestNotAblePostSimulatorsOcpp16MoreThen1Evse(t *testing.T) {
 		Name:            "test2",
 		Type:            simulator.Evc,
 		Protocol:        simulator.Ocpp16,
+		CPId:            "12344",
 		StartCharging:   true,
 		Phases:          simulator.One,
 		PhaseRotation:   simulator.NotApplicable,
@@ -464,6 +475,7 @@ func TestPostSimulatorsOcpp201MoreThen1Evse(t *testing.T) {
 		Name:            "name",
 		Type:            simulator.Evc,
 		Protocol:        simulator.Ocpp201,
+		CPId:            "12344",
 		StartCharging:   true,
 		Phases:          simulator.One,
 		PhaseRotation:   simulator.NotApplicable,
@@ -535,6 +547,7 @@ func TestPutSimulators(t *testing.T) {
 			Name:          "test1",
 			Type:          simulator.Evc,
 			Protocol:      simulator.Ocpp201,
+			CPId:          "12344",
 			StartCharging: true,
 			Phases:        simulator.One,
 			PhaseRotation: simulator.NotApplicable,
@@ -556,6 +569,7 @@ func TestPutSimulators(t *testing.T) {
 	e := simulator.Asset{
 		Type:            simulator.Pm,
 		Protocol:        simulator.Ocpp16,
+		CPId:            "12344",
 		StartCharging:   false,
 		Phases:          simulator.Three,
 		PhaseRotation:   simulator.RST,
@@ -715,6 +729,7 @@ func TestPutSimulatorsChangeNameID(t *testing.T) {
 			Name:          "test1",
 			Type:          simulator.Evc,
 			Protocol:      simulator.Ocpp201,
+			CPId:          "12344",
 			StartCharging: true,
 			Phases:        simulator.One,
 			PhaseRotation: simulator.NotApplicable,
@@ -739,6 +754,7 @@ func TestPutSimulatorsChangeNameID(t *testing.T) {
 		Name:            "testing",
 		Type:            simulator.Pm,
 		Protocol:        simulator.Ocpp16,
+		CPId:            "12344",
 		StartCharging:   false,
 		Phases:          simulator.Three,
 		PhaseRotation:   simulator.RST,
@@ -839,6 +855,7 @@ func TestNotAblePutSimulatorsOcpp16MoreThen1Evse(t *testing.T) {
 			Name:          "test1",
 			Type:          simulator.Evc,
 			Protocol:      simulator.Ocpp201,
+			CPId:          "12344",
 			StartCharging: true,
 			Phases:        simulator.One,
 			PhaseRotation: simulator.NotApplicable,
@@ -860,6 +877,7 @@ func TestNotAblePutSimulatorsOcpp16MoreThen1Evse(t *testing.T) {
 	e := simulator.Asset{
 		Type:            simulator.Pm,
 		Protocol:        simulator.Ocpp16,
+		CPId:            "12344",
 		StartCharging:   false,
 		Phases:          simulator.Three,
 		PhaseRotation:   simulator.RST,
@@ -914,6 +932,7 @@ func TestPutSimulatorsOcpp201MoreThen1Evse(t *testing.T) {
 			Name:          "test1",
 			Type:          simulator.Evc,
 			Protocol:      simulator.Ocpp16,
+			CPId:          "12344",
 			StartCharging: true,
 			Phases:        simulator.One,
 			PhaseRotation: simulator.NotApplicable,
@@ -935,6 +954,7 @@ func TestPutSimulatorsOcpp201MoreThen1Evse(t *testing.T) {
 	e := simulator.Asset{
 		Type:            simulator.Pm,
 		Protocol:        simulator.Ocpp201,
+		CPId:            "12344",
 		StartCharging:   false,
 		Phases:          simulator.Three,
 		PhaseRotation:   simulator.RST,
@@ -1851,7 +1871,7 @@ func generateConfFiles(tmp string, al []*simulator.Asset, ml []*model.Struct) {
 	}
 }
 
-func postSimulatorsRequiredFields() (bn, bt, bp, bst, bph, bc, be simulator.Asset) { //nolint:gocritic // because tests
+func postSimulatorsRequiredFields() (bn, bt, bp, bst, bph, bc, be, bci simulator.Asset) { //nolint:gocritic // because tests
 	// name
 	bn = simulator.Asset{
 		Type:          simulator.Evc,
@@ -1922,7 +1942,17 @@ func postSimulatorsRequiredFields() (bn, bt, bp, bst, bph, bc, be simulator.Asse
 		CurrentType:   simulator.Ac,
 	}
 
-	return bn, bt, bp, bst, bph, bc, be
+	// cpid
+	bci = simulator.Asset{
+		Name:          "name",
+		Type:          simulator.Evc,
+		Protocol:      simulator.Ocpp201,
+		StartCharging: true,
+		Phases:        simulator.One,
+		CurrentType:   simulator.Ac,
+	}
+
+	return bn, bt, bp, bst, bph, bc, be, bci
 }
 
 func postModelsRequiredFields() (bn, bt model.Struct) {

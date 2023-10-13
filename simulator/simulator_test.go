@@ -59,6 +59,7 @@ func TestCreateSimulator(t *testing.T) {
 		Type:            simulator.Evc,
 		Protocol:        simulator.Ocpp201,
 		Model:           mID,
+		CPId:            "12344",
 		StartCharging:   true,
 		Phases:          simulator.One,
 		PhaseRotation:   simulator.NotApplicable,
@@ -234,6 +235,24 @@ func TestCreateSimulatorRequiredFields(t *testing.T) {
 	assert.NoFileExists(t, nf)
 
 	assert.False(t, ok)
+
+	// cpid
+	sim = simulator.Asset{
+		Name:        "name",
+		Type:        simulator.Evc,
+		Protocol:    simulator.Ocpp16,
+		Model:       mID,
+		Phases:      simulator.One,
+		CurrentType: simulator.Ac,
+	}
+
+	ok, _, _ = s.CreateSimConf(&sim)
+
+	nf = tmp + defSCFolder + "/" + sim.Name + ".json"
+
+	assert.NoFileExists(t, nf)
+
+	assert.False(t, ok)
 }
 
 func TestCanNotCreateSimulatorSameName(t *testing.T) {
@@ -314,6 +333,7 @@ func TestCanNotCreateSimulatorOcpp16MoreThen1Evse(t *testing.T) {
 		Type:            simulator.Evc,
 		Protocol:        simulator.Ocpp16,
 		Model:           mID,
+		CPId:            "12344",
 		StartCharging:   true,
 		Phases:          simulator.Three,
 		PhaseRotation:   simulator.RST,
@@ -360,7 +380,7 @@ func TestCanNotCreateSimulatorOcpp16MoreThen1Evse(t *testing.T) {
 
 	assert.False(t, ok)
 
-	assert.Equal(t, msg, s.L.Get(text.Ocpp16SimConfFileMoreEvse))
+	assert.Equal(t, s.L.Get(text.Ocpp16SimConfFileMoreEvse), msg)
 
 	nf := tmp + defSCFolder + "/" + sim.Name + ".json"
 
@@ -383,6 +403,7 @@ func TestCreateSimulatorOcpp201MoreThen1Evse(t *testing.T) {
 		Type:            simulator.Evc,
 		Protocol:        simulator.Ocpp201,
 		Model:           mID,
+		CPId:            "12344",
 		StartCharging:   true,
 		Phases:          simulator.Three,
 		PhaseRotation:   simulator.RST,
@@ -460,6 +481,7 @@ func TestUpdateSimulator(t *testing.T) {
 	a := simulator.Asset{
 		Type:            simulator.Pm,
 		Protocol:        simulator.Ocpp16,
+		CPId:            "12344",
 		Phases:          simulator.Three,
 		PhaseRotation:   simulator.RST,
 		CurrentType:     simulator.Dc,
@@ -600,6 +622,7 @@ func TestUpdateSimulatorChangeName(t *testing.T) {
 		Name:            "asdasd",
 		Type:            simulator.Pm,
 		Protocol:        simulator.Ocpp16,
+		CPId:            "12344",
 		Phases:          simulator.Three,
 		PhaseRotation:   simulator.NotApplicable,
 		CurrentType:     simulator.Dc,
@@ -661,6 +684,7 @@ func TestCanNotUpdateSimulatorOcpp16MoreThen1Evse(t *testing.T) {
 	a := simulator.Asset{
 		Type:            simulator.Evc,
 		Protocol:        simulator.Ocpp16,
+		CPId:            "12344",
 		Phases:          simulator.Three,
 		PhaseRotation:   simulator.RST,
 		CurrentType:     simulator.Dc,
@@ -735,6 +759,7 @@ func TestUpdateSimulatorOcpp201MoreThen1Evse(t *testing.T) {
 	a := simulator.Asset{
 		Type:            simulator.Pm,
 		Protocol:        simulator.Ocpp201,
+		CPId:            "12344",
 		Phases:          simulator.Three,
 		PhaseRotation:   simulator.RST,
 		CurrentType:     simulator.Dc,
