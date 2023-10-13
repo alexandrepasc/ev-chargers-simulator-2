@@ -8,6 +8,7 @@ import (
 	"github.com/alexandrepasc/ev-chargers-simulator-2/assets"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/assets/modbus"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/assets/ocpp16"
+	"github.com/alexandrepasc/ev-chargers-simulator-2/assets/ocpp201"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/common"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/simulator"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/simulator/model"
@@ -64,6 +65,16 @@ func (h *Handler) Start() []chan bool {
 
 			go s.Start(h.Channel[i], h.Quit[i])
 		case simulator.Ocpp201:
+			var s = ocpp201.Ocpp201{
+				L:       h.L,
+				Timeout: h.Tout,
+				CSAddr:  h.Addr,
+				CSPort:  h.Port,
+				Asset:   a,
+				Mod:     m,
+			}
+
+			go s.Start(h.Channel[i], h.Quit[i])
 
 		case simulator.Modbus:
 		}
