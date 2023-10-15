@@ -1,12 +1,17 @@
 package assets
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"math"
+	"os"
 	"strconv"
 	"time"
 
 	"github.com/alexandrepasc/ev-chargers-simulator-2/common"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/simulator"
+	"github.com/alexandrepasc/ev-chargers-simulator-2/translation"
+	"github.com/alexandrepasc/ev-chargers-simulator-2/translation/text"
 	"github.com/lorenzodonini/ocpp-go/ws"
 )
 
@@ -262,6 +267,59 @@ t	-	Timeout value (int64)
 */
 func GetWsClient(t int64) (wsc *ws.Client) {
 	wsc = ws.NewClient()
+
+	var cfg = ws.ClientTimeoutConfig{
+		HandshakeTimeout: time.Second * time.Duration(t),
+		WriteWait:        time.Second * time.Duration(t),
+		PingPeriod:       time.Second * time.Duration(t),
+		PongWait:         time.Second * time.Duration(t),
+	}
+
+	wsc.SetTimeoutConfig(cfg)
+
+	return wsc
+}
+
+/*
+Create a new tls websocket client with the parameters sent and returns it (*ws.Client).
+
+t		-	Timeout value (int64)
+
+ca		-	CA certificate path and name (string)
+
+cert	-	Client certificate path and name (string)
+
+key		-	Client certificate key path and name (string)
+
+l		-	Translation language (translation.Translation)
+*/
+func GetTLSWsClient(t int64, ca, cert, key string, l translation.Translation) (wsc *ws.Client) {
+	var certPool, errcp = x509.SystemCertPool()
+	if errcp != nil {
+		common.Log("GetTlsWsClient").Error(errcp)
+	}
+
+	var caCert, errca = os.ReadFile(ca)
+	if errca != nil {
+		common.Log("GetTlsWsClient").Fatal(errca)
+	} else if !certPool.AppendCertsFromPEM(caCert) {
+		common.Log("GetTlsWsClient").Info(l.Get(text.CaCertNotFound))
+	}
+
+	var clientCertificates []tls.Certificate
+
+	var certificate, errc = tls.LoadX509KeyPair(cert, key)
+	if errc != nil {
+		common.Log("GetTlsWsClient").Fatal(errc)
+	}
+
+	clientCertificates = []tls.Certificate{certificate}
+
+	wsc = ws.NewTLSClient(&tls.Config{
+		RootCAs:      certPool,
+		Certificates: clientCertificates,
+		MinVersion:   tls.VersionTLS13,
+	})
 
 	var cfg = ws.ClientTimeoutConfig{
 		HandshakeTimeout: time.Second * time.Duration(t),

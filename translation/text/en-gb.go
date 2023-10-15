@@ -55,4 +55,5 @@ var EnGB = map[Key]string{
 	UUIDParsingError:              "The id could not be parsed to UUID.",
 	ModbusServerStarted:           "Modbus server started.",
 	ModbusServerStopped:           "Modbus server stopped.",
+	CaCertNotFound:                "No ca.cert file found, will use system CA certificates.",
 }

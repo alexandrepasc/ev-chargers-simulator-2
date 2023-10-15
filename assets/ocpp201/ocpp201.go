@@ -12,6 +12,8 @@ import (
 	"github.com/alexandrepasc/ev-chargers-simulator-2/translation/text"
 	"github.com/google/uuid"
 	ocpp201 "github.com/lorenzodonini/ocpp-go/ocpp2.0.1"
+	"github.com/lorenzodonini/ocpp-go/ocppj"
+	"github.com/lorenzodonini/ocpp-go/ws"
 )
 
 type Ocpp201 struct {
@@ -49,9 +51,18 @@ func (o *Ocpp201) Start(c chan common.Channel, q chan bool) {
 		"simulator": o.Asset.Name,
 	}
 
-	o.s = setupServer(o.Asset.CPId, o.Timeout, o)
+	// TODO: remove this
+	ocppj.SetLogger(logger)
+	ws.SetLogger(logger)
 
-	sErr := o.s.Start("ws://" + o.CSAddr + ":" + o.CSPort)
+	o.s = setupServer(o.Asset.CPId, o.Timeout, o, o.L)
+
+	var conn = "ws://"
+	if o.Asset.TLS {
+		conn = "wss://"
+	}
+
+	sErr := o.s.Start(conn + o.CSAddr + ":" + o.CSPort)
 
 	if sErr != nil {
 		o.logger.log(lm, sErr.Error(), assets.Error)
@@ -86,10 +97,16 @@ id	-	Charge station identifier (string)
 
 t	-	Timeout value to set to the server (int64)
 
-h	-	Ocpp201 project structure (*Ocpp201)
+o	-	Ocpp201 project structure (*Ocpp201)
+
+l	-	Translation language (translation.Translation)
 */
-func setupServer(id string, t int64, _ *Ocpp201) (s ocpp201.ChargingStation) {
-	s = ocpp201.NewChargingStation(id, nil, assets.GetWsClient(t))
+func setupServer(id string, t int64, o *Ocpp201, l translation.Translation) (s ocpp201.ChargingStation) {
+	if o.Asset.TLS {
+		s = ocpp201.NewChargingStation(id, nil, assets.GetTLSWsClient(t, o.Mod.CA, o.Mod.Cert, o.Mod.Key, l))
+	} else {
+		s = ocpp201.NewChargingStation(id, nil, assets.GetWsClient(t))
+	}
 
 	return s
 }

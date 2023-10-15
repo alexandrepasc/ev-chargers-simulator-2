@@ -46,4 +46,5 @@ var PtPT = map[Key]string{
 	UUIDParsingError:              "O id não pôde ser convertido para UUID.",
 	ModbusServerStarted:           "O servidor de modbus iniciou.",
 	ModbusServerStopped:           "O servidor de modbus parou.",
+	CaCertNotFound:                "Não foi encontrado nenhum ficheiro ca.cert, irá ser usado os certificados CA do sistema.",
 }
