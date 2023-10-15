@@ -47,6 +47,7 @@ var EnGB = map[Key]string{
 	EvcMissingCurrentTypeError:    "The Current Type (currentType) property is required for this asset type and the value must be valid.",
 	EvcMissingEvsesError:          "The Evses property (evses) is required for this asset type and the list must not be empty.",
 	OcppMissingCPIdError:          "The CPId property (cPId) is required for this asset protocol and the value must be valid.",
+	MissingModelError:             "The Model property (model) is required for this asset and the value must be valid.",
 	OpenSimConfFileError:          "Error opening the simulator configuration file.",
 	WriteSimConfFileError:         "Error writing the simulator configuration file.",
 	InternalServerError:           "Something went very wrong.",

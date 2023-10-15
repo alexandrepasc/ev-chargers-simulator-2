@@ -49,6 +49,7 @@ const (
 	EvcMissingCurrentTypeError    Key = "EvcMissingCurrentTypeError"    // The current type property is required
 	EvcMissingEvsesError          Key = "EvcMissingEvsesError"          // The evses property is required
 	OcppMissingCPIdError          Key = "OcppMissingCPIdError"          // The CP Id property is required
+	MissingModelError             Key = "MissingModelError"             // The model property is required
 	OpenSimConfFileError          Key = "OpenSimConfFileError"          // Error opening the simulator configuration file
 	WriteSimConfFileError         Key = "WriteSimConfFileError"         // Error writing the simulator configuration file
 	InternalServerError           Key = "InternalServerError"           // API message returned when something breaks

@@ -67,7 +67,9 @@ Sets the post simulators endpoint controller, it will generate a new sim configu
 c	-	request  context (*gin.context)
 */
 func (s *Simulators) postSimulators(c *gin.Context) {
-	var b = simulator.Asset{}
+	var b = simulator.Asset{
+		TLS: false,
+	}
 
 	err := c.BindJSON(&b)
 

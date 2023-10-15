@@ -253,6 +253,29 @@ func TestCreateSimulatorRequiredFields(t *testing.T) {
 	assert.NoFileExists(t, nf)
 
 	assert.False(t, ok)
+
+	// model
+	sim = simulator.Asset{
+		Name:        "name",
+		Type:        simulator.Evc,
+		Protocol:    simulator.Ocpp16,
+		TLS:         true,
+		CPId:        "12344",
+		Phases:      simulator.One,
+		CurrentType: simulator.Ac,
+		Evses:       []simulator.Evse{{}},
+	}
+
+	msg := ""
+	ok, msg, _ = s.CreateSimConf(&sim)
+
+	assert.Equal(t, s.L.Get(text.MissingModelError), msg)
+
+	nf = tmp + defSCFolder + "/" + sim.Name + ".json"
+
+	assert.NoFileExists(t, nf)
+
+	assert.False(t, ok)
 }
 
 func TestCanNotCreateSimulatorSameName(t *testing.T) {
@@ -804,6 +827,81 @@ func TestUpdateSimulatorOcpp201MoreThen1Evse(t *testing.T) {
 	ab, _, c, aa := s.UpdateSimConf(id, &a)
 
 	assert.True(t, ab)
+
+	assert.Equal(t, http.StatusOK, c)
+
+	assert.Equal(t, id, aa.SimID)
+
+	assert.Equal(t, "sim0", aa.Name)
+
+	assert.Equal(t, simulator.Pm, aa.Type)
+
+	assert.Equal(t, simulator.Ocpp201, aa.Protocol)
+
+	assert.Equal(t, simulator.Three, aa.Phases)
+
+	assert.Equal(t, simulator.RST, aa.PhaseRotation)
+
+	p := tmp + defSCFolder + "/sim0.json"
+
+	af := readFile(p)
+
+	assert.Equal(t, id, af.SimID)
+
+	assert.Equal(t, "sim0", af.Name)
+
+	assert.Equal(t, simulator.Pm, af.Type)
+
+	assert.Equal(t, simulator.Ocpp201, af.Protocol)
+
+	assert.Equal(t, simulator.Three, af.Phases)
+
+	assert.Equal(t, simulator.RST, af.PhaseRotation)
+}
+
+func TestUpdateSimulatorTlsModelRequired(t *testing.T) {
+	tmp := t.TempDir()
+
+	createFolders(tmp)
+
+	s := before(tmp)
+
+	generateAssetConfFiles(1, tmp)
+
+	id, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0")
+
+	a := simulator.Asset{
+		Type:            simulator.Pm,
+		Protocol:        simulator.Ocpp201,
+		TLS:             true,
+		CPId:            "12344",
+		Phases:          simulator.Three,
+		PhaseRotation:   simulator.RST,
+		CurrentType:     simulator.Dc,
+		AuthorizeRemote: true,
+		AuthList:        true,
+		Evses: []simulator.Evse{
+			{},
+		},
+	}
+
+	ab, am, c, aa := s.UpdateSimConf(id, &a)
+
+	assert.False(t, ab)
+
+	assert.Equal(t, s.L.Get(text.MissingModelError), am)
+
+	assert.Equal(t, http.StatusBadRequest, c)
+
+	assert.Empty(t, aa)
+
+	a.Model = uuid.MustParse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0")
+
+	ab, am, c, aa = s.UpdateSimConf(id, &a)
+
+	assert.True(t, ab)
+
+	assert.Empty(t, am)
 
 	assert.Equal(t, http.StatusOK, c)
 

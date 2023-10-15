@@ -80,6 +80,10 @@ func (s *Simulator) CreateSimConf(a *Asset) (ok bool, msg string, na *Asset) {
 		}
 	}
 
+	if a.TLS && a.Model.String() == "00000000-0000-0000-0000-000000000000" {
+		return false, s.L.Get(text.MissingModelError), &Asset{}
+	}
+
 	var al = s.GetSimulators()
 
 	var nm = true
@@ -160,6 +164,10 @@ func (s *Simulator) UpdateSimConf(id uuid.UUID, a *Asset) (ok bool, msg string, 
 			if len(a.Evses) > 1 {
 				return false, s.L.Get(text.Ocpp16SimConfFileMoreEvse), http.StatusBadRequest, &Asset{}
 			}
+		}
+
+		if a.TLS && a.Model.String() == "00000000-0000-0000-0000-000000000000" {
+			return false, s.L.Get(text.MissingModelError), http.StatusBadRequest, &Asset{}
 		}
 
 		common.Log("UpdateSimConf").Info(s.L.Get(text.UpdateSimConfFile))

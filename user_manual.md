@@ -2,7 +2,7 @@
 
 |         |    Version   |
 | ------- | ------------ |
-| Product | **v0.18.10** |
+| Product | **v0.18.11** |
 | Manual  | **Rev1**     |
 
 <div class="page"/>
@@ -161,6 +161,9 @@ The **Models** are used to add configurations to the simulators, for example the
 - `id`: Model identifier
 - `name`: Model name
 - `type`: Type of asset that this config can be used (ocpp, modbus)
+- `ca`: CA certificate location and name, full path
+- `cert`: Client certificate location and name, full path
+- `key`: Client certificate key location and name, full path
 - `ocpp`: Ocpp structure
   - `serialNumb`: Equipment serial number
   - `model`: Equipment model name
@@ -271,6 +274,7 @@ Now looking into the core of this application, the **Simulators**. There is on e
 - `name`: Simulator name
 - `type`: Type of the asset that the configuration will be used to (evc, pm)
 - `protocol`: Protocol used by the asset
+- `tls`: Set if the asset will connect using TLS or not, the default is false (if yes model is required)
 - `model`: Id of the configuration file set in the model's folder
 - `port`: Communication ip port
 - `cPId`: Charge point id to identify the unit (used in the ocpp protocol)

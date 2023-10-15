@@ -6,6 +6,9 @@ type Struct struct {
 	ID     uuid.UUID   `json:"id" validate:"required"`   // Model identifier
 	Name   string      `json:"name" validate:"required"` // Model name
 	Type   Type        `json:"type" validate:"required"` // Type of asset that this config can be used (ocpp, modbus)
+	CA     string      `json:"ca,omitempty"`             // CA certificate location and name, full path
+	Cert   string      `json:"cert,omitempty"`           // Client certificate location and name, full path
+	Key    string      `json:"key,omitempty"`            // Client certificate key location and name, full path
 	Ocpp   OcppModel   `json:"ocpp,omitempty"`           // Ocpp structure
 	Modbus ModbusModel `json:"modbus,omitempty"`         // Modbus structure
 }

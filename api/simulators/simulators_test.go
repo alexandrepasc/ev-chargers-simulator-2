@@ -184,6 +184,8 @@ func TestPostSimulators(t *testing.T) {
 
 	assert.Equal(t, body.Protocol, a.Protocol)
 
+	assert.False(t, body.TLS)
+
 	assert.Equal(t, body.Phases, a.Phases)
 
 	assert.Equal(t, body.PhaseRotation, a.PhaseRotation)
