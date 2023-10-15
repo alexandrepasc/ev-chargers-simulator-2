@@ -68,7 +68,8 @@ c	-	request  context (*gin.context)
 */
 func (s *Simulators) postSimulators(c *gin.Context) {
 	var b = simulator.Asset{
-		TLS: false,
+		TLS:       false,
+		BasicAuth: false,
 	}
 
 	err := c.BindJSON(&b)
