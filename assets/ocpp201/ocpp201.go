@@ -103,9 +103,21 @@ l	-	Translation language (translation.Translation)
 */
 func setupServer(id string, t int64, o *Ocpp201, l translation.Translation) (s ocpp201.ChargingStation) {
 	if o.Asset.TLS {
-		s = ocpp201.NewChargingStation(id, nil, assets.GetTLSWsClient(t, o.Mod.CA, o.Mod.Cert, o.Mod.Key, l))
+		s = ocpp201.NewChargingStation(id, nil, assets.GetTLSWsClient(
+			t,
+			o.Mod.CA,
+			o.Mod.Cert,
+			o.Mod.Key,
+			o.Asset.BasicAuth,
+			o.Mod.BasicAuth,
+			l,
+		))
 	} else {
-		s = ocpp201.NewChargingStation(id, nil, assets.GetWsClient(t))
+		s = ocpp201.NewChargingStation(id, nil, assets.GetWsClient(
+			t,
+			o.Asset.BasicAuth,
+			o.Mod.BasicAuth,
+		))
 	}
 
 	return s

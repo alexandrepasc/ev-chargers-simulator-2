@@ -10,6 +10,7 @@ import (
 
 	"github.com/alexandrepasc/ev-chargers-simulator-2/common"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/simulator"
+	"github.com/alexandrepasc/ev-chargers-simulator-2/simulator/model"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/translation"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/translation/text"
 	"github.com/lorenzodonini/ocpp-go/ws"
@@ -264,9 +265,17 @@ func GetMaxPower(e *simulator.Evse) int64 {
 Create a new websocket client with the parameter timeout and returns it (*ws.Client).
 
 t	-	Timeout value (int64)
+
+ba	-	If the client should have the http basic authentication (bool)
+
+c	-	The http basic authentication credentials (model.BasicAuth)
 */
-func GetWsClient(t int64) (wsc *ws.Client) {
+func GetWsClient(t int64, ba bool, c model.BasicAuth) (wsc *ws.Client) {
 	wsc = ws.NewClient()
+
+	if ba {
+		wsc.SetBasicAuth(c.Username, c.Password)
+	}
 
 	var cfg = ws.ClientTimeoutConfig{
 		HandshakeTimeout: time.Second * time.Duration(t),
@@ -291,9 +300,13 @@ cert	-	Client certificate path and name (string)
 
 key		-	Client certificate key path and name (string)
 
+ba		-	If the client should have the http basic authentication (bool)
+
+c		-	The http basic authentication credentials (model.BasicAuth)
+
 l		-	Translation language (translation.Translation)
 */
-func GetTLSWsClient(t int64, ca, cert, key string, l translation.Translation) (wsc *ws.Client) {
+func GetTLSWsClient(t int64, ca, cert, key string, ba bool, c model.BasicAuth, l translation.Translation) (wsc *ws.Client) {
 	var certPool, errcp = x509.SystemCertPool()
 	if errcp != nil {
 		common.Log("GetTlsWsClient").Error(errcp)
@@ -320,6 +333,10 @@ func GetTLSWsClient(t int64, ca, cert, key string, l translation.Translation) (w
 		Certificates: clientCertificates,
 		MinVersion:   tls.VersionTLS13,
 	})
+
+	if ba {
+		wsc.SetBasicAuth(c.Username, c.Password)
+	}
 
 	var cfg = ws.ClientTimeoutConfig{
 		HandshakeTimeout: time.Second * time.Duration(t),
