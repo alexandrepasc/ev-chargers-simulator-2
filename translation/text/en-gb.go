@@ -56,4 +56,5 @@ var EnGB = map[Key]string{
 	ModbusServerStarted:           "Modbus server started.",
 	ModbusServerStopped:           "Modbus server stopped.",
 	CaCertNotFound:                "No ca.cert file found, will use system CA certificates.",
+	StartUpConfigurations:         "Set startup configurations.",
 }

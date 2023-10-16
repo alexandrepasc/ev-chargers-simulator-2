@@ -10,7 +10,6 @@ import (
 
 	"github.com/alexandrepasc/ev-chargers-simulator-2/common"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/simulator"
-	"github.com/alexandrepasc/ev-chargers-simulator-2/simulator/model"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/translation"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/translation/text"
 	"github.com/lorenzodonini/ocpp-go/ws"
@@ -266,15 +265,17 @@ Create a new websocket client with the parameter timeout and returns it (*ws.Cli
 
 t	-	Timeout value (int64)
 
-ba	-	If the client should have the http basic authentication (bool)
+u		-	Basic authentication username (string)
 
-c	-	The http basic authentication credentials (model.BasicAuth)
+p		-	Basic authentication password (string)
+
+ba	-	If the client should have the http basic authentication (bool)
 */
-func GetWsClient(t int64, ba bool, c model.BasicAuth) (wsc *ws.Client) {
+func GetWsClient(t int64, u, p string, ba bool) (wsc *ws.Client) {
 	wsc = ws.NewClient()
 
 	if ba {
-		wsc.SetBasicAuth(c.Username, c.Password)
+		wsc.SetBasicAuth(u, p)
 	}
 
 	var cfg = ws.ClientTimeoutConfig{
@@ -300,13 +301,15 @@ cert	-	Client certificate path and name (string)
 
 key		-	Client certificate key path and name (string)
 
-ba		-	If the client should have the http basic authentication (bool)
+u		-	Basic authentication username (string)
 
-c		-	The http basic authentication credentials (model.BasicAuth)
+p		-	Basic authentication password (string)
+
+ba		-	If the client should have the http basic authentication (bool)
 
 l		-	Translation language (translation.Translation)
 */
-func GetTLSWsClient(t int64, ca, cert, key string, ba bool, c model.BasicAuth, l translation.Translation) (wsc *ws.Client) {
+func GetTLSWsClient(t int64, ca, cert, key, u, p string, ba bool, l translation.Translation) (wsc *ws.Client) {
 	var certPool, errcp = x509.SystemCertPool()
 	if errcp != nil {
 		common.Log("GetTlsWsClient").Error(errcp)
@@ -335,7 +338,7 @@ func GetTLSWsClient(t int64, ca, cert, key string, ba bool, c model.BasicAuth, l
 	})
 
 	if ba {
-		wsc.SetBasicAuth(c.Username, c.Password)
+		wsc.SetBasicAuth(u, p)
 	}
 
 	var cfg = ws.ClientTimeoutConfig{

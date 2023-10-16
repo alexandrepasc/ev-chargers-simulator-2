@@ -58,4 +58,5 @@ const (
 	ModbusServerStarted           Key = "ModbusServerStarted"           // Simulator modbus server started
 	ModbusServerStopped           Key = "ModbusServerStopped"           // Simulator modbus server stopped
 	CaCertNotFound                Key = "CaCertNotFound"                // No CA certificate found
+	StartUpConfigurations         Key = "StartUpConfigurations"         // Set the startup configurations for an asset
 )

@@ -47,4 +47,5 @@ var PtPT = map[Key]string{
 	ModbusServerStarted:           "O servidor de modbus iniciou.",
 	ModbusServerStopped:           "O servidor de modbus parou.",
 	CaCertNotFound:                "Não foi encontrado nenhum ficheiro ca.cert, irá ser usado os certificados CA do sistema.",
+	StartUpConfigurations:         "Definir configurações de arranque.",
 }
