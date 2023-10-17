@@ -6,39 +6,61 @@ import (
 )
 
 // TODO: the correct implementation of the variables could have multiple structures for the same key, review the documentation
-var configKeys = map[string]provisioning.GetVariableResult{
+var configKeys = map[string]variable{
 	"ItemsPerMessage": {
-		Variable: types.Variable{
-			Name:     "ItemsPerMessage",
-			Instance: "GetVariables",
+		item: provisioning.GetVariableResult{
+			Variable: types.Variable{
+				Name:     "ItemsPerMessage",
+				Instance: "GetVariables",
+			},
+			Component: types.Component{
+				Name: "DeviceDataCtrlr",
+			},
+			AttributeStatus: provisioning.GetVariableStatusAccepted,
+			AttributeType:   types.AttributeActual,
+			AttributeValue:  "",
 		},
-		Component: types.Component{
-			Name: "DeviceDataCtrlr",
-		},
-		AttributeStatus: provisioning.GetVariableStatusAccepted,
-		AttributeType:   types.AttributeActual,
-		AttributeValue:  "",
+		mutability: ReadOnly,
 	},
 	"BasicAuthPassword": {
-		Variable: types.Variable{
-			Name: "BasicAuthPassword",
+		item: provisioning.GetVariableResult{
+			Variable: types.Variable{
+				Name: "BasicAuthPassword",
+			},
+			Component: types.Component{
+				Name: "SecurityCtrlr",
+			},
+			AttributeStatus: provisioning.GetVariableStatusAccepted,
+			AttributeType:   types.AttributeActual,
+			AttributeValue:  "",
 		},
-		Component: types.Component{
-			Name: "SecurityCtrlr",
-		},
-		AttributeStatus: provisioning.GetVariableStatusAccepted,
-		AttributeType:   types.AttributeActual,
-		AttributeValue:  "",
+		mutability: WriteOnly,
 	},
 	"Identity": {
-		Variable: types.Variable{
-			Name: "Identity",
+		item: provisioning.GetVariableResult{
+			Variable: types.Variable{
+				Name: "Identity",
+			},
+			Component: types.Component{
+				Name: "SecurityCtrlr",
+			},
+			AttributeStatus: provisioning.GetVariableStatusAccepted,
+			AttributeType:   types.AttributeActual,
+			AttributeValue:  "",
 		},
-		Component: types.Component{
-			Name: "SecurityCtrlr",
-		},
-		AttributeStatus: provisioning.GetVariableStatusAccepted,
-		AttributeType:   types.AttributeActual,
-		AttributeValue:  "",
+		mutability: ReadWrite,
 	},
 }
+
+type variable struct {
+	item       provisioning.GetVariableResult
+	mutability mutability
+}
+
+type mutability string
+
+const (
+	ReadOnly  mutability = "r"
+	WriteOnly mutability = "w"
+	ReadWrite mutability = "rw"
+)

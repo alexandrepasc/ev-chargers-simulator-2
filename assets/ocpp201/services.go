@@ -50,7 +50,7 @@ func (o *Ocpp201) getConfigurationKeys(k []provisioning.GetVariableData) (r []pr
 		"simulator": o.Asset.Name,
 	}
 
-	var m, errm = strconv.ParseInt(o.ConfigKeys["ItemsPerMessage"].AttributeValue, 10, 64)
+	var m, errm = strconv.ParseInt(o.ConfigKeys["ItemsPerMessage"].item.AttributeValue, 10, 64)
 	if errm != nil {
 		o.logger.log(lm, errm, assets.Fatal)
 
@@ -64,7 +64,7 @@ func (o *Ocpp201) getConfigurationKeys(k []provisioning.GetVariableData) (r []pr
 	for _, ki := range k {
 		var _, ok = o.ConfigKeys[ki.Variable.Name]
 
-		// The variable is not listed in the configuration keys
+		// B06.FR.07 The variable is not listed in the configuration keys
 		if !ok {
 			var uk = provisioning.GetVariableResult{
 				Variable:        ki.Variable,
@@ -78,8 +78,8 @@ func (o *Ocpp201) getConfigurationKeys(k []provisioning.GetVariableData) (r []pr
 			continue
 		}
 
-		// The requested variable component is not equal to the configuration key
-		if o.ConfigKeys[ki.Variable.Name].Component.Name != ki.Component.Name || o.ConfigKeys[ki.Variable.Name].Component.Instance != ki.Component.Instance {
+		// B06.FR.06 The requested variable component is not equal to the configuration key
+		if o.ConfigKeys[ki.Variable.Name].item.Component.Name != ki.Component.Name || o.ConfigKeys[ki.Variable.Name].item.Component.Instance != ki.Component.Instance {
 			var uk = provisioning.GetVariableResult{
 				Variable:        ki.Variable,
 				Component:       ki.Component,
@@ -92,8 +92,8 @@ func (o *Ocpp201) getConfigurationKeys(k []provisioning.GetVariableData) (r []pr
 			continue
 		}
 
-		// The requested attribute type is not equal to the configuraion key
-		if o.ConfigKeys[ki.Variable.Name].AttributeType != ki.AttributeType {
+		// B06.FR.08 The requested attribute type is not equal to the configuraion key
+		if o.ConfigKeys[ki.Variable.Name].item.AttributeType != ki.AttributeType {
 			var uk = provisioning.GetVariableResult{
 				Variable:        ki.Variable,
 				Component:       ki.Component,
@@ -106,7 +106,21 @@ func (o *Ocpp201) getConfigurationKeys(k []provisioning.GetVariableData) (r []pr
 			continue
 		}
 
-		r = append(r, o.ConfigKeys[ki.Variable.Name])
+		// B06.FR.09 The requested variable is write only
+		if o.ConfigKeys[ki.Variable.Name].mutability == WriteOnly {
+			var uk = provisioning.GetVariableResult{
+				Variable:        ki.Variable,
+				Component:       ki.Component,
+				AttributeStatus: provisioning.GetVariableStatusRejected,
+				AttributeType:   ki.AttributeType,
+			}
+
+			r = append(r, uk)
+
+			continue
+		}
+
+		r = append(r, o.ConfigKeys[ki.Variable.Name].item)
 	}
 
 	return r, nil
@@ -122,12 +136,17 @@ v	-	The value to set in the configuration (string)
 
 s	-	The status of the configuration variable (provisioning.GetVariableStatus)
 */
-func getConfigKey(n, v string, s provisioning.GetVariableStatus) provisioning.GetVariableResult {
-	return provisioning.GetVariableResult{
-		Variable:        configKeys[n].Variable,
-		Component:       configKeys[n].Component,
+func getConfigKey(n, v string, s provisioning.GetVariableStatus) variable {
+	var item = provisioning.GetVariableResult{
+		Variable:        configKeys[n].item.Variable,
+		Component:       configKeys[n].item.Component,
 		AttributeStatus: s,
-		AttributeType:   configKeys[n].AttributeType,
+		AttributeType:   configKeys[n].item.AttributeType,
 		AttributeValue:  v,
+	}
+
+	return variable{
+		item:       item,
+		mutability: configKeys[n].mutability,
 	}
 }

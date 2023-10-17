@@ -12,23 +12,22 @@ import (
 	"github.com/alexandrepasc/ev-chargers-simulator-2/translation/text"
 	"github.com/google/uuid"
 	ocpp201 "github.com/lorenzodonini/ocpp-go/ocpp2.0.1"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/provisioning"
 	"github.com/lorenzodonini/ocpp-go/ocppj"
 	"github.com/lorenzodonini/ocpp-go/ws"
 )
 
 type Ocpp201 struct {
-	lock       sync.RWMutex                              // Lock goroutine
-	logger     logging                                   // Logging
-	L          translation.Translation                   // Translation module
-	Timeout    int64                                     // Connection timeout
-	CSAddr     string                                    // Central system ip address
-	CSPort     string                                    // Central system port
-	Asset      *simulator.Asset                          // Asset data for the simulator
-	Mod        *model.Struct                             // Model data for the asset
-	s          ocpp201.ChargingStation                   // Ocpp charging station server
-	ConfigKeys map[string]provisioning.GetVariableResult // Configuration key map
-	st         time.Time                                 // Simulator start timestamp
+	lock       sync.RWMutex            // Lock goroutine
+	logger     logging                 // Logging
+	L          translation.Translation // Translation module
+	Timeout    int64                   // Connection timeout
+	CSAddr     string                  // Central system ip address
+	CSPort     string                  // Central system port
+	Asset      *simulator.Asset        // Asset data for the simulator
+	Mod        *model.Struct           // Model data for the asset
+	s          ocpp201.ChargingStation // Ocpp charging station server
+	ConfigKeys map[string]variable     // Configuration key map
+	st         time.Time               // Simulator start timestamp
 }
 
 /*
@@ -112,16 +111,16 @@ func setupServer(id string, t int64, o *Ocpp201, l translation.Translation) (s o
 			o.Mod.CA,
 			o.Mod.Cert,
 			o.Mod.Key,
-			o.ConfigKeys["Identity"].AttributeValue,
-			o.ConfigKeys["BasicAuthPassword"].AttributeValue,
+			o.ConfigKeys["Identity"].item.AttributeValue,
+			o.ConfigKeys["BasicAuthPassword"].item.AttributeValue,
 			o.Asset.BasicAuth,
 			l,
 		))
 	} else {
 		s = ocpp201.NewChargingStation(id, nil, assets.GetWsClient(
 			t,
-			o.ConfigKeys["Identity"].AttributeValue,
-			o.ConfigKeys["BasicAuthPassword"].AttributeValue,
+			o.ConfigKeys["Identity"].item.AttributeValue,
+			o.ConfigKeys["BasicAuthPassword"].item.AttributeValue,
 			o.Asset.BasicAuth,
 		))
 	}
