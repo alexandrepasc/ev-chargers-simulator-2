@@ -64,9 +64,8 @@ func (o *Ocpp201) getConfigurationKeys(k []provisioning.GetVariableData) (r []pr
 	for _, ki := range k {
 		var _, ok = o.ConfigKeys[ki.Variable.Name]
 
-		if ok {
-			r = append(r, o.ConfigKeys[ki.Variable.Name])
-		} else {
+		// The variable is not listed in the configuration keys
+		if !ok {
 			var uk = provisioning.GetVariableResult{
 				Variable:        ki.Variable,
 				Component:       ki.Component,
@@ -75,7 +74,39 @@ func (o *Ocpp201) getConfigurationKeys(k []provisioning.GetVariableData) (r []pr
 			}
 
 			r = append(r, uk)
+
+			continue
 		}
+
+		// The requested variable component is not equal to the configuration key
+		if o.ConfigKeys[ki.Variable.Name].Component.Name != ki.Component.Name || o.ConfigKeys[ki.Variable.Name].Component.Instance != ki.Component.Instance {
+			var uk = provisioning.GetVariableResult{
+				Variable:        ki.Variable,
+				Component:       ki.Component,
+				AttributeStatus: provisioning.GetVariableStatusUnknownComponent,
+				AttributeType:   ki.AttributeType,
+			}
+
+			r = append(r, uk)
+
+			continue
+		}
+
+		// The requested attribute type is not equal to the configuraion key
+		if o.ConfigKeys[ki.Variable.Name].AttributeType != ki.AttributeType {
+			var uk = provisioning.GetVariableResult{
+				Variable:        ki.Variable,
+				Component:       ki.Component,
+				AttributeStatus: provisioning.GetVariableStatusNotSupported,
+				AttributeType:   ki.AttributeType,
+			}
+
+			r = append(r, uk)
+
+			continue
+		}
+
+		r = append(r, o.ConfigKeys[ki.Variable.Name])
 	}
 
 	return r, nil
