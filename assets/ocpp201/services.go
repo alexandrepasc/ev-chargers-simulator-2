@@ -78,6 +78,20 @@ func (o *Ocpp201) getConfigurationKeys(k []provisioning.GetVariableData) (r []pr
 			continue
 		}
 
+		// B06.FR.09 The requested variable is write only
+		if o.ConfigKeys[ki.Variable.Name].mutability == WriteOnly {
+			var uk = provisioning.GetVariableResult{
+				Variable:        ki.Variable,
+				Component:       ki.Component,
+				AttributeStatus: provisioning.GetVariableStatusRejected,
+				AttributeType:   ki.AttributeType,
+			}
+
+			r = append(r, uk)
+
+			continue
+		}
+
 		// B06.FR.06 The requested variable component is not equal to the configuration key
 		if o.ConfigKeys[ki.Variable.Name].item.Component.Name != ki.Component.Name || o.ConfigKeys[ki.Variable.Name].item.Component.Instance != ki.Component.Instance {
 			var uk = provisioning.GetVariableResult{
@@ -98,20 +112,6 @@ func (o *Ocpp201) getConfigurationKeys(k []provisioning.GetVariableData) (r []pr
 				Variable:        ki.Variable,
 				Component:       ki.Component,
 				AttributeStatus: provisioning.GetVariableStatusNotSupported,
-				AttributeType:   ki.AttributeType,
-			}
-
-			r = append(r, uk)
-
-			continue
-		}
-
-		// B06.FR.09 The requested variable is write only
-		if o.ConfigKeys[ki.Variable.Name].mutability == WriteOnly {
-			var uk = provisioning.GetVariableResult{
-				Variable:        ki.Variable,
-				Component:       ki.Component,
-				AttributeStatus: provisioning.GetVariableStatusRejected,
 				AttributeType:   ki.AttributeType,
 			}
 
