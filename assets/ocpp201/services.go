@@ -2,6 +2,7 @@ package ocpp201
 
 import (
 	"strconv"
+	"time"
 
 	"github.com/alexandrepasc/ev-chargers-simulator-2/assets"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/translation/text"
@@ -31,6 +32,51 @@ func (o *Ocpp201) setStartUpConfigurations() {
 	o.ConfigKeys["BasicAuthPassword"] = getConfigKey("BasicAuthPassword", o.Mod.BasicAuth.Password, status)
 
 	o.ConfigKeys["Identity"] = getConfigKey("Identity", o.Mod.BasicAuth.Username, status)
+}
+
+/*
+Sends the boot notification to the central system.
+
+r	-	Reason for the boot notification (provisioning.BootReason)
+*/
+func (o *Ocpp201) sendBootNotification(r provisioning.BootReason) {
+	var lm = map[string]string{
+		"protocol":  string(o.Asset.Protocol),
+		"function":  "sendBootNotification",
+		"feature":   provisioning.BootNotificationFeatureName,
+		"simulator": o.Asset.Name,
+		"sender":    assets.CP,
+		"type":      assets.Request,
+	}
+
+	var req = provisioning.BootNotificationRequest{
+		Reason: r,
+		ChargingStation: provisioning.ChargingStationType{
+			SerialNumber:    o.Mod.Ocpp.SerialNumb,
+			Model:           o.Mod.Ocpp.Model,
+			VendorName:      o.Mod.Ocpp.Vendor,
+			FirmwareVersion: o.Mod.Ocpp.FwVersion,
+			Modem: &provisioning.ModemType{
+				Iccid: o.Mod.Ocpp.Modem.Iccid,
+				Imsi:  o.Mod.Ocpp.Modem.Imsi,
+			},
+		},
+	}
+
+	o.logger.log(lm, req, assets.Info)
+
+	var res, err = o.s.SendRequest(req)
+
+	lm["sender"] = assets.CS
+	lm["type"] = assets.Response
+
+	if err != nil {
+		o.logger.log(lm, err, assets.Error)
+	}
+
+	o.logger.log(lm, res.(*provisioning.BootNotificationResponse), assets.Info)
+
+	o.st = time.Now()
 }
 
 /*

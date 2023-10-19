@@ -211,7 +211,17 @@ func (h *Handler) SetInfoStartValues() {
 }
 
 // TODO: Handle modbus protocol
-/**/
+/*
+Returns the module structure in the case if matches the selected id in the asset configuration
+and if matches the protocol (*model.Struct). In case there is no module configured it will return
+the default module.
+
+id	-	Asset model identifier (uuid.UUID)
+
+p	-	Asset protocol (simulator.Protocol)
+
+al	-	Model configuration list ([]*model.Struct)
+*/
 func getModel(id uuid.UUID, p simulator.Protocol, al []*model.Struct) *model.Struct {
 	for _, m := range al {
 		if m.ID == id {

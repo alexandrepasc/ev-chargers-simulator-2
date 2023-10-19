@@ -12,6 +12,7 @@ import (
 	"github.com/alexandrepasc/ev-chargers-simulator-2/translation/text"
 	"github.com/google/uuid"
 	ocpp201 "github.com/lorenzodonini/ocpp-go/ocpp2.0.1"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/provisioning"
 	"github.com/lorenzodonini/ocpp-go/ocppj"
 	"github.com/lorenzodonini/ocpp-go/ws"
 )
@@ -68,11 +69,13 @@ func (o *Ocpp201) Start(c chan common.Channel, q chan bool) {
 	sErr := o.s.Start(conn + o.CSAddr + ":" + o.CSPort)
 
 	if sErr != nil {
-		o.logger.log(lm, sErr.Error(), assets.Error)
+		o.logger.log(lm, sErr, assets.Error)
 		return
 	}
 
 	o.logger.log(lm, o.L.Get(text.Ocpp201ServerStarted), assets.Info)
+
+	o.sendBootNotification(provisioning.BootReasonPowerUp)
 
 	for {
 		select {
