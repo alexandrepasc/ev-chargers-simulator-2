@@ -7,7 +7,9 @@ import (
 	"github.com/alexandrepasc/ev-chargers-simulator-2/assets"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/translation/text"
 	"github.com/lorenzodonini/ocpp-go/ocpp"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/availability"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/provisioning"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
 	"github.com/lorenzodonini/ocpp-go/ocppj"
 )
 
@@ -72,11 +74,80 @@ func (o *Ocpp201) sendBootNotification(r provisioning.BootReason) {
 
 	if err != nil {
 		o.logger.log(lm, err, assets.Error)
+		return
 	}
 
 	o.logger.log(lm, res.(*provisioning.BootNotificationResponse), assets.Info)
 
 	o.st = time.Now()
+
+	o.processBootResponse(res.(*provisioning.BootNotificationResponse))
+}
+
+/*
+Have the logic needed to process the boot notification response.
+
+res	-	The cs boot response (provisioning.BootNotificationResponse)
+*/
+func (o *Ocpp201) processBootResponse(res *provisioning.BootNotificationResponse) {
+	if res.Status == provisioning.RegistrationStatusAccepted {
+		if res.Interval > 0 {
+			o.ConfigKeys["HeartbeatInterval"] = getConfigKey("HeartbeatInterval", strconv.Itoa(res.Interval), provisioning.GetVariableStatusAccepted)
+		}
+
+		for ei, e := range o.Asset.Evses {
+			for ci, c := range e.Connectors {
+				o.sendStatusNotification(
+					e.ID,
+					c.ID,
+					o.Asset.Evses[ei].Connectors[ci].Data[o.Asset.Evses[ei].Connectors[ci].DP.Position].ChargingState,
+				)
+			}
+		}
+	}
+}
+
+/*
+Send the connector status information to the cs.
+
+eID	-	EVSE identifier (int64)
+
+cID	-	Connector identifier (int64)
+
+cS	-	Connector status (int64)
+*/
+func (o *Ocpp201) sendStatusNotification(eID, cID, cS int64) {
+	var lm = map[string]string{
+		"protocol":  string(o.Asset.Protocol),
+		"function":  "sendStatusNotification",
+		"feature":   availability.StatusNotificationFeatureName,
+		"simulator": o.Asset.Name,
+		"sender":    assets.CP,
+		"type":      assets.Request,
+	}
+
+	var req = availability.StatusNotificationRequest{
+		Timestamp: &types.DateTime{
+			Time: time.Now(),
+		},
+		EvseID:          int(eID),
+		ConnectorID:     int(cID),
+		ConnectorStatus: availability.ConnectorStatus(assets.Status[cS]),
+	}
+
+	o.logger.log(lm, req, assets.Info)
+
+	var res, err = o.s.SendRequest(req)
+
+	lm["sender"] = assets.CS
+	lm["type"] = assets.Response
+
+	if err != nil {
+		o.logger.log(lm, err, assets.Error)
+		return
+	}
+
+	o.logger.log(lm, res.(*availability.StatusNotificationResponse), assets.Info)
 }
 
 /*

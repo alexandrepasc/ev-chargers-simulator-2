@@ -7,6 +7,19 @@ import (
 
 // TODO: the correct implementation of the variables could have multiple structures for the same key, review the documentation
 var configKeys = map[string]variable{
+	"HeartbeatInterval": {
+		item: provisioning.GetVariableResult{
+			Variable: types.Variable{
+				Name: "HeartbeatInterval",
+			},
+			Component: types.Component{
+				Name: "OCPPCommCtrlr",
+			},
+			AttributeStatus: provisioning.GetVariableStatusAccepted,
+			AttributeValue:  "",
+		},
+		mutability: ReadWrite,
+	},
 	"ItemsPerMessage": {
 		item: provisioning.GetVariableResult{
 			Variable: types.Variable{
