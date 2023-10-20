@@ -18,22 +18,40 @@ Save the configuration keys to the routine asset, and update the values with the
 defined by the user in the asset and module configuration files.
 */
 func (o *Ocpp201) setStartUpConfigurations() {
-	o.ConfigKeys = configKeys
+	o.components = components
 
 	o.logger.log(map[string]string{"protocol": string(o.Asset.Protocol), "function": "setStartUpConfigurations", "simulator": o.Asset.Name},
 		o.L.Get(text.StartUpConfigurations), assets.Info)
 
 	var status = provisioning.GetVariableStatusAccepted
 
-	o.ConfigKeys["ItemsPerMessage"] = getConfigKey("ItemsPerMessage", strconv.FormatInt(assets.DefGetConfigurationMaxKeys, 10), status)
+	o.components["DeviceDataCtrlr"].variables["ItemsPerMessage"] = setComponentVariableValueStatus(
+		"DeviceDataCtrlr",
+		"ItemsPerMessage",
+		strconv.FormatInt(assets.DefGetConfigurationMaxKeys, 10),
+		0,
+		status,
+	)
 
 	if !o.Asset.BasicAuth {
 		status = provisioning.GetVariableStatusNotSupported
 	}
 
-	o.ConfigKeys["BasicAuthPassword"] = getConfigKey("BasicAuthPassword", o.Mod.BasicAuth.Password, status)
+	o.components["SecurityCtrlr"].variables["BasicAuthPassword"] = setComponentVariableValueStatus(
+		"SecurityCtrlr",
+		"BasicAuthPassword",
+		o.Mod.BasicAuth.Password,
+		0,
+		status,
+	)
 
-	o.ConfigKeys["Identity"] = getConfigKey("Identity", o.Mod.BasicAuth.Username, status)
+	o.components["SecurityCtrlr"].variables["Identity"] = setComponentVariableValueStatus(
+		"SecurityCtrlr",
+		"Identity",
+		o.Mod.BasicAuth.Username,
+		0,
+		status,
+	)
 }
 
 /*
@@ -92,7 +110,13 @@ res	-	The cs boot response (provisioning.BootNotificationResponse)
 func (o *Ocpp201) processBootResponse(res *provisioning.BootNotificationResponse) {
 	if res.Status == provisioning.RegistrationStatusAccepted {
 		if res.Interval > 0 {
-			o.ConfigKeys["HeartbeatInterval"] = getConfigKey("HeartbeatInterval", strconv.Itoa(res.Interval), provisioning.GetVariableStatusAccepted)
+			o.components["OCPPCommCtrlr"].variables["HeartbeatInterval"] = setComponentVariableValueStatus(
+				"OCPPCommCtrlr",
+				"HeartbeatInterval",
+				strconv.Itoa(res.Interval),
+				0,
+				provisioning.GetVariableStatusAccepted,
+			)
 		}
 
 		for ei, e := range o.Asset.Evses {
@@ -151,66 +175,39 @@ func (o *Ocpp201) sendStatusNotification(eID, cID, cS int64) {
 }
 
 /*
-Get the configuration keys from the asset, validating if they are known or not
+Get the variables from the asset, validating if they are known or not
 ([]provisioning.GetVariableResult). If there is any problem with the request returns
 the conrresponding error (error).
 
 k	-	The list of variables requested by the cs ([]provisioning.GetVariableData)
 */
-// TODO: validate that the attribute type matches
-// TODO: validate the component value
-func (o *Ocpp201) getConfigurationKeys(k []provisioning.GetVariableData) (r []provisioning.GetVariableResult, err error) {
+func (o *Ocpp201) processGetVariables(k []provisioning.GetVariableData) (r []provisioning.GetVariableResult, err error) {
 	var lm = map[string]string{
 		"protocol":  string(o.Asset.Protocol),
 		"function":  "getConfigurationKeys",
-		"feature":   "GetVariables",
+		"feature":   provisioning.GetVariablesFeatureName,
 		"simulator": o.Asset.Name,
 	}
 
-	var m, errm = strconv.ParseInt(o.ConfigKeys["ItemsPerMessage"].item.AttributeValue, 10, 64)
+	var m, errm = strconv.ParseInt(o.components["DeviceDataCtrlr"].variables["ItemsPerMessage"].item[0].AttributeValue, 10, 64)
 	if errm != nil {
 		o.logger.log(lm, errm, assets.Fatal)
 
 		return nil, errm
 	}
 
+	// B06.FR.16 More elements than the allowed
 	if len(k) > int(m) {
 		return nil, ocpp.NewError(ocppj.OccurrenceConstraintViolation, "", "")
 	}
 
+	// B06.FR.17 More length than the allowed
+	// TODO: not sure how to do this
+
 	for _, ki := range k {
-		var _, ok = o.ConfigKeys[ki.Variable.Name]
-
-		// B06.FR.07 The variable is not listed in the configuration keys
-		if !ok {
-			var uk = provisioning.GetVariableResult{
-				Variable:        ki.Variable,
-				Component:       ki.Component,
-				AttributeStatus: provisioning.GetVariableStatusUnknownVariable,
-				AttributeType:   ki.AttributeType,
-			}
-
-			r = append(r, uk)
-
-			continue
-		}
-
-		// B06.FR.09 The requested variable is write only
-		if o.ConfigKeys[ki.Variable.Name].mutability == WriteOnly {
-			var uk = provisioning.GetVariableResult{
-				Variable:        ki.Variable,
-				Component:       ki.Component,
-				AttributeStatus: provisioning.GetVariableStatusRejected,
-				AttributeType:   ki.AttributeType,
-			}
-
-			r = append(r, uk)
-
-			continue
-		}
-
-		// B06.FR.06 The requested variable component is not equal to the configuration key
-		if o.ConfigKeys[ki.Variable.Name].item.Component.Name != ki.Component.Name || o.ConfigKeys[ki.Variable.Name].item.Component.Instance != ki.Component.Instance {
+		// B06.FR.06 Unknown component
+		var _, okc = components[ki.Component.Name]
+		if !okc {
 			var uk = provisioning.GetVariableResult{
 				Variable:        ki.Variable,
 				Component:       ki.Component,
@@ -223,8 +220,34 @@ func (o *Ocpp201) getConfigurationKeys(k []provisioning.GetVariableData) (r []pr
 			continue
 		}
 
-		// B06.FR.08 The requested attribute type is not equal to the configuraion key
-		if o.ConfigKeys[ki.Variable.Name].item.AttributeType != ki.AttributeType {
+		// B06.FR.07 Unknown variable for the given component
+		var _, okv = components[ki.Component.Name].variables[ki.Variable.Name]
+		if !okv {
+			var uk = provisioning.GetVariableResult{
+				Variable:        ki.Variable,
+				Component:       ki.Component,
+				AttributeStatus: provisioning.GetVariableStatusUnknownVariable,
+				AttributeType:   ki.AttributeType,
+			}
+
+			r = append(r, uk)
+
+			continue
+		}
+
+		// B06.FR.08 Unknown attribute type for the given variable
+		var oka = false
+
+		var index int
+
+		for idx, vi := range components[ki.Component.Name].variables[ki.Variable.Name].item {
+			if ki.AttributeType == vi.AttributeType {
+				oka = true
+				index = idx
+			}
+		}
+
+		if !oka {
 			var uk = provisioning.GetVariableResult{
 				Variable:        ki.Variable,
 				Component:       ki.Component,
@@ -237,33 +260,152 @@ func (o *Ocpp201) getConfigurationKeys(k []provisioning.GetVariableData) (r []pr
 			continue
 		}
 
-		r = append(r, o.ConfigKeys[ki.Variable.Name].item)
+		// B06.FR.09 Write only variable
+		if components[ki.Component.Name].variables[ki.Variable.Name].mutability == WriteOnly {
+			var uk = provisioning.GetVariableResult{
+				Variable:        ki.Variable,
+				Component:       ki.Component,
+				AttributeStatus: provisioning.GetVariableStatusRejected,
+				AttributeType:   ki.AttributeType,
+			}
+
+			r = append(r, uk)
+
+			continue
+		}
+
+		// B06.FR.11 Empty attribute type
+		var okat bool
+
+		switch ki.AttributeType {
+		case types.AttributeActual, types.AttributeTarget, types.AttributeMinSet, types.AttributeMaxSet:
+			okat = true
+		default:
+			okat = false
+		}
+
+		var vn = provisioning.GetVariableResult{
+			Component: components[ki.Component.Name].variables[ki.Variable.Name].item[index].Component,
+			Variable:  components[ki.Component.Name].variables[ki.Variable.Name].item[index].Variable,
+		}
+
+		if !okat {
+			vn.AttributeType = types.AttributeActual
+		} else {
+			vn.AttributeType = components[ki.Component.Name].variables[ki.Variable.Name].item[index].AttributeType
+		}
+
+		// B06.FR.13 No attribute value (at the moment this is created as empty and filled in by the setStartUpConfigurations)
+
+		// B06.FR.14 Instance value provided in the component and/or variable
+		// B06.FR.15 No value or empty string instance in the component and/or variable
+		if ki.Component.Instance != "" {
+			if ki.Component.Instance != components[ki.Component.Name].variables[ki.Variable.Name].item[index].Component.Instance {
+				var uk = provisioning.GetVariableResult{
+					Variable:        ki.Variable,
+					Component:       ki.Component,
+					AttributeStatus: provisioning.GetVariableStatusUnknownComponent,
+					AttributeType:   ki.AttributeType,
+				}
+
+				r = append(r, uk)
+
+				continue
+			}
+		} else {
+			if components[ki.Component.Name].variables[ki.Variable.Name].item[index].Component.Instance != "" {
+				var uk = provisioning.GetVariableResult{
+					Variable:        ki.Variable,
+					Component:       ki.Component,
+					AttributeStatus: provisioning.GetVariableStatusUnknownComponent,
+					AttributeType:   ki.AttributeType,
+				}
+
+				r = append(r, uk)
+
+				continue
+			}
+		}
+
+		vn.Component.Instance = ki.Component.Instance
+
+		if ki.Variable.Instance != "" {
+			if ki.Variable.Instance != components[ki.Component.Name].variables[ki.Variable.Name].item[index].Variable.Instance {
+				var uk = provisioning.GetVariableResult{
+					Variable:        ki.Variable,
+					Component:       ki.Component,
+					AttributeStatus: provisioning.GetVariableStatusUnknownVariable,
+					AttributeType:   ki.AttributeType,
+				}
+
+				r = append(r, uk)
+
+				continue
+			}
+		} else {
+			if components[ki.Component.Name].variables[ki.Variable.Name].item[index].Variable.Instance != "" {
+				var uk = provisioning.GetVariableResult{
+					Variable:        ki.Variable,
+					Component:       ki.Component,
+					AttributeStatus: provisioning.GetVariableStatusUnknownVariable,
+					AttributeType:   ki.AttributeType,
+				}
+
+				r = append(r, uk)
+
+				continue
+			}
+		}
+
+		vn.Variable.Instance = ki.Variable.Instance
+
+		vn.AttributeStatus = components[ki.Component.Name].variables[ki.Variable.Name].item[index].AttributeStatus
+		vn.AttributeValue = components[ki.Component.Name].variables[ki.Variable.Name].item[index].AttributeValue
+
+		r = append(r, vn)
 	}
 
 	return r, nil
 }
 
 /*
-Ge the configuration name, the value, the status and return the structure to be set with the
-correct values (provisioning.GetVariableResult).
+Set the variable value and status sent in the parameters, and return the variable structure
+with the list of variables (variable).
 
-n	-	The configuration variable name (string)
+cn	-	Component name where the variable lives (string)
 
-v	-	The value to set in the configuration (string)
+vn	-	Name of the variable to change (string)
 
-s	-	The status of the configuration variable (provisioning.GetVariableStatus)
+val	-	Value to set to the variable (string)
+
+i	-	Index of the variable instance (int)
+
+s	-	Status to set to the variable (provisioning.GetVariableStatus)
 */
-func getConfigKey(n, v string, s provisioning.GetVariableStatus) variable {
-	var item = provisioning.GetVariableResult{
-		Variable:        configKeys[n].item.Variable,
-		Component:       configKeys[n].item.Component,
-		AttributeStatus: s,
-		AttributeType:   configKeys[n].item.AttributeType,
-		AttributeValue:  v,
+//nolint:unparam // because dev
+func setComponentVariableValueStatus(cn, vn, val string, i int, s provisioning.GetVariableStatus) variable {
+	var uis = []provisioning.GetVariableResult{}
+
+	for x, y := range components[cn].variables[vn].item {
+		if x == i {
+			var ui = provisioning.GetVariableResult{
+				Variable:        components[cn].variables[vn].item[x].Variable,
+				Component:       components[cn].variables[vn].item[x].Component,
+				AttributeStatus: s,
+				AttributeType:   components[cn].variables[vn].item[x].AttributeType,
+				AttributeValue:  val,
+			}
+
+			uis = append(uis, ui)
+
+			continue
+		}
+
+		uis = append(uis, y)
 	}
 
 	return variable{
-		item:       item,
-		mutability: configKeys[n].mutability,
+		item:       uis,
+		mutability: components[cn].variables[vn].mutability,
 	}
 }

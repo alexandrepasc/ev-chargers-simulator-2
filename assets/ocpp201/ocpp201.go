@@ -27,7 +27,7 @@ type Ocpp201 struct {
 	Asset      *simulator.Asset        // Asset data for the simulator
 	Mod        *model.Struct           // Model data for the asset
 	s          ocpp201.ChargingStation // Ocpp charging station server
-	ConfigKeys map[string]variable     // Configuration key map
+	components map[string]component    // Components and variables keys
 	st         time.Time               // Simulator start timestamp
 }
 
@@ -114,16 +114,16 @@ func setupServer(id string, t int64, o *Ocpp201, l translation.Translation) (s o
 			o.Mod.CA,
 			o.Mod.Cert,
 			o.Mod.Key,
-			o.ConfigKeys["Identity"].item.AttributeValue,
-			o.ConfigKeys["BasicAuthPassword"].item.AttributeValue,
+			o.components["SecurityCtrlr"].variables["Identity"].item[0].AttributeValue,
+			o.components["SecurityCtrlr"].variables["BasicAuthPassword"].item[0].AttributeValue,
 			o.Asset.BasicAuth,
 			l,
 		))
 	} else {
 		s = ocpp201.NewChargingStation(id, nil, assets.GetWsClient(
 			t,
-			o.ConfigKeys["Identity"].item.AttributeValue,
-			o.ConfigKeys["BasicAuthPassword"].item.AttributeValue,
+			o.components["SecurityCtrlr"].variables["Identity"].item[0].AttributeValue,
+			o.components["SecurityCtrlr"].variables["BasicAuthPassword"].item[0].AttributeValue,
 			o.Asset.BasicAuth,
 		))
 	}

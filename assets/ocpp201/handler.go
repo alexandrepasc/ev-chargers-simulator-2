@@ -24,7 +24,7 @@ func (o *Ocpp201) OnGetVariables(req *provisioning.GetVariablesRequest) (res *pr
 	lm["sender"] = assets.CP
 	lm["type"] = assets.Response
 
-	var r, e = o.getConfigurationKeys(req.GetVariableData)
+	var r, e = o.processGetVariables(req.GetVariableData)
 	if e != nil {
 		o.logger.log(lm, e, assets.Error)
 
@@ -38,6 +38,21 @@ func (o *Ocpp201) OnGetVariables(req *provisioning.GetVariablesRequest) (res *pr
 	o.logger.log(lm, res, assets.Info)
 
 	return res, nil
+}
+
+func (o *Ocpp201) OnSetVariables(req *provisioning.SetVariablesRequest) (res *provisioning.SetVariablesResponse, err error) {
+	var lm = map[string]string{
+		"protocol":  string(o.Asset.Protocol),
+		"function":  "OnSetVariables",
+		"feature":   req.GetFeatureName(),
+		"simulator": o.Asset.Name,
+		"sender":    assets.CS,
+		"type":      assets.Request,
+	}
+
+	o.logger.log(lm, req, assets.Info)
+	// logDefault(request.GetFeatureName()).Warnf("Unsupported feature")
+	return nil, ocpp.NewError(ocppj.NotSupported, "Not supported", "")
 }
 
 func (o *Ocpp201) OnGetBaseReport(req *provisioning.GetBaseReportRequest) (res *provisioning.GetBaseReportResponse, err error) {
@@ -57,11 +72,6 @@ func (o *Ocpp201) OnReset(req *provisioning.ResetRequest) (res *provisioning.Res
 }
 
 func (o *Ocpp201) OnSetNetworkProfile(req *provisioning.SetNetworkProfileRequest) (res *provisioning.SetNetworkProfileResponse, err error) {
-	// logDefault(request.GetFeatureName()).Warnf("Unsupported feature")
-	return nil, ocpp.NewError(ocppj.NotSupported, "Not supported", "")
-}
-
-func (o *Ocpp201) OnSetVariables(req *provisioning.SetVariablesRequest) (res *provisioning.SetVariablesResponse, err error) {
 	// logDefault(request.GetFeatureName()).Warnf("Unsupported feature")
 	return nil, ocpp.NewError(ocppj.NotSupported, "Not supported", "")
 }
