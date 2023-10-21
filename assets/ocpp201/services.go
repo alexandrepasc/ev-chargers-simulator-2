@@ -60,6 +60,16 @@ func (o *Ocpp201) setStartUpConfigurations() {
 		0,
 		status,
 	)
+
+	status = provisioning.GetVariableStatusAccepted
+
+	o.components["OCPPCommCtrlr"].variables["HeartbeatInterval"] = setComponentVariableValueStatus(
+		"OCPPCommCtrlr",
+		"HeartbeatInterval",
+		strconv.FormatInt(assets.DefHeartbeatInterval, 10),
+		0,
+		status,
+	)
 }
 
 /*
