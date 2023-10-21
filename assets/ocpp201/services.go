@@ -33,6 +33,14 @@ func (o *Ocpp201) setStartUpConfigurations() {
 		status,
 	)
 
+	o.components["DeviceDataCtrlr"].variables["ItemsPerMessage"] = setComponentVariableValueStatus(
+		"DeviceDataCtrlr",
+		"ItemsPerMessage",
+		strconv.FormatInt(assets.DefGetConfigurationMaxKeys, 10),
+		1,
+		status,
+	)
+
 	if !o.Asset.BasicAuth {
 		status = provisioning.GetVariableStatusNotSupported
 	}
@@ -184,7 +192,7 @@ k	-	The list of variables requested by the cs ([]provisioning.GetVariableData)
 func (o *Ocpp201) processGetVariables(k []provisioning.GetVariableData) (r []provisioning.GetVariableResult, err error) {
 	var lm = map[string]string{
 		"protocol":  string(o.Asset.Protocol),
-		"function":  "getConfigurationKeys",
+		"function":  "processGetVariables",
 		"feature":   provisioning.GetVariablesFeatureName,
 		"simulator": o.Asset.Name,
 	}
@@ -369,6 +377,141 @@ func (o *Ocpp201) processGetVariables(k []provisioning.GetVariableData) (r []pro
 }
 
 /*
+Have all the logic to process the set variable request from the cs. Will do all the checks
+and return the response list ([]provisioning.SetVariableResult) and in case some error is found
+returns it (error)
+
+k	-	List of requested variables ([]provisioning.SetVariableData)
+*/
+func (o *Ocpp201) processSetVariables(k []provisioning.SetVariableData) (r []provisioning.SetVariableResult, err error) {
+	var lm = map[string]string{
+		"protocol":  string(o.Asset.Protocol),
+		"function":  "processSetVariables",
+		"feature":   provisioning.SetVariablesFeatureName,
+		"simulator": o.Asset.Name,
+	}
+
+	var m, errm = strconv.ParseInt(o.components["DeviceDataCtrlr"].variables["ItemsPerMessage"].item[1].AttributeValue, 10, 64)
+	if errm != nil {
+		o.logger.log(lm, errm, assets.Fatal)
+
+		return nil, errm
+	}
+
+	// B05.FR.11 More elements than the allowed
+	if len(k) > int(m) {
+		return nil, ocpp.NewError(ocppj.OccurrenceConstraintViolation, "", "")
+	}
+
+	// B05.FR.13 Multiple elements with the same component, variable a attribute type combination
+	// TODO: not sure how to handle this
+
+	for _, ki := range k {
+		// B05.FR.04 Unknown component
+		var _, okc = components[ki.Component.Name]
+		if !okc {
+			var uk = provisioning.SetVariableResult{
+				Variable:        ki.Variable,
+				Component:       ki.Component,
+				AttributeStatus: provisioning.SetVariableStatusUnknownComponent,
+				AttributeType:   ki.AttributeType,
+			}
+
+			r = append(r, uk)
+
+			continue
+		}
+
+		// B05.FR.05 Unknown variable for given component
+		var _, okv = components[ki.Component.Name].variables[ki.Variable.Name]
+		if !okv {
+			var uk = provisioning.SetVariableResult{
+				Variable:        ki.Variable,
+				Component:       ki.Component,
+				AttributeStatus: provisioning.SetVariableStatusUnknownVariable,
+				AttributeType:   ki.AttributeType,
+			}
+
+			r = append(r, uk)
+
+			continue
+		}
+
+		// B05.FR.06 Unknow attribute type for given variable
+		var oka = false
+
+		var index int
+
+		for idx, vi := range components[ki.Component.Name].variables[ki.Variable.Name].item {
+			if ki.AttributeType == vi.AttributeType {
+				oka = true
+				index = idx
+			}
+		}
+
+		if !oka {
+			var uk = provisioning.SetVariableResult{
+				Variable:        ki.Variable,
+				Component:       ki.Component,
+				AttributeStatus: provisioning.SetVariableStatusNotSupported,
+				AttributeType:   ki.AttributeType,
+			}
+
+			r = append(r, uk)
+
+			continue
+		}
+
+		// B05.FR.07 Incorrect value format for given variable
+		// B05.FR.08 Value is lower or higher than thr variable range
+
+		// B05.FR.09 Read only variable
+		if components[ki.Component.Name].variables[ki.Variable.Name].mutability == ReadOnly {
+			var uk = provisioning.SetVariableResult{
+				Variable:        ki.Variable,
+				Component:       ki.Component,
+				AttributeStatus: provisioning.SetVariableStatusRejected,
+				AttributeType:   ki.AttributeType,
+			}
+
+			r = append(r, uk)
+
+			continue
+		}
+
+		// B05.FR.12 Empty attribute type
+		var okat bool
+
+		switch ki.AttributeType {
+		case types.AttributeActual, types.AttributeTarget, types.AttributeMinSet, types.AttributeMaxSet:
+			okat = true
+		default:
+			okat = false
+		}
+
+		var vn = provisioning.SetVariableResult{
+			Component: components[ki.Component.Name].variables[ki.Variable.Name].item[index].Component,
+			Variable:  components[ki.Component.Name].variables[ki.Variable.Name].item[index].Variable,
+		}
+
+		if !okat {
+			vn.AttributeType = types.AttributeActual
+		} else {
+			vn.AttributeType = components[ki.Component.Name].variables[ki.Variable.Name].item[index].AttributeType
+		}
+
+		vn.Variable.Instance = components[ki.Component.Name].variables[ki.Variable.Name].item[index].Variable.Instance
+
+		vn.AttributeStatus = provisioning.SetVariableStatusAccepted
+		components[ki.Component.Name].variables[ki.Variable.Name].item[index].AttributeValue = ki.AttributeValue
+
+		r = append(r, vn)
+	}
+
+	return r, nil
+}
+
+/*
 Set the variable value and status sent in the parameters, and return the variable structure
 with the list of variables (variable).
 
@@ -382,7 +525,6 @@ i	-	Index of the variable instance (int)
 
 s	-	Status to set to the variable (provisioning.GetVariableStatus)
 */
-//nolint:unparam // because dev
 func setComponentVariableValueStatus(cn, vn, val string, i int, s provisioning.GetVariableStatus) variable {
 	var uis = []provisioning.GetVariableResult{}
 

@@ -9,6 +9,10 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocppj"
 )
 
+/*
+Handles the get variables request from the cs and returns the response or error in case of failure.
+*/
+//nolint:dupl //because at the moment there is no idea to clean this
 func (o *Ocpp201) OnGetVariables(req *provisioning.GetVariablesRequest) (res *provisioning.GetVariablesResponse, err error) {
 	var lm = map[string]string{
 		"protocol":  string(o.Asset.Protocol),
@@ -40,6 +44,10 @@ func (o *Ocpp201) OnGetVariables(req *provisioning.GetVariablesRequest) (res *pr
 	return res, nil
 }
 
+/*
+Handles the set variables request from the cs and returns the response or error in case of failure.
+*/
+//nolint:dupl //because at the moment there is no idea to clean this
 func (o *Ocpp201) OnSetVariables(req *provisioning.SetVariablesRequest) (res *provisioning.SetVariablesResponse, err error) {
 	var lm = map[string]string{
 		"protocol":  string(o.Asset.Protocol),
@@ -51,8 +59,24 @@ func (o *Ocpp201) OnSetVariables(req *provisioning.SetVariablesRequest) (res *pr
 	}
 
 	o.logger.log(lm, req, assets.Info)
-	// logDefault(request.GetFeatureName()).Warnf("Unsupported feature")
-	return nil, ocpp.NewError(ocppj.NotSupported, "Not supported", "")
+
+	lm["sender"] = assets.CP
+	lm["type"] = assets.Response
+
+	var r, e = o.processSetVariables(req.SetVariableData)
+	if e != nil {
+		o.logger.log(lm, e, assets.Error)
+
+		return nil, e
+	}
+
+	res = &provisioning.SetVariablesResponse{
+		SetVariableResult: r,
+	}
+
+	o.logger.log(lm, res, assets.Info)
+
+	return res, nil
 }
 
 func (o *Ocpp201) OnGetBaseReport(req *provisioning.GetBaseReportRequest) (res *provisioning.GetBaseReportResponse, err error) {
