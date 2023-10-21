@@ -1,8 +1,9 @@
 package model
 
 const (
-	Ocpp   Type = "ocpp"
-	Modbus Type = "modbus"
+	Ocpp   Type   = "ocpp"
+	Modbus Type   = "modbus"
+	jsonEx string = ".json" // Json file extension
 )
 
 var DefOcppMod = Struct{

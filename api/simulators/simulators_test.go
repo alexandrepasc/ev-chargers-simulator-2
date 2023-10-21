@@ -31,6 +31,10 @@ const (
 	mPost    method = "POST"
 	mPut     method = "PUT"
 	mDelete  method = "DELETE"
+	vID0     string = "/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0"
+	nID      string = "/asd"
+	simConf  string = "/simConf"
+	jsonEx   string = ".json"
 )
 
 func TestGetSimulators(t *testing.T) {
@@ -194,7 +198,7 @@ func TestPostSimulators(t *testing.T) {
 
 	assert.Equal(t, body.Evses, a.Evses)
 
-	assert.FileExists(t, tmp+"/simConf/"+body.Name+".json")
+	assert.FileExists(t, tmp+simConf+body.Name+jsonEx)
 }
 
 func TestPostSimulatorsRequiredFields(t *testing.T) {
@@ -456,7 +460,7 @@ func TestNotAblePostSimulatorsOcpp16MoreThen1Evse(t *testing.T) {
 
 	assert.Equal(t, translation.Translation{L: translation.EnGb}.Get(text.Ocpp16SimConfFileMoreEvse), a.Message)
 
-	assert.NoFileExists(t, tmp+"/simConf/"+body.Name+".json")
+	assert.NoFileExists(t, tmp+"/simConf/"+body.Name+jsonEx)
 }
 
 func TestPostSimulatorsOcpp201MoreThen1Evse(t *testing.T) {
@@ -537,7 +541,7 @@ func TestPostSimulatorsOcpp201MoreThen1Evse(t *testing.T) {
 
 	assert.Equal(t, body.Evses, a.Evses)
 
-	assert.FileExists(t, tmp+"/simConf/"+body.Name+".json")
+	assert.FileExists(t, tmp+"/simConf/"+body.Name+jsonEx)
 }
 
 func TestPutSimulators(t *testing.T) {
@@ -656,7 +660,7 @@ func TestPutSimulatorsWrongID(t *testing.T) {
 
 	w := httptest.NewRecorder()
 
-	req, _ := http.NewRequest(string(mPut), ep+"/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0", b)
+	req, _ := http.NewRequest(string(mPut), ep+vID0, b)
 
 	r.ServeHTTP(w, req)
 
@@ -710,7 +714,7 @@ func TestPutSimulatorsInvalidID(t *testing.T) {
 
 	w := httptest.NewRecorder()
 
-	req, _ := http.NewRequest(string(mPut), ep+"/asd", b)
+	req, _ := http.NewRequest(string(mPut), ep+nID, b)
 
 	r.ServeHTTP(w, req)
 
@@ -1320,7 +1324,7 @@ func TestPostModels(t *testing.T) {
 
 	assert.Equal(t, e.Ocpp.SerialNumb, a.Ocpp.SerialNumb)
 
-	assert.FileExists(t, tmp+"/simConf/models/"+e.Name+".json")
+	assert.FileExists(t, tmp+"/simConf/models/"+e.Name+jsonEx)
 }
 
 func TestPostModelsRequiredFields(t *testing.T) {
@@ -1475,7 +1479,7 @@ func TestPutModels(t *testing.T) {
 
 	w := httptest.NewRecorder()
 
-	req, _ := http.NewRequest(string(mPut), modelsEp+"/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0", b)
+	req, _ := http.NewRequest(string(mPut), modelsEp+vID0, b)
 
 	r.ServeHTTP(w, req)
 
@@ -1622,7 +1626,7 @@ func TestPutModelsChangeName(t *testing.T) {
 
 	w := httptest.NewRecorder()
 
-	req, _ := http.NewRequest(string(mPut), modelsEp+"/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0", b)
+	req, _ := http.NewRequest(string(mPut), modelsEp+vID0, b)
 
 	r.ServeHTTP(w, req)
 
@@ -1826,9 +1830,9 @@ func before(t *testing.T, al []*simulator.Asset, ml []*model.Struct) (s simulato
 
 	tmp = t.TempDir()
 
-	os.Mkdir(tmp+"/simConf", fs.FileMode(common.FolderPermissions))
+	os.Mkdir(tmp+simConf, fs.FileMode(common.FolderPermissions))
 
-	os.Mkdir(tmp+"/simConf"+common.DefMCFolder, fs.FileMode(common.FolderPermissions))
+	os.Mkdir(tmp+simConf+common.DefMCFolder, fs.FileMode(common.FolderPermissions))
 
 	generateConfFiles(tmp, al, ml)
 
@@ -1837,12 +1841,12 @@ func before(t *testing.T, al []*simulator.Asset, ml []*model.Struct) (s simulato
 	}
 
 	s = simulator.Simulator{
-		Scp: tmp + "/simConf",
+		Scp: tmp + simConf,
 		L:   l,
 	}
 
 	m = model.Model{
-		Scp: tmp + "/simConf",
+		Scp: tmp + simConf,
 		L:   l,
 	}
 
@@ -1851,7 +1855,7 @@ func before(t *testing.T, al []*simulator.Asset, ml []*model.Struct) (s simulato
 
 func generateConfFiles(tmp string, al []*simulator.Asset, ml []*model.Struct) {
 	for i := 0; i < len(al); i++ {
-		p := tmp + "/simConf" + "/" + al[i].Name + ".json"
+		p := tmp + "/simConf" + "/" + al[i].Name + jsonEx
 
 		f, _ := os.Create(p)
 		f.Close()
@@ -1862,7 +1866,7 @@ func generateConfFiles(tmp string, al []*simulator.Asset, ml []*model.Struct) {
 	}
 
 	for i := 0; i < len(ml); i++ {
-		p := tmp + "/simConf" + common.DefMCFolder + "/" + ml[i].Name + ".json"
+		p := tmp + "/simConf" + common.DefMCFolder + "/" + ml[i].Name + jsonEx
 
 		f, _ := os.Create(p)
 		f.Close()

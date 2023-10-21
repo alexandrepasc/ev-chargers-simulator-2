@@ -174,7 +174,7 @@ func (s *Simulator) UpdateSimConf(id uuid.UUID, a *Asset) (ok bool, msg string, 
 
 		_, b := marshalAssetToJSON(na)
 
-		err := os.WriteFile(s.Scp+"/"+na.Name+".json", b, fs.FileMode(common.FilePermissions))
+		err := os.WriteFile(s.Scp+"/"+na.Name+jsonEx, b, fs.FileMode(common.FilePermissions))
 
 		if err != nil {
 			common.Log("UpdateSimConf").Error(err)
@@ -206,7 +206,7 @@ func (s *Simulator) DeleteSimConf(id uuid.UUID) (ok bool, msg string, code int) 
 			continue
 		}
 
-		err := os.Remove(s.Scp + "/" + i.Name + ".json")
+		err := os.Remove(s.Scp + "/" + i.Name + jsonEx)
 
 		if err != nil {
 			common.Log("DeleteSimConf").Error(err)
@@ -296,7 +296,7 @@ p	-	Path where the file will be created (string).
 n	-	Name for the file (string).
 */
 func generateFile(p, n string, l translation.Translation) (ok bool, f *os.File) {
-	f, err := os.Create(p + "/" + n + ".json")
+	f, err := os.Create(p + "/" + n + jsonEx)
 
 	if err != nil {
 		common.Log("generateFile").Error(err)
