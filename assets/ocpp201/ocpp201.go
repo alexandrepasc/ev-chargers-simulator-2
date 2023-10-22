@@ -30,6 +30,9 @@ type Ocpp201 struct {
 	components map[string]component            // Components and variables keys
 	bootStatus provisioning.RegistrationStatus // The booting status of the cp
 	st         time.Time                       // Simulator start timestamp
+	connectSeq bool                            // To trigger the websocket connection
+	bootSeq    bool                            // To trigger the boot up sequence
+	bootReason provisioning.BootReason         // Boot reason
 }
 
 /*
@@ -60,28 +63,34 @@ func (o *Ocpp201) Start(c chan common.Channel, q chan bool) {
 	ocppj.SetLogger(logger)
 	ws.SetLogger(logger)
 
-	o.s = setupServer(o.Asset.CPId, o.Timeout, o, o.L)
-
-	var conn = "ws://"
-	if o.Asset.TLS {
-		conn = "wss://"
-	}
-
-	sErr := o.s.Start(conn + o.CSAddr + ":" + o.CSPort)
-
-	if sErr != nil {
-		o.logger.log(lm, sErr, assets.Error)
-		return
-	}
-
-	o.logger.log(lm, o.L.Get(text.Ocpp201ServerStarted), assets.Info)
-
-	var br, eB = o.sendBootNotification(provisioning.BootReasonPowerUp)
-	if eB == nil {
-		o.processBootResponse(br, provisioning.BootReasonPowerUp)
-	}
-
 	for {
+		if o.connectSeq {
+			o.s = setupServer(o.Asset.CPId, o.Timeout, o, o.L)
+
+			var conn = "ws://"
+			if o.Asset.TLS {
+				conn = "wss://"
+			}
+
+			sErr := o.s.Start(conn + o.CSAddr + ":" + o.CSPort)
+		
+			if sErr != nil {
+				o.logger.log(lm, sErr, assets.Error)
+				return
+			}
+
+			o.connectSeq = false
+		
+			o.logger.log(lm, o.L.Get(text.Ocpp201ServerStarted), assets.Info)
+		}
+
+		if o.bootSeq {
+			var br, eB = o.sendBootNotification(o.bootReason)
+			if eB == nil {
+				o.processBootResponse(br, o.bootReason)
+			}
+		}
+
 		select {
 		case <-q:
 			o.logger.log(lm, o.L.Get(text.Ocpp201ServerStopped), assets.Info)

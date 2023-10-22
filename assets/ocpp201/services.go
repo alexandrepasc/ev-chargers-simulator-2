@@ -20,6 +20,12 @@ defined by the user in the asset and module configuration files.
 func (o *Ocpp201) setStartUpConfigurations() {
 	o.components = components
 
+	o.connectSeq = true
+
+	o.bootSeq = true
+
+	o.bootReason = provisioning.BootReasonPowerUp
+
 	o.bootStatus = provisioning.RegistrationStatusAccepted
 
 	o.logger.log(map[string]string{"protocol": string(o.Asset.Protocol), "function": "setStartUpConfigurations", "simulator": o.Asset.Name},
@@ -145,6 +151,7 @@ func (o *Ocpp201) processBootResponse(res *provisioning.BootNotificationResponse
 			o.bootStatus = resp.Status
 
 			if resp.Status == provisioning.RegistrationStatusAccepted {
+				o.bootSeq = false
 				break
 			}
 		}
@@ -160,6 +167,9 @@ func (o *Ocpp201) processBootResponse(res *provisioning.BootNotificationResponse
 		)
 	}
 
+	// B01.FR.06 Synchronization internal clock
+	// TODO: need to be done
+
 	for ei, e := range o.Asset.Evses {
 		for ci, c := range e.Connectors {
 			o.sendStatusNotification(
@@ -169,6 +179,8 @@ func (o *Ocpp201) processBootResponse(res *provisioning.BootNotificationResponse
 			)
 		}
 	}
+
+	o.bootSeq = false
 }
 
 /*
