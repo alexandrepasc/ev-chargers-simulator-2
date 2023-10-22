@@ -138,8 +138,10 @@ res	-	The cs boot response (provisioning.BootNotificationResponse)
 func (o *Ocpp201) processBootResponse(res *provisioning.BootNotificationResponse, r provisioning.BootReason) {
 	if res.Status != provisioning.RegistrationStatusAccepted {
 		for {
+			// B03.FR.06 Not accepted and interval grater than 0
 			var i = res.Interval
 
+			// B03.FR.05 Not accepted and interval is 0
 			if res.Interval <= 0 {
 				i = int(assets.DefHeartbeatInterval)
 			}

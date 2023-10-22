@@ -1,4 +1,4 @@
-//nolint:gocritic,revive,whitespace,wsl //because dev
+//nolint:revive //because dev
 package ocpp201
 
 import (
@@ -91,41 +91,62 @@ func (o *Ocpp201) OnSetVariables(req *provisioning.SetVariablesRequest) (res *pr
 	return res, nil
 }
 
+/*
+Handles the trigger message request from the cs and returns the response or error in case of
+failure.
+*/
+func (o *Ocpp201) OnTriggerMessage(req *remotecontrol.TriggerMessageRequest) (res *remotecontrol.TriggerMessageResponse, err error) {
+	var lm = map[string]string{
+		"protocol":  string(o.Asset.Protocol),
+		"function":  "OnTriggerMessage",
+		"feature":   req.GetFeatureName(),
+		"simulator": o.Asset.Name,
+		"sender":    assets.CS,
+		"type":      assets.Request,
+	}
+
+	o.logger.log(lm, req, assets.Info)
+	// B02.FR.09 Boot pending returns the boot response
+	// B03.FR.08 Boot rejected and not trigger message BootNotification
+	return nil, ocpp.NewError(ocppj.NotSupported, "Not supported", "")
+}
+
 func (o *Ocpp201) OnGetBaseReport(req *provisioning.GetBaseReportRequest) (res *provisioning.GetBaseReportResponse, err error) {
-	// logDefault(request.GetFeatureName()).Warnf("Unsupported feature")
+	// B02.FR.09 Boot pending returns the get base report response
+	// B03.FR.08 Boot rejected returns SecurityError
 	return nil, ocpp.NewError(ocppj.NotSupported, "Not supported", "")
 }
 
 func (o *Ocpp201) OnGetReport(req *provisioning.GetReportRequest) (res *provisioning.GetReportResponse, err error) {
-	// logDefault(request.GetFeatureName()).Warnf("Unsupported feature")
+	// B02.FR.09 Boot pending returns the get report response
+	// B03.FR.08 Boot rejected returns SecurityError
 	return nil, ocpp.NewError(ocppj.NotSupported, "Not supported", "")
 }
 
 func (o *Ocpp201) OnReset(req *provisioning.ResetRequest) (res *provisioning.ResetResponse, err error) {
-	// logDefault(request.GetFeatureName()).Info("reset handled")
+	// B03.FR.08 Boot rejected returns SecurityError
 	res = provisioning.NewResetResponse(provisioning.ResetStatusAccepted)
 	return
 }
 
 func (o *Ocpp201) OnSetNetworkProfile(req *provisioning.SetNetworkProfileRequest) (res *provisioning.SetNetworkProfileResponse, err error) {
-	// logDefault(request.GetFeatureName()).Warnf("Unsupported feature")
+	// B03.FR.08 Boot rejected returns SecurityError
 	return nil, ocpp.NewError(ocppj.NotSupported, "Not supported", "")
 }
 
 func (o *Ocpp201) OnRequestStartTransaction(req *remotecontrol.RequestStartTransactionRequest) (res *remotecontrol.RequestStartTransactionResponse, err error) {
-
+	// B02.FR.05 Boot pending returns the rejected response
+	// B03.FR.08 Boot rejected returns SecurityError
 	return nil, ocpp.NewError(ocppj.NotSupported, "Not supported", "")
 }
 
 func (o *Ocpp201) OnRequestStopTransaction(req *remotecontrol.RequestStopTransactionRequest) (res *remotecontrol.RequestStopTransactionResponse, err error) {
-
-	return nil, ocpp.NewError(ocppj.NotSupported, "Not supported", "")
-}
-
-func (o *Ocpp201) OnTriggerMessage(req *remotecontrol.TriggerMessageRequest) (res *remotecontrol.TriggerMessageResponse, err error) {
+	// B02.FR.05 Boot pending returns the rejected response
+	// B03.FR.08 Boot rejected returns SecurityError
 	return nil, ocpp.NewError(ocppj.NotSupported, "Not supported", "")
 }
 
 func (o *Ocpp201) OnUnlockConnector(req *remotecontrol.UnlockConnectorRequest) (res *remotecontrol.UnlockConnectorResponse, err error) {
+	// B03.FR.08 Boot rejected returns SecurityError
 	return nil, ocpp.NewError(ocppj.NotSupported, "Not supported", "")
 }
