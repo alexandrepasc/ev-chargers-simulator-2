@@ -18,17 +18,18 @@ import (
 )
 
 type Ocpp201 struct {
-	lock       sync.RWMutex            // Lock goroutine
-	logger     logging                 // Logging
-	L          translation.Translation // Translation module
-	Timeout    int64                   // Connection timeout
-	CSAddr     string                  // Central system ip address
-	CSPort     string                  // Central system port
-	Asset      *simulator.Asset        // Asset data for the simulator
-	Mod        *model.Struct           // Model data for the asset
-	s          ocpp201.ChargingStation // Ocpp charging station server
-	components map[string]component    // Components and variables keys
-	st         time.Time               // Simulator start timestamp
+	lock       sync.RWMutex                    // Lock goroutine
+	logger     logging                         // Logging
+	L          translation.Translation         // Translation module
+	Timeout    int64                           // Connection timeout
+	CSAddr     string                          // Central system ip address
+	CSPort     string                          // Central system port
+	Asset      *simulator.Asset                // Asset data for the simulator
+	Mod        *model.Struct                   // Model data for the asset
+	s          ocpp201.ChargingStation         // Ocpp charging station server
+	components map[string]component            // Components and variables keys
+	bootStatus provisioning.RegistrationStatus // The booting status of the cp
+	st         time.Time                       // Simulator start timestamp
 }
 
 /*
@@ -75,7 +76,10 @@ func (o *Ocpp201) Start(c chan common.Channel, q chan bool) {
 
 	o.logger.log(lm, o.L.Get(text.Ocpp201ServerStarted), assets.Info)
 
-	o.sendBootNotification(provisioning.BootReasonPowerUp)
+	var br, eB = o.sendBootNotification(provisioning.BootReasonPowerUp)
+	if eB == nil {
+		o.processBootResponse(br, provisioning.BootReasonPowerUp)
+	}
 
 	for {
 		select {

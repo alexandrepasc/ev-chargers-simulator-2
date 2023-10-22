@@ -28,6 +28,12 @@ func (o *Ocpp201) OnGetVariables(req *provisioning.GetVariablesRequest) (res *pr
 	lm["sender"] = assets.CP
 	lm["type"] = assets.Response
 
+	// B03.FR.08 Boot rejected and not trigger message BootNotification
+	var eB = o.isBootRejected(lm)
+	if eB != nil {
+		return nil, ocpp.NewError(ocppj.SecurityError, "", "")
+	}
+
 	var r, e = o.processGetVariables(req.GetVariableData)
 	if e != nil {
 		o.logger.log(lm, e, assets.Error)
@@ -62,6 +68,12 @@ func (o *Ocpp201) OnSetVariables(req *provisioning.SetVariablesRequest) (res *pr
 
 	lm["sender"] = assets.CP
 	lm["type"] = assets.Response
+
+	// B03.FR.08 Boot rejected and not trigger message BootNotification
+	var eB = o.isBootRejected(lm)
+	if eB != nil {
+		return nil, ocpp.NewError(ocppj.SecurityError, "", "")
+	}
 
 	var r, e = o.processSetVariables(req.SetVariableData)
 	if e != nil {

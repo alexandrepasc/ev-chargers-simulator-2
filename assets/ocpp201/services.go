@@ -20,6 +20,8 @@ defined by the user in the asset and module configuration files.
 func (o *Ocpp201) setStartUpConfigurations() {
 	o.components = components
 
+	o.bootStatus = provisioning.RegistrationStatusAccepted
+
 	o.logger.log(map[string]string{"protocol": string(o.Asset.Protocol), "function": "setStartUpConfigurations", "simulator": o.Asset.Name},
 		o.L.Get(text.StartUpConfigurations), assets.Info)
 
@@ -77,7 +79,7 @@ Sends the boot notification to the central system.
 
 r	-	Reason for the boot notification (provisioning.BootReason)
 */
-func (o *Ocpp201) sendBootNotification(r provisioning.BootReason) {
+func (o *Ocpp201) sendBootNotification(r provisioning.BootReason) (res *provisioning.BootNotificationResponse, err error) {
 	var lm = map[string]string{
 		"protocol":  string(o.Asset.Protocol),
 		"function":  "sendBootNotification",
@@ -103,21 +105,23 @@ func (o *Ocpp201) sendBootNotification(r provisioning.BootReason) {
 
 	o.logger.log(lm, req, assets.Info)
 
-	var res, err = o.s.SendRequest(req)
+	var resp, e = o.s.SendRequest(req)
 
 	lm["sender"] = assets.CS
 	lm["type"] = assets.Response
 
-	if err != nil {
-		o.logger.log(lm, err, assets.Error)
-		return
+	if e != nil {
+		o.logger.log(lm, e, assets.Error)
+		return nil, e
 	}
 
-	o.logger.log(lm, res.(*provisioning.BootNotificationResponse), assets.Info)
+	o.logger.log(lm, resp.(*provisioning.BootNotificationResponse), assets.Info)
 
 	o.st = time.Now()
 
-	o.processBootResponse(res.(*provisioning.BootNotificationResponse))
+	o.bootStatus = resp.(*provisioning.BootNotificationResponse).Status
+
+	return resp.(*provisioning.BootNotificationResponse), nil
 }
 
 /*
@@ -125,26 +129,44 @@ Have the logic needed to process the boot notification response.
 
 res	-	The cs boot response (provisioning.BootNotificationResponse)
 */
-func (o *Ocpp201) processBootResponse(res *provisioning.BootNotificationResponse) {
-	if res.Status == provisioning.RegistrationStatusAccepted {
-		if res.Interval > 0 {
-			o.components["OCPPCommCtrlr"].variables["HeartbeatInterval"] = setComponentVariableValueStatus(
-				"OCPPCommCtrlr",
-				"HeartbeatInterval",
-				strconv.Itoa(res.Interval),
-				0,
-				provisioning.GetVariableStatusAccepted,
-			)
-		}
+func (o *Ocpp201) processBootResponse(res *provisioning.BootNotificationResponse, r provisioning.BootReason) {
+	if res.Status != provisioning.RegistrationStatusAccepted {
+		for {
+			var i = res.Interval
 
-		for ei, e := range o.Asset.Evses {
-			for ci, c := range e.Connectors {
-				o.sendStatusNotification(
-					e.ID,
-					c.ID,
-					o.Asset.Evses[ei].Connectors[ci].Data[o.Asset.Evses[ei].Connectors[ci].DP.Position].ChargingState,
-				)
+			if res.Interval <= 0 {
+				i = int(assets.DefHeartbeatInterval)
 			}
+
+			time.Sleep(time.Duration(i) * time.Second)
+
+			var resp, _ = o.sendBootNotification(r)
+
+			o.bootStatus = resp.Status
+
+			if resp.Status == provisioning.RegistrationStatusAccepted {
+				break
+			}
+		}
+	}
+
+	if res.Interval > 0 {
+		o.components["OCPPCommCtrlr"].variables["HeartbeatInterval"] = setComponentVariableValueStatus(
+			"OCPPCommCtrlr",
+			"HeartbeatInterval",
+			strconv.Itoa(res.Interval),
+			0,
+			provisioning.GetVariableStatusAccepted,
+		)
+	}
+
+	for ei, e := range o.Asset.Evses {
+		for ci, c := range e.Connectors {
+			o.sendStatusNotification(
+				e.ID,
+				c.ID,
+				o.Asset.Evses[ei].Connectors[ci].Data[o.Asset.Evses[ei].Connectors[ci].DP.Position].ChargingState,
+			)
 		}
 	}
 }
@@ -519,6 +541,24 @@ func (o *Ocpp201) processSetVariables(k []provisioning.SetVariableData) (r []pro
 	}
 
 	return r, nil
+}
+
+/*
+B03.FR.08 Boot rejected and not trigger message BootNotification
+
+Checks if the boot status is rejected, if so returns the ocpp security error (error),
+if not returns nil.
+
+lm	-	The logging fields (map[string]string)
+*/
+func (o *Ocpp201) isBootRejected(lm map[string]string) error {
+	if o.bootStatus == provisioning.RegistrationStatusRejected {
+		o.logger.log(lm, ocppj.SecurityError, assets.Error)
+
+		return ocpp.NewError(ocppj.SecurityError, "", "")
+	}
+
+	return nil
 }
 
 /*
