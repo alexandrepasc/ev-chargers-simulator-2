@@ -73,14 +73,14 @@ func (o *Ocpp201) Start(c chan common.Channel, q chan bool) {
 			}
 
 			sErr := o.s.Start(conn + o.CSAddr + ":" + o.CSPort)
-		
+
 			if sErr != nil {
 				o.logger.log(lm, sErr, assets.Error)
 				return
 			}
 
 			o.connectSeq = false
-		
+
 			o.logger.log(lm, o.L.Get(text.Ocpp201ServerStarted), assets.Info)
 		}
 
