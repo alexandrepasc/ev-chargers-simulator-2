@@ -106,18 +106,34 @@ func (o *Ocpp201) OnTriggerMessage(req *remotecontrol.TriggerMessageRequest) (re
 	}
 
 	o.logger.log(lm, req, assets.Info)
+	// B02.FR.02
 	// B02.FR.09 Boot pending returns the boot response
 	// B03.FR.08 Boot rejected and not trigger message BootNotification
-	return nil, ocpp.NewError(ocppj.NotSupported, "Not supported", "")
+
+	lm["sender"] = assets.CS
+	lm["type"] = assets.Response
+
+	//nolint:exhaustive //because still in dev
+	switch req.RequestedMessage {
+	case remotecontrol.MessageTriggerBootNotification:
+		o.bootReason = provisioning.BootReasonTriggered
+		o.bootSeq = true
+
+		return &remotecontrol.TriggerMessageResponse{Status: remotecontrol.TriggerMessageStatusAccepted}, nil
+	default:
+		return nil, ocpp.NewError(ocppj.NotSupported, "", "")
+	}
 }
 
 func (o *Ocpp201) OnGetBaseReport(req *provisioning.GetBaseReportRequest) (res *provisioning.GetBaseReportResponse, err error) {
+	// B02.FR.02
 	// B02.FR.09 Boot pending returns the get base report response
 	// B03.FR.08 Boot rejected returns SecurityError
 	return nil, ocpp.NewError(ocppj.NotSupported, "Not supported", "")
 }
 
 func (o *Ocpp201) OnGetReport(req *provisioning.GetReportRequest) (res *provisioning.GetReportResponse, err error) {
+	// B02.FR.02
 	// B02.FR.09 Boot pending returns the get report response
 	// B03.FR.08 Boot rejected returns SecurityError
 	return nil, ocpp.NewError(ocppj.NotSupported, "Not supported", "")

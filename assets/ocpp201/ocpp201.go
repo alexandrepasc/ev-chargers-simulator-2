@@ -142,6 +142,7 @@ func setupServer(id string, t int64, o *Ocpp201, l translation.Translation) (s o
 	}
 
 	s.SetProvisioningHandler(o)
+	s.SetRemoteControlHandler(o)
 
 	return s
 }

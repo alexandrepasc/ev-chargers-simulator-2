@@ -170,6 +170,14 @@ func (o *Ocpp201) processBootResponse(res *provisioning.BootNotificationResponse
 			0,
 			provisioning.GetVariableStatusAccepted,
 		)
+	} else {
+		o.components["OCPPCommCtrlr"].variables["HeartbeatInterval"] = setComponentVariableValueStatus(
+			"OCPPCommCtrlr",
+			"HeartbeatInterval",
+			strconv.FormatInt(assets.DefHeartbeatInterval, 10),
+			0,
+			provisioning.GetVariableStatusAccepted,
+		)
 	}
 
 	// B01.FR.06 Synchronization internal clock
