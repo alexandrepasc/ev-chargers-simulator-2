@@ -353,6 +353,25 @@ func GetTLSWsClient(t int64, ca, cert, key, u, p string, ba bool, l translation.
 	return wsc
 }
 
+/*
+Handles the counter from the simulator and handles the max int64 value, in case it is reaching the
+max value (max int64 value - 7) it will be reseted to 0 and will return the value (int64).
+
+t	-	Ticker value (int64)
+*/
+// TODO: add this to all the implementations
+func HandleTick(t int64) int64 {
+	const rInt64 = math.MaxInt64 - 7
+
+	if t > rInt64 {
+		t = 0
+	} else {
+		t++
+	}
+
+	return t
+}
+
 func IsDataChanClosed(ch <-chan common.Channel) bool {
 	select {
 	case <-ch:

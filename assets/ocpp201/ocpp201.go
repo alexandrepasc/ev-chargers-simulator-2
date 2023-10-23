@@ -18,21 +18,23 @@ import (
 )
 
 type Ocpp201 struct {
-	lock       sync.RWMutex                    // Lock goroutine
-	logger     logging                         // Logging
-	L          translation.Translation         // Translation module
-	Timeout    int64                           // Connection timeout
-	CSAddr     string                          // Central system ip address
-	CSPort     string                          // Central system port
-	Asset      *simulator.Asset                // Asset data for the simulator
-	Mod        *model.Struct                   // Model data for the asset
-	s          ocpp201.ChargingStation         // Ocpp charging station server
-	components map[string]component            // Components and variables keys
-	bootStatus provisioning.RegistrationStatus // The booting status of the cp
-	st         time.Time                       // Simulator start timestamp
-	connectSeq bool                            // To trigger the websocket connection
-	bootSeq    bool                            // To trigger the boot up sequence
-	bootReason provisioning.BootReason         // Boot reason
+	lock         sync.RWMutex                    // Lock goroutine
+	logger       logging                         // Logging
+	L            translation.Translation         // Translation module
+	Timeout      int64                           // Connection timeout
+	CSAddr       string                          // Central system ip address
+	CSPort       string                          // Central system port
+	Asset        *simulator.Asset                // Asset data for the simulator
+	Mod          *model.Struct                   // Model data for the asset
+	s            ocpp201.ChargingStation         // Ocpp charging station server
+	components   map[string]component            // Components and variables keys
+	bootStatus   provisioning.RegistrationStatus // The booting status of the cp
+	st           time.Time                       // Simulator start timestamp
+	connectSeq   bool                            // To trigger the websocket connection
+	bootSeq      bool                            // To trigger the boot up sequence
+	bootReason   provisioning.BootReason         // Boot reason
+	bootInterval int                             // Handle the boot interval when the boot fails
+	tick         int64                           // Ticker to enable trigger scheduled events
 }
 
 /*
@@ -82,20 +84,26 @@ func (o *Ocpp201) Start(c chan common.Channel, q chan bool) {
 			o.connectSeq = false
 
 			o.logger.log(lm, o.L.Get(text.Ocpp201ServerStarted), assets.Info)
+
+			o.st = time.Now()
 		}
 
 		if o.bootSeq {
-			var br, eB = o.sendBootNotification(o.bootReason)
-			if eB == nil {
-				o.processBootResponse(br, o.bootReason)
+			if o.bootInterval == 0 || o.tick%int64(o.bootInterval) == 0 {
+				var br, eB = o.sendBootNotification(o.bootReason)
+				if eB == nil {
+					o.processBootResponse(br, o.bootReason)
+				}
 			}
 		}
 
+		o.tick = assets.HandleTick(o.tick)
+
 		select {
 		case <-q:
-			o.logger.log(lm, o.L.Get(text.Ocpp201ServerStopped), assets.Info)
-
 			o.s.Stop()
+
+			o.logger.log(lm, o.L.Get(text.Ocpp201ServerStopped), assets.Info)
 
 			close(q)
 			close(c)

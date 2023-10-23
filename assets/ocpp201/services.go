@@ -28,6 +28,10 @@ func (o *Ocpp201) setStartUpConfigurations() {
 
 	o.bootStatus = provisioning.RegistrationStatusAccepted
 
+	o.bootInterval = 0
+
+	o.tick = 0
+
 	o.logger.log(map[string]string{"protocol": string(o.Asset.Protocol), "function": "setStartUpConfigurations", "simulator": o.Asset.Name},
 		o.L.Get(text.StartUpConfigurations), assets.Info)
 
@@ -124,8 +128,6 @@ func (o *Ocpp201) sendBootNotification(r provisioning.BootReason) (res *provisio
 
 	o.logger.log(lm, resp.(*provisioning.BootNotificationResponse), assets.Info)
 
-	o.st = time.Now()
-
 	o.bootStatus = resp.(*provisioning.BootNotificationResponse).Status
 
 	return resp.(*provisioning.BootNotificationResponse), nil
@@ -140,60 +142,58 @@ r	-	Boot reason in case the request needs to be done again (provisioning.BootRea
 */
 func (o *Ocpp201) processBootResponse(res *provisioning.BootNotificationResponse, r provisioning.BootReason) {
 	if res.Status != provisioning.RegistrationStatusAccepted {
-		for {
-			// B03.FR.06 Not accepted and interval grater than 0
-			var i = res.Interval
+		// B03.FR.06 Not accepted and interval grater than 0
+		o.bootInterval = res.Interval
 
-			// B03.FR.05 Not accepted and interval is 0
-			if res.Interval <= 0 {
-				i = int(assets.DefHeartbeatInterval)
-			}
-
-			time.Sleep(time.Duration(i) * time.Second)
-
-			var resp, _ = o.sendBootNotification(r)
-
-			o.bootStatus = resp.Status
-
-			if resp.Status == provisioning.RegistrationStatusAccepted {
-				o.bootSeq = false
-				break
-			}
+		// B03.FR.05 Not accepted and interval is 0
+		if res.Interval <= 0 {
+			o.bootInterval = int(assets.DefHeartbeatInterval)
 		}
-	}
 
-	if res.Interval > 0 {
-		o.components["OCPPCommCtrlr"].variables["HeartbeatInterval"] = setComponentVariableValueStatus(
-			"OCPPCommCtrlr",
-			"HeartbeatInterval",
-			strconv.Itoa(res.Interval),
-			0,
-			provisioning.GetVariableStatusAccepted,
-		)
+		var resp, _ = o.sendBootNotification(r)
+
+		o.bootStatus = resp.Status
+
+		if resp.Status == provisioning.RegistrationStatusAccepted {
+			o.bootSeq = false
+			o.bootInterval = 0
+		}
 	} else {
-		o.components["OCPPCommCtrlr"].variables["HeartbeatInterval"] = setComponentVariableValueStatus(
-			"OCPPCommCtrlr",
-			"HeartbeatInterval",
-			strconv.FormatInt(assets.DefHeartbeatInterval, 10),
-			0,
-			provisioning.GetVariableStatusAccepted,
-		)
-	}
-
-	// B01.FR.06 Synchronization internal clock
-	// TODO: need to be done
-
-	for ei, e := range o.Asset.Evses {
-		for ci, c := range e.Connectors {
-			o.sendStatusNotification(
-				e.ID,
-				c.ID,
-				o.Asset.Evses[ei].Connectors[ci].Data[o.Asset.Evses[ei].Connectors[ci].DP.Position].ChargingState,
+		if res.Interval > 0 {
+			o.components["OCPPCommCtrlr"].variables["HeartbeatInterval"] = setComponentVariableValueStatus(
+				"OCPPCommCtrlr",
+				"HeartbeatInterval",
+				strconv.Itoa(res.Interval),
+				0,
+				provisioning.GetVariableStatusAccepted,
+			)
+		} else {
+			o.components["OCPPCommCtrlr"].variables["HeartbeatInterval"] = setComponentVariableValueStatus(
+				"OCPPCommCtrlr",
+				"HeartbeatInterval",
+				strconv.FormatInt(assets.DefHeartbeatInterval, 10),
+				0,
+				provisioning.GetVariableStatusAccepted,
 			)
 		}
-	}
 
-	o.bootSeq = false
+		// B01.FR.06 Synchronization internal clock
+		// TODO: need to be done
+
+		for ei, e := range o.Asset.Evses {
+			for ci, c := range e.Connectors {
+				o.sendStatusNotification(
+					e.ID,
+					c.ID,
+					o.Asset.Evses[ei].Connectors[ci].Data[o.Asset.Evses[ei].Connectors[ci].DP.Position].ChargingState,
+				)
+			}
+		}
+
+		o.bootInterval = 0
+
+		o.bootSeq = false
+	}
 }
 
 /*
