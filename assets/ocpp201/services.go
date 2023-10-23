@@ -81,7 +81,8 @@ func (o *Ocpp201) setStartUpConfigurations() {
 }
 
 /*
-Sends the boot notification to the central system.
+Sends the boot notification to the central system. Returns the response
+(*provisioning.BootNotificationResponse) and the error (error) in case of failure.
 
 r	-	Reason for the boot notification (provisioning.BootReason)
 */
@@ -134,6 +135,8 @@ func (o *Ocpp201) sendBootNotification(r provisioning.BootReason) (res *provisio
 Have the logic needed to process the boot notification response.
 
 res	-	The cs boot response (provisioning.BootNotificationResponse)
+
+r	-	Boot reason in case the request needs to be done again (provisioning.BootReason)
 */
 func (o *Ocpp201) processBootResponse(res *provisioning.BootNotificationResponse, r provisioning.BootReason) {
 	if res.Status != provisioning.RegistrationStatusAccepted {
