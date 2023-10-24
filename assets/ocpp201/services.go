@@ -32,6 +32,8 @@ func (o *Ocpp201) setStartUpConfigurations() {
 
 	o.tick = 0
 
+	o.heartbeatC = 0
+
 	o.logger.log(map[string]string{"protocol": string(o.Asset.Protocol), "function": "setStartUpConfigurations", "simulator": o.Asset.Name},
 		o.L.Get(text.StartUpConfigurations), assets.Info)
 
@@ -118,6 +120,9 @@ func (o *Ocpp201) sendBootNotification(r provisioning.BootReason) (res *provisio
 
 	var resp, e = o.s.SendRequest(req)
 
+	// G02.FR.05 reset heartbeat interval when another message has been sent
+	o.heartbeatC = 0
+
 	lm["sender"] = assets.CS
 	lm["type"] = assets.Response
 
@@ -197,6 +202,66 @@ func (o *Ocpp201) processBootResponse(res *provisioning.BootNotificationResponse
 }
 
 /*
+Logic to handle the heartbeat interval timer, in case reaches the time calls the send heartbeat
+function and resets it. If the it didn't reached the time just increments it.
+*/
+func (o *Ocpp201) processHeartbeat() {
+	var lm = map[string]string{
+		"protocol":  string(o.Asset.Protocol),
+		"function":  "processHeartbeat",
+		"feature":   availability.HeartbeatFeatureName,
+		"simulator": o.Asset.Name,
+	}
+
+	o.heartbeatC++
+
+	var hb, errH = strconv.ParseInt(o.components["OCPPCommCtrlr"].variables["HeartbeatInterval"].item[0].AttributeValue, 10, 64)
+	if errH != nil {
+		o.logger.log(lm, errH, assets.Error)
+		return
+	}
+
+	if o.heartbeatC == hb {
+		o.sendHeartbeat()
+
+		o.heartbeatC = 0
+	}
+}
+
+/*
+Sends the heartbeat request to the cs.
+*/
+func (o *Ocpp201) sendHeartbeat() {
+	var lm = map[string]string{
+		"protocol":  string(o.Asset.Protocol),
+		"function":  "sendHeartbeat",
+		"feature":   availability.HeartbeatFeatureName,
+		"simulator": o.Asset.Name,
+		"sender":    assets.CP,
+		"type":      assets.Request,
+	}
+
+	var req = availability.HeartbeatRequest{}
+
+	o.logger.log(lm, req, assets.Info)
+
+	var resp, e = o.s.SendRequest(req)
+
+	lm["sender"] = assets.CS
+	lm["type"] = assets.Response
+
+	if e != nil {
+		o.logger.log(lm, e, assets.Error)
+		return
+	}
+
+	// G02.FR.06 sync the internal clock
+	// G02.FR.07 if heartbeat is never sent send it once every 24 hours
+
+	o.logger.log(lm, resp.(*availability.HeartbeatResponse), assets.Info)
+}
+
+/*
 Send the connector status information to the cs.
 
 eID	-	EVSE identifier (int64)
@@ -227,6 +292,9 @@ func (o *Ocpp201) sendStatusNotification(eID, cID, cS int64) {
 	o.logger.log(lm, req, assets.Info)
 
 	var res, err = o.s.SendRequest(req)
+
+	// G02.FR.05 reset heartbeat interval when another message has been sent
+	o.heartbeatC = 0
 
 	lm["sender"] = assets.CS
 	lm["type"] = assets.Response

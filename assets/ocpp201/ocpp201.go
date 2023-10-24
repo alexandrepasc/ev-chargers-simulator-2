@@ -35,6 +35,7 @@ type Ocpp201 struct {
 	bootReason   provisioning.BootReason         // Boot reason
 	bootInterval int                             // Handle the boot interval when the boot fails
 	tick         int64                           // Ticker to enable trigger scheduled events
+	heartbeatC   int64                           // Heartbeat counter to handle the request interval
 }
 
 /*
@@ -96,6 +97,8 @@ func (o *Ocpp201) Start(c chan common.Channel, q chan bool) {
 				}
 			}
 		}
+
+		o.processHeartbeat()
 
 		o.tick = assets.HandleTick(o.tick)
 
