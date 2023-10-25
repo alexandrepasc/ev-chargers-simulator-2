@@ -13,29 +13,28 @@ import (
 	"github.com/google/uuid"
 	ocpp201 "github.com/lorenzodonini/ocpp-go/ocpp2.0.1"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/provisioning"
-	"github.com/lorenzodonini/ocpp-go/ocppj"
-	"github.com/lorenzodonini/ocpp-go/ws"
 )
 
 type Ocpp201 struct {
-	lock         sync.RWMutex                    // Lock goroutine
-	logger       logging                         // Logging
-	L            translation.Translation         // Translation module
-	Timeout      int64                           // Connection timeout
-	CSAddr       string                          // Central system ip address
-	CSPort       string                          // Central system port
-	Asset        *simulator.Asset                // Asset data for the simulator
-	Mod          *model.Struct                   // Model data for the asset
-	s            ocpp201.ChargingStation         // Ocpp charging station server
-	components   map[string]component            // Components and variables keys
-	bootStatus   provisioning.RegistrationStatus // The booting status of the cp
-	st           time.Time                       // Simulator start timestamp
-	connectSeq   bool                            // To trigger the websocket connection
-	bootSeq      bool                            // To trigger the boot up sequence
-	bootReason   provisioning.BootReason         // Boot reason
-	bootInterval int                             // Handle the boot interval when the boot fails
-	tick         int64                           // Ticker to enable trigger scheduled events
-	heartbeatC   int64                           // Heartbeat counter to handle the request interval
+	lock          sync.RWMutex                    // Lock goroutine
+	logger        logging                         // Logging
+	L             translation.Translation         // Translation module
+	Timeout       int64                           // Connection timeout
+	CSAddr        string                          // Central system ip address
+	CSPort        string                          // Central system port
+	Asset         *simulator.Asset                // Asset data for the simulator
+	Mod           *model.Struct                   // Model data for the asset
+	s             ocpp201.ChargingStation         // Ocpp charging station server
+	components    map[string]component            // Components and variables keys
+	bootStatus    provisioning.RegistrationStatus // The booting status of the cp
+	st            time.Time                       // Simulator start timestamp
+	connectSeq    bool                            // To trigger the websocket connection
+	bootSeq       bool                            // To trigger the boot up sequence
+	bootReason    provisioning.BootReason         // Boot reason
+	bootInterval  int                             // Handle the boot interval when the boot fails
+	disconnectSeq bool                            // To trigger the simulator to close the server
+	tick          int64                           // Ticker to enable trigger scheduled events
+	heartbeatC    int64                           // Heartbeat counter to handle the request interval
 }
 
 /*
@@ -63,10 +62,18 @@ func (o *Ocpp201) Start(c chan common.Channel, q chan bool) {
 	o.setStartUpConfigurations()
 
 	// TODO: remove this
-	ocppj.SetLogger(logger)
-	ws.SetLogger(logger)
+	// ocppj.SetLogger(logger)
+	// ws.SetLogger(logger)
 
 	for {
+		if o.disconnectSeq {
+			o.s.Stop()
+
+			o.logger.log(lm, o.L.Get(text.Ocpp201ServerStopped), assets.Info)
+
+			o.disconnectSeq = false
+		}
+
 		if o.connectSeq {
 			o.s = setupServer(o.Asset.CPId, o.Timeout, o, o.L)
 
@@ -78,6 +85,7 @@ func (o *Ocpp201) Start(c chan common.Channel, q chan bool) {
 			sErr := o.s.Start(conn + o.CSAddr + ":" + o.CSPort)
 
 			if sErr != nil {
+				// TODO: investigate what to do when the asset fails to connect
 				o.logger.log(lm, sErr, assets.Error)
 				return
 			}
@@ -93,7 +101,7 @@ func (o *Ocpp201) Start(c chan common.Channel, q chan bool) {
 			if o.bootInterval == 0 || o.tick%int64(o.bootInterval) == 0 {
 				var br, eB = o.sendBootNotification(o.bootReason)
 				if eB == nil {
-					o.processBootResponse(br, o.bootReason)
+					o.processBootResponse(br)
 				}
 			}
 		}
@@ -116,6 +124,8 @@ func (o *Ocpp201) Start(c chan common.Channel, q chan bool) {
 		default:
 			channelComm(c, o.Asset.Evses, o.st, o.Asset.Name, o.Asset.SimID)
 		}
+
+		time.Sleep(1 * time.Second)
 	}
 }
 

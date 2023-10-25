@@ -87,7 +87,6 @@ var components = map[string]component{
 							Instance: "",
 						},
 						AttributeStatus: provisioning.GetVariableStatusAccepted,
-						AttributeType:   types.AttributeActual,
 						AttributeValue:  "",
 					},
 				},

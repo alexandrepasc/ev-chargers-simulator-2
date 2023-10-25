@@ -30,6 +30,8 @@ func (o *Ocpp201) setStartUpConfigurations() {
 
 	o.bootInterval = 0
 
+	o.disconnectSeq = false
+
 	o.tick = 0
 
 	o.heartbeatC = 0
@@ -145,7 +147,7 @@ res	-	The cs boot response (provisioning.BootNotificationResponse)
 
 r	-	Boot reason in case the request needs to be done again (provisioning.BootReason)
 */
-func (o *Ocpp201) processBootResponse(res *provisioning.BootNotificationResponse, r provisioning.BootReason) {
+func (o *Ocpp201) processBootResponse(res *provisioning.BootNotificationResponse) {
 	if res.Status != provisioning.RegistrationStatusAccepted {
 		// B03.FR.06 Not accepted and interval grater than 0
 		o.bootInterval = res.Interval
@@ -155,11 +157,7 @@ func (o *Ocpp201) processBootResponse(res *provisioning.BootNotificationResponse
 			o.bootInterval = int(assets.DefHeartbeatInterval)
 		}
 
-		var resp, _ = o.sendBootNotification(r)
-
-		o.bootStatus = resp.Status
-
-		if resp.Status == provisioning.RegistrationStatusAccepted {
+		if res.Status == provisioning.RegistrationStatusAccepted {
 			o.bootSeq = false
 			o.bootInterval = 0
 		}
@@ -199,6 +197,8 @@ func (o *Ocpp201) processBootResponse(res *provisioning.BootNotificationResponse
 
 		o.bootSeq = false
 	}
+
+	o.bootReason = provisioning.BootReasonPowerUp
 }
 
 /*
@@ -531,6 +531,8 @@ func (o *Ocpp201) processSetVariables(k []provisioning.SetVariableData) (r []pro
 	// B05.FR.13 Multiple elements with the same component, variable a attribute type combination
 	// TODO: not sure how to handle this
 
+	var isBasicAuthPassword = false
+
 	for _, ki := range k {
 		// B05.FR.04 Unknown component
 		var _, okc = components[ki.Component.Name]
@@ -630,7 +632,22 @@ func (o *Ocpp201) processSetVariables(k []provisioning.SetVariableData) (r []pro
 		vn.AttributeStatus = provisioning.SetVariableStatusAccepted
 		components[ki.Component.Name].variables[ki.Variable.Name].item[index].AttributeValue = ki.AttributeValue
 
+		if ki.Variable.Name == "BasicAuthPassword" {
+			isBasicAuthPassword = true
+		}
+
 		r = append(r, vn)
+	}
+
+	// A01 Update cp password for http basic authentication
+	if isBasicAuthPassword {
+		o.disconnectSeq = true
+
+		o.connectSeq = true
+
+		o.bootSeq = true
+
+		o.bootReason = provisioning.BootReasonApplicationReset
 	}
 
 	return r, nil
