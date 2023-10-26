@@ -86,6 +86,36 @@ func (o *Ocpp201) setStartUpConfigurations() {
 		0,
 		status,
 	)
+
+	// TODO: this might not be correct
+	switch {
+	case o.Asset.BasicAuth && o.Asset.TLS:
+		o.components["SecurityCtrlr"].variables["SecurityProfile"] = setComponentVariableValueStatus(
+			"SecurityCtrlr",
+			"SecurityProfile",
+			"3",
+			0,
+			status,
+		)
+
+	case o.Asset.BasicAuth && !o.Asset.TLS:
+		o.components["SecurityCtrlr"].variables["SecurityProfile"] = setComponentVariableValueStatus(
+			"SecurityCtrlr",
+			"SecurityProfile",
+			"1",
+			0,
+			status,
+		)
+
+	case !o.Asset.BasicAuth && !o.Asset.TLS:
+		o.components["SecurityCtrlr"].variables["SecurityProfile"] = setComponentVariableValueStatus(
+			"SecurityCtrlr",
+			"SecurityProfile",
+			"0",
+			0,
+			status,
+		)
+	}
 }
 
 /*

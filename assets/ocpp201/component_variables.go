@@ -110,6 +110,18 @@ var components = map[string]component{
 				},
 				mutability: ReadWrite,
 			},
+			"SecurityProfile": {
+				item: []provisioning.GetVariableResult{
+					{
+						Variable: types.Variable{
+							Name: "SecurityProfile",
+						},
+						AttributeStatus: provisioning.GetVariableStatusAccepted,
+						AttributeValue:  "",
+					},
+				},
+				mutability: ReadOnly,
+			},
 		},
 	},
 }
