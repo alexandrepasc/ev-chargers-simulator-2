@@ -9,6 +9,7 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/availability"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/provisioning"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/security"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
 	"github.com/lorenzodonini/ocpp-go/ocppj"
 )
@@ -681,6 +682,46 @@ func (o *Ocpp201) processSetVariables(k []provisioning.SetVariableData) (r []pro
 	}
 
 	return r, nil
+}
+
+/*
+Send the security event notification to the cs.
+
+t	-	The security event type from the list of events (securityEventType)
+
+i	-	Additional information to add to the request (string)
+*/
+func (o *Ocpp201) sendSecurityEventNotification(t securityEventType, i string) {
+	var lm = map[string]string{
+		"protocol":  string(o.Asset.Protocol),
+		"function":  "sendSecurityEventNotification",
+		"feature":   security.SecurityEventNotificationFeatureName,
+		"simulator": o.Asset.Name,
+		"sender":    assets.CP,
+		"type":      assets.Request,
+	}
+
+	var req = security.SecurityEventNotificationRequest{
+		Type: string(t),
+		Timestamp: &types.DateTime{
+			Time: time.Now(),
+		},
+		TechInfo: i,
+	}
+
+	o.logger.log(lm, req, assets.Info)
+
+	var res, err = o.s.SendRequest(req)
+
+	lm["sender"] = assets.CS
+	lm["type"] = assets.Response
+
+	if err != nil {
+		o.logger.log(lm, err, assets.Error)
+		return
+	}
+
+	o.logger.log(lm, res.(*security.SecurityEventNotificationResponse), assets.Info)
 }
 
 /*
