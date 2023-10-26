@@ -904,18 +904,21 @@ func (o *Ocpp16) processAlignedData() {
 
 	var ad = o.meterValuesAlignedData(conf)
 
-	var _, c = getActiveConnector(o.Asset.Evses[0])
+	// TODO: this needs to be validated doesnt know if the changes make sense
+	var idx, c = getActiveConnector(o.Asset.Evses[0])
 
-	if c.Data[c.DP.Position].ChargingState == int64(assets.Charging) {
-		var cl = strings.Split(*o.Conf["StopTxnAlignedData"].Value, ",")
+	if idx != -1 {
+		if c.Data[c.DP.Position].ChargingState == int64(assets.Charging) {
+			var cl = strings.Split(*o.Conf["StopTxnAlignedData"].Value, ",")
 
-		var tad []types.MeterValue
+			var tad []types.MeterValue
 
-		if len(cl) != 0 || cl[0] != "" {
-			tad = o.meterValuesAlignedData(cl)
+			if len(cl) != 0 || cl[0] != "" {
+				tad = o.meterValuesAlignedData(cl)
+			}
+
+			o.txnAlignedData = append(o.txnAlignedData, tad...)
 		}
-
-		o.txnAlignedData = append(o.txnAlignedData, tad...)
 	}
 
 	// TODO: review the connector id, at this moment is returning the total of the asset so the id is 0
