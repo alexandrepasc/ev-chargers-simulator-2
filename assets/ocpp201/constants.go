@@ -1,5 +1,19 @@
 package ocpp201
 
+type mutability string
+
+const (
+	ReadOnly  mutability = "r"
+	WriteOnly mutability = "w"
+	ReadWrite mutability = "rw"
+)
+
+type secEventSeq struct {
+	isToTrigger bool
+	eventType   securityEventType
+	eventInfo   string
+}
+
 type securityEventType string
 
 //nolint:varcheck,deadcode // Because this are a list that could be used in the future

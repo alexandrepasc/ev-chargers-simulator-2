@@ -138,11 +138,3 @@ type variable struct {
 	item       []provisioning.GetVariableResult
 	mutability mutability
 }
-
-type mutability string
-
-const (
-	ReadOnly  mutability = "r"
-	WriteOnly mutability = "w"
-	ReadWrite mutability = "rw"
-)
