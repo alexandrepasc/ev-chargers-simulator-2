@@ -35,6 +35,7 @@ type Ocpp201 struct {
 	disconnectSeq bool                            // To trigger the simulator to close the server
 	tick          int64                           // Ticker to enable trigger scheduled events
 	heartbeatC    int64                           // Heartbeat counter to handle the request interval
+	secEventSeq   secEventSeq
 }
 
 /*
@@ -77,12 +78,7 @@ func (o *Ocpp201) Start(c chan common.Channel, q chan bool) {
 		if o.connectSeq {
 			o.s = setupServer(o.Asset.CPId, o.Timeout, o, o.L)
 
-			var conn = "ws://"
-			if o.Asset.TLS {
-				conn = "wss://"
-			}
-
-			sErr := o.s.Start(conn + o.CSAddr + ":" + o.CSPort)
+			sErr := o.s.Start(assets.GetConnProtocol(o.Asset.TLS) + o.CSAddr + ":" + o.CSPort)
 
 			if sErr != nil {
 				// TODO: investigate what to do when the asset fails to connect
@@ -104,6 +100,10 @@ func (o *Ocpp201) Start(c chan common.Channel, q chan bool) {
 					o.processBootResponse(br)
 				}
 			}
+		}
+
+		if o.secEventSeq.isToTrigger {
+			o.sendSecurityEventNotification(o.secEventSeq.eventType, o.secEventSeq.eventInfo)
 		}
 
 		o.processHeartbeat()

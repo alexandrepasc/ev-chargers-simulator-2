@@ -372,6 +372,20 @@ func HandleTick(t int64) int64 {
 	return t
 }
 
+/*
+Get the connection protocol string depending if the tls is enabled for the asset or not (string).
+
+t	-	Is the tls activated to the asset (bool)
+*/
+// TODO: add this to all the implementations
+func GetConnProtocol(t bool) string {
+	if t {
+		return string(wssConn)
+	}
+
+	return string(wsConn)
+}
+
 func IsDataChanClosed(ch <-chan common.Channel) bool {
 	select {
 	case <-ch:

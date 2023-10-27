@@ -37,6 +37,12 @@ func (o *Ocpp201) setStartUpConfigurations() {
 
 	o.heartbeatC = 0
 
+	o.secEventSeq = secEventSeq{
+		isToTrigger: true,
+		eventType:   startupOfTheDevice,
+		eventInfo:   "",
+	}
+
 	o.logger.log(map[string]string{"protocol": string(o.Asset.Protocol), "function": "setStartUpConfigurations", "simulator": o.Asset.Name},
 		o.L.Get(text.StartUpConfigurations), assets.Info)
 
@@ -679,6 +685,12 @@ func (o *Ocpp201) processSetVariables(k []provisioning.SetVariableData) (r []pro
 		o.bootSeq = true
 
 		o.bootReason = provisioning.BootReasonApplicationReset
+
+		o.secEventSeq = secEventSeq{
+			isToTrigger: true,
+			eventType:   resetOrReboot,
+			eventInfo:   "",
+		}
 	}
 
 	return r, nil
@@ -713,6 +725,9 @@ func (o *Ocpp201) sendSecurityEventNotification(t securityEventType, i string) {
 
 	var res, err = o.s.SendRequest(req)
 
+	// G02.FR.05 reset heartbeat interval when another message has been sent
+	o.heartbeatC = 0
+
 	lm["sender"] = assets.CS
 	lm["type"] = assets.Response
 
@@ -722,6 +737,8 @@ func (o *Ocpp201) sendSecurityEventNotification(t securityEventType, i string) {
 	}
 
 	o.logger.log(lm, res.(*security.SecurityEventNotificationResponse), assets.Info)
+
+	o.secEventSeq.isToTrigger = false
 }
 
 /*
