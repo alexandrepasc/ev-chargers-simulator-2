@@ -48,17 +48,17 @@ func (o *Ocpp201) setStartUpConfigurations() {
 
 	var status = provisioning.GetVariableStatusAccepted
 
-	o.components["DeviceDataCtrlr"].variables["ItemsPerMessage"] = setComponentVariableValueStatus(
-		"DeviceDataCtrlr",
-		"ItemsPerMessage",
+	o.components[string(deviceDataCtrlr)].variables[string(itemsPerMessage)] = setComponentVariableValueStatus(
+		string(deviceDataCtrlr),
+		string(itemsPerMessage),
 		strconv.FormatInt(assets.DefGetConfigurationMaxKeys, 10),
 		0,
 		status,
 	)
 
-	o.components["DeviceDataCtrlr"].variables["ItemsPerMessage"] = setComponentVariableValueStatus(
-		"DeviceDataCtrlr",
-		"ItemsPerMessage",
+	o.components[string(deviceDataCtrlr)].variables[string(itemsPerMessage)] = setComponentVariableValueStatus(
+		string(deviceDataCtrlr),
+		string(itemsPerMessage),
 		strconv.FormatInt(assets.DefGetConfigurationMaxKeys, 10),
 		1,
 		status,
@@ -68,17 +68,17 @@ func (o *Ocpp201) setStartUpConfigurations() {
 		status = provisioning.GetVariableStatusNotSupported
 	}
 
-	o.components["SecurityCtrlr"].variables["BasicAuthPassword"] = setComponentVariableValueStatus(
-		"SecurityCtrlr",
-		"BasicAuthPassword",
+	o.components[string(securityCtrlr)].variables[string(basicAuthPassword)] = setComponentVariableValueStatus(
+		string(securityCtrlr),
+		string(basicAuthPassword),
 		o.Mod.BasicAuth.Password,
 		0,
 		status,
 	)
 
-	o.components["SecurityCtrlr"].variables["Identity"] = setComponentVariableValueStatus(
-		"SecurityCtrlr",
-		"Identity",
+	o.components[string(securityCtrlr)].variables[string(identity)] = setComponentVariableValueStatus(
+		string(securityCtrlr),
+		string(identity),
 		o.Mod.BasicAuth.Username,
 		0,
 		status,
@@ -86,9 +86,9 @@ func (o *Ocpp201) setStartUpConfigurations() {
 
 	status = provisioning.GetVariableStatusAccepted
 
-	o.components["OCPPCommCtrlr"].variables["HeartbeatInterval"] = setComponentVariableValueStatus(
-		"OCPPCommCtrlr",
-		"HeartbeatInterval",
+	o.components[string(oCPPCommCtrlr)].variables[string(heartbeatInterval)] = setComponentVariableValueStatus(
+		string(oCPPCommCtrlr),
+		string(heartbeatInterval),
 		strconv.FormatInt(assets.DefHeartbeatInterval, 10),
 		0,
 		status,
@@ -97,27 +97,27 @@ func (o *Ocpp201) setStartUpConfigurations() {
 	// TODO: this might not be correct
 	switch {
 	case o.Asset.BasicAuth && o.Asset.TLS:
-		o.components["SecurityCtrlr"].variables["SecurityProfile"] = setComponentVariableValueStatus(
-			"SecurityCtrlr",
-			"SecurityProfile",
+		o.components[string(securityCtrlr)].variables[string(securityProfile)] = setComponentVariableValueStatus(
+			string(securityCtrlr),
+			string(securityProfile),
 			"3",
 			0,
 			status,
 		)
 
 	case o.Asset.BasicAuth && !o.Asset.TLS:
-		o.components["SecurityCtrlr"].variables["SecurityProfile"] = setComponentVariableValueStatus(
-			"SecurityCtrlr",
-			"SecurityProfile",
+		o.components[string(securityCtrlr)].variables[string(securityProfile)] = setComponentVariableValueStatus(
+			string(securityCtrlr),
+			string(securityProfile),
 			"1",
 			0,
 			status,
 		)
 
 	case !o.Asset.BasicAuth && !o.Asset.TLS:
-		o.components["SecurityCtrlr"].variables["SecurityProfile"] = setComponentVariableValueStatus(
-			"SecurityCtrlr",
-			"SecurityProfile",
+		o.components[string(securityCtrlr)].variables[string(securityProfile)] = setComponentVariableValueStatus(
+			string(securityCtrlr),
+			string(securityProfile),
 			"0",
 			0,
 			status,
@@ -200,17 +200,17 @@ func (o *Ocpp201) processBootResponse(res *provisioning.BootNotificationResponse
 		}
 	} else {
 		if res.Interval > 0 {
-			o.components["OCPPCommCtrlr"].variables["HeartbeatInterval"] = setComponentVariableValueStatus(
-				"OCPPCommCtrlr",
-				"HeartbeatInterval",
+			o.components[string(oCPPCommCtrlr)].variables[string(heartbeatInterval)] = setComponentVariableValueStatus(
+				string(oCPPCommCtrlr),
+				string(heartbeatInterval),
 				strconv.Itoa(res.Interval),
 				0,
 				provisioning.GetVariableStatusAccepted,
 			)
 		} else {
-			o.components["OCPPCommCtrlr"].variables["HeartbeatInterval"] = setComponentVariableValueStatus(
-				"OCPPCommCtrlr",
-				"HeartbeatInterval",
+			o.components[string(oCPPCommCtrlr)].variables[string(heartbeatInterval)] = setComponentVariableValueStatus(
+				string(oCPPCommCtrlr),
+				string(heartbeatInterval),
 				strconv.FormatInt(assets.DefHeartbeatInterval, 10),
 				0,
 				provisioning.GetVariableStatusAccepted,
@@ -252,7 +252,7 @@ func (o *Ocpp201) processHeartbeat() {
 
 	o.heartbeatC++
 
-	var hb, errH = strconv.ParseInt(o.components["OCPPCommCtrlr"].variables["HeartbeatInterval"].item[0].AttributeValue, 10, 64)
+	var hb, errH = strconv.ParseInt(o.components[string(oCPPCommCtrlr)].variables[string(heartbeatInterval)].item[0].AttributeValue, 10, 64)
 	if errH != nil {
 		o.logger.log(lm, errH, assets.Error)
 		return
@@ -359,7 +359,7 @@ func (o *Ocpp201) processGetVariables(k []provisioning.GetVariableData) (r []pro
 		"simulator": o.Asset.Name,
 	}
 
-	var m, errm = strconv.ParseInt(o.components["DeviceDataCtrlr"].variables["ItemsPerMessage"].item[0].AttributeValue, 10, 64)
+	var m, errm = strconv.ParseInt(o.components[string(deviceDataCtrlr)].variables[string(itemsPerMessage)].item[0].AttributeValue, 10, 64)
 	if errm != nil {
 		o.logger.log(lm, errm, assets.Fatal)
 
@@ -553,7 +553,7 @@ func (o *Ocpp201) processSetVariables(k []provisioning.SetVariableData) (r []pro
 		"simulator": o.Asset.Name,
 	}
 
-	var m, errm = strconv.ParseInt(o.components["DeviceDataCtrlr"].variables["ItemsPerMessage"].item[1].AttributeValue, 10, 64)
+	var m, errm = strconv.ParseInt(o.components[string(deviceDataCtrlr)].variables[string(itemsPerMessage)].item[1].AttributeValue, 10, 64)
 	if errm != nil {
 		o.logger.log(lm, errm, assets.Fatal)
 
@@ -669,7 +669,7 @@ func (o *Ocpp201) processSetVariables(k []provisioning.SetVariableData) (r []pro
 		vn.AttributeStatus = provisioning.SetVariableStatusAccepted
 		components[ki.Component.Name].variables[ki.Variable.Name].item[index].AttributeValue = ki.AttributeValue
 
-		if ki.Variable.Name == "BasicAuthPassword" {
+		if ki.Variable.Name == string(basicAuthPassword) {
 			isBasicAuthPassword = true
 		}
 

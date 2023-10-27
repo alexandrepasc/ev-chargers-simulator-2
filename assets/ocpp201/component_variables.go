@@ -7,23 +7,23 @@ import (
 
 // TODO: every controller component has an enable variable that could enable or disable the functionality
 var components = map[string]component{
-	"AlignedDataCtrlr": {
-		name:    "AlignedDataCtrlr",
+	string(alignedDataCtrlr): {
+		name:    alignedDataCtrlr,
 		enabled: true,
 	},
-	"DeviceDataCtrlr": {
-		name:    "DeviceDataCtrlr",
+	string(deviceDataCtrlr): {
+		name:    deviceDataCtrlr,
 		enabled: true,
 		variables: map[string]variable{
-			"ItemsPerMessage": {
+			string(itemsPerMessage): {
 				item: []provisioning.GetVariableResult{
 					{
 						Variable: types.Variable{
-							Name:     "ItemsPerMessage",
+							Name:     string(itemsPerMessage),
 							Instance: "GetVariables",
 						},
 						Component: types.Component{
-							Name:     "DeviceDataCtrlr",
+							Name:     string(deviceDataCtrlr),
 							Instance: "",
 						},
 						AttributeStatus: provisioning.GetVariableStatusAccepted,
@@ -32,11 +32,11 @@ var components = map[string]component{
 					},
 					{
 						Variable: types.Variable{
-							Name:     "ItemsPerMessage",
+							Name:     string(itemsPerMessage),
 							Instance: "SetVariables",
 						},
 						Component: types.Component{
-							Name:     "DeviceDataCtrlr",
+							Name:     string(deviceDataCtrlr),
 							Instance: "",
 						},
 						AttributeStatus: provisioning.GetVariableStatusAccepted,
@@ -48,19 +48,19 @@ var components = map[string]component{
 			},
 		},
 	},
-	"OCPPCommCtrlr": {
-		name:    "OCPPCommCtrlr",
+	string(oCPPCommCtrlr): {
+		name:    oCPPCommCtrlr,
 		enabled: true,
 		variables: map[string]variable{
-			"HeartbeatInterval": {
+			string(heartbeatInterval): {
 				item: []provisioning.GetVariableResult{
 					{
 						Variable: types.Variable{
-							Name:     "HeartbeatInterval",
+							Name:     string(heartbeatInterval),
 							Instance: "",
 						},
 						Component: types.Component{
-							Name:     "OCPPCommCtrlr",
+							Name:     string(oCPPCommCtrlr),
 							Instance: "",
 						},
 						AttributeStatus: provisioning.GetVariableStatusAccepted,
@@ -69,38 +69,15 @@ var components = map[string]component{
 				},
 				mutability: ReadWrite,
 			},
-		},
-	},
-	"SecurityCtrlr": {
-		name:    "SecurityCtrlr",
-		enabled: true,
-		variables: map[string]variable{
-			"BasicAuthPassword": {
+			string(networkConfigurationPriority): {
 				item: []provisioning.GetVariableResult{
 					{
 						Variable: types.Variable{
-							Name:     "BasicAuthPassword",
+							Name:     string(networkConfigurationPriority),
 							Instance: "",
 						},
 						Component: types.Component{
-							Name:     "SecurityCtrlr",
-							Instance: "",
-						},
-						AttributeStatus: provisioning.GetVariableStatusAccepted,
-						AttributeValue:  "",
-					},
-				},
-				mutability: WriteOnly,
-			},
-			"Identity": {
-				item: []provisioning.GetVariableResult{
-					{
-						Variable: types.Variable{
-							Name:     "Identity",
-							Instance: "",
-						},
-						Component: types.Component{
-							Name:     "SecurityCtrlr",
+							Name:     string(oCPPCommCtrlr),
 							Instance: "",
 						},
 						AttributeStatus: provisioning.GetVariableStatusAccepted,
@@ -110,11 +87,56 @@ var components = map[string]component{
 				},
 				mutability: ReadWrite,
 			},
-			"SecurityProfile": {
+		},
+	},
+	string(securityCtrlr): {
+		name:    securityCtrlr,
+		enabled: true,
+		variables: map[string]variable{
+			string(basicAuthPassword): {
 				item: []provisioning.GetVariableResult{
 					{
 						Variable: types.Variable{
-							Name: "SecurityProfile",
+							Name:     string(basicAuthPassword),
+							Instance: "",
+						},
+						Component: types.Component{
+							Name:     string(securityCtrlr),
+							Instance: "",
+						},
+						AttributeStatus: provisioning.GetVariableStatusAccepted,
+						AttributeValue:  "",
+					},
+				},
+				mutability: WriteOnly,
+			},
+			string(identity): {
+				item: []provisioning.GetVariableResult{
+					{
+						Variable: types.Variable{
+							Name:     string(identity),
+							Instance: "",
+						},
+						Component: types.Component{
+							Name:     string(securityCtrlr),
+							Instance: "",
+						},
+						AttributeStatus: provisioning.GetVariableStatusAccepted,
+						AttributeType:   types.AttributeActual,
+						AttributeValue:  "",
+					},
+				},
+				mutability: ReadWrite,
+			},
+			string(securityProfile): {
+				item: []provisioning.GetVariableResult{
+					{
+						Variable: types.Variable{
+							Name: string(securityProfile),
+						},
+						Component: types.Component{
+							Name:     string(securityCtrlr),
+							Instance: "",
 						},
 						AttributeStatus: provisioning.GetVariableStatusAccepted,
 						AttributeValue:  "",
@@ -128,7 +150,7 @@ var components = map[string]component{
 
 type component struct {
 	//nolint:structcheck //because dev
-	name string
+	name componentName
 	//nolint:structcheck //because dev
 	enabled   bool
 	variables map[string]variable

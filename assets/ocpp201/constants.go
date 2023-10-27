@@ -39,3 +39,23 @@ const (
 	maintenanceLoginAccepted            securityEventType = "MaintenanceLoginAccepted"            // CRITICAL Successful login to the local maintenance interface.
 	maintenanceLoginFailed              securityEventType = "MaintenanceLoginFailed"              // CRITICAL Failed login attempt to the local maintenance interface.
 )
+
+type componentName string
+
+const (
+	alignedDataCtrlr componentName = "AlignedDataCtrlr"
+	deviceDataCtrlr  componentName = "DeviceDataCtrlr"
+	oCPPCommCtrlr    componentName = "OCPPCommCtrlr"
+	securityCtrlr    componentName = "SecurityCtrlr"
+)
+
+type variableName string
+
+const (
+	itemsPerMessage              variableName = "ItemsPerMessage"
+	heartbeatInterval            variableName = "HeartbeatInterval"
+	networkConfigurationPriority variableName = "NetworkConfigurationPriority"
+	basicAuthPassword            variableName = "BasicAuthPassword"
+	identity                     variableName = "Identity"
+	securityProfile              variableName = "SecurityProfile"
+)
