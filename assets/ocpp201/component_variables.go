@@ -85,7 +85,8 @@ var components = map[string]component{
 						AttributeValue:  "",
 					},
 				},
-				mutability: ReadWrite,
+				// I'll set this as read only since there is no logic to handle multiple values
+				mutability: ReadOnly,
 			},
 		},
 	},

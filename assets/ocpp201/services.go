@@ -105,6 +105,14 @@ func (o *Ocpp201) setStartUpConfigurations() {
 			status,
 		)
 
+		o.components[string(oCPPCommCtrlr)].variables[string(networkConfigurationPriority)] = setComponentVariableValueStatus(
+			string(oCPPCommCtrlr),
+			string(networkConfigurationPriority),
+			"3",
+			0,
+			status,
+		)
+
 	case o.Asset.BasicAuth && !o.Asset.TLS:
 		o.components[string(securityCtrlr)].variables[string(securityProfile)] = setComponentVariableValueStatus(
 			string(securityCtrlr),
@@ -114,10 +122,26 @@ func (o *Ocpp201) setStartUpConfigurations() {
 			status,
 		)
 
+		o.components[string(oCPPCommCtrlr)].variables[string(networkConfigurationPriority)] = setComponentVariableValueStatus(
+			string(oCPPCommCtrlr),
+			string(networkConfigurationPriority),
+			"1",
+			0,
+			status,
+		)
+
 	case !o.Asset.BasicAuth && !o.Asset.TLS:
 		o.components[string(securityCtrlr)].variables[string(securityProfile)] = setComponentVariableValueStatus(
 			string(securityCtrlr),
 			string(securityProfile),
+			"0",
+			0,
+			status,
+		)
+
+		o.components[string(oCPPCommCtrlr)].variables[string(networkConfigurationPriority)] = setComponentVariableValueStatus(
+			string(oCPPCommCtrlr),
+			string(networkConfigurationPriority),
 			"0",
 			0,
 			status,
