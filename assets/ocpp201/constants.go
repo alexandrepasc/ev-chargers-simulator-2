@@ -1,5 +1,7 @@
 package ocpp201
 
+import "github.com/lorenzodonini/ocpp-go/ocpp2.0.1/provisioning"
+
 type mutability string
 
 const (
@@ -39,6 +41,13 @@ const (
 	maintenanceLoginAccepted            securityEventType = "MaintenanceLoginAccepted"            // CRITICAL Successful login to the local maintenance interface.
 	maintenanceLoginFailed              securityEventType = "MaintenanceLoginFailed"              // CRITICAL Failed login attempt to the local maintenance interface.
 )
+
+type bootSeq struct {
+	isToTrigger  bool                            // To trigger the boot up sequence
+	bootStatus   provisioning.RegistrationStatus // The booting status of the cp
+	bootReason   provisioning.BootReason         // Boot reason
+	bootInterval int                             // Handle the boot interval when the boot fails
+}
 
 type componentName string
 

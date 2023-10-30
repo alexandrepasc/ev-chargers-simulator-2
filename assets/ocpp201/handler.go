@@ -116,13 +116,39 @@ func (o *Ocpp201) OnTriggerMessage(req *remotecontrol.TriggerMessageRequest) (re
 	//nolint:exhaustive //because still in dev
 	switch req.RequestedMessage {
 	case remotecontrol.MessageTriggerBootNotification:
-		o.bootReason = provisioning.BootReasonTriggered
-		o.bootSeq = true
+		o.bootSeq.bootReason = provisioning.BootReasonTriggered
+		o.bootSeq.isToTrigger = true
 
 		return &remotecontrol.TriggerMessageResponse{Status: remotecontrol.TriggerMessageStatusAccepted}, nil
 	default:
 		return nil, ocpp.NewError(ocppj.NotSupported, "", "")
 	}
+}
+
+func (o *Ocpp201) OnReset(req *provisioning.ResetRequest) (res *provisioning.ResetResponse, err error) {
+	var lm = map[string]string{
+		"protocol":  string(o.Asset.Protocol),
+		"function":  "OnReset",
+		"feature":   req.GetFeatureName(),
+		"simulator": o.Asset.Name,
+		"sender":    assets.CS,
+		"type":      assets.Request,
+	}
+
+	o.logger.log(lm, req, assets.Info)
+
+	lm["sender"] = assets.CP
+	lm["type"] = assets.Response
+
+	// B03.FR.08 Boot rejected returns SecurityError
+	var eB = o.isBootRejected(lm)
+	if eB != nil {
+		return nil, ocpp.NewError(ocppj.SecurityError, "", "")
+	}
+
+	res = provisioning.NewResetResponse(provisioning.ResetStatusAccepted)
+
+	return
 }
 
 func (o *Ocpp201) OnGetBaseReport(req *provisioning.GetBaseReportRequest) (res *provisioning.GetBaseReportResponse, err error) {
@@ -137,12 +163,6 @@ func (o *Ocpp201) OnGetReport(req *provisioning.GetReportRequest) (res *provisio
 	// B02.FR.09 Boot pending returns the get report response
 	// B03.FR.08 Boot rejected returns SecurityError
 	return nil, ocpp.NewError(ocppj.NotSupported, "Not supported", "")
-}
-
-func (o *Ocpp201) OnReset(req *provisioning.ResetRequest) (res *provisioning.ResetResponse, err error) {
-	// B03.FR.08 Boot rejected returns SecurityError
-	res = provisioning.NewResetResponse(provisioning.ResetStatusAccepted)
-	return
 }
 
 func (o *Ocpp201) OnSetNetworkProfile(req *provisioning.SetNetworkProfileRequest) (res *provisioning.SetNetworkProfileResponse, err error) {

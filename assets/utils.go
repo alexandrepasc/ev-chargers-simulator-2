@@ -386,6 +386,60 @@ func GetConnProtocol(t bool) string {
 	return string(wsConn)
 }
 
+/*
+Runs through all the asset EVSEs and retursn true (bool) in case one of the connectors is in the
+charging state, if not returns false.
+
+el 	-	Asset EVSEs list ([]*simulator.Evse)
+*/
+func IsAssetWithTransaction(el []*simulator.Evse) bool {
+	for _, e := range el {
+		if IsEvseWithTransaction(e) {
+			return true
+		}
+	}
+
+	return false
+}
+
+/*
+Returns true (bool) in case any of the EVSE connector is in the charging state and false if
+none of the connectors is in the that state.
+
+e	-	Asset EVSE (*simulator.Evse)
+*/
+func IsEvseWithTransaction(e *simulator.Evse) bool {
+	for _, c := range e.Connectors {
+		if c.Data[c.DP.Position].ChargingState == int64(Charging) {
+			return true
+		}
+	}
+
+	return false
+}
+
+/*
+Get the EVSE index and structure (int, *simulator.Evse) from the asset using the identifier. In
+case none is found or the id is nil returns the index as -1 and the EVSE as nil.
+
+id	-	The EVSE identifier (*int)
+
+el	-	The asset EVSE list ([]*simulator.Evse)
+*/
+func GetEvseByID(id *int, el []*simulator.Evse) (i int, evse *simulator.Evse) {
+	if id == nil {
+		return -1, nil
+	}
+
+	for idx, e := range el {
+		if e.ID == int64(*id) {
+			return idx, e
+		}
+	}
+
+	return -1, nil
+}
+
 func IsDataChanClosed(ch <-chan common.Channel) bool {
 	select {
 	case <-ch:

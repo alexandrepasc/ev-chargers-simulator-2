@@ -23,13 +23,12 @@ func (o *Ocpp201) setStartUpConfigurations() {
 
 	o.connectSeq = true
 
-	o.bootSeq = true
-
-	o.bootReason = provisioning.BootReasonPowerUp
-
-	o.bootStatus = provisioning.RegistrationStatusAccepted
-
-	o.bootInterval = 0
+	o.bootSeq = bootSeq{
+		isToTrigger:  true,
+		bootStatus:   provisioning.RegistrationStatusAccepted,
+		bootReason:   provisioning.BootReasonPowerUp,
+		bootInterval: 0,
+	}
 
 	o.disconnectSeq = false
 
@@ -196,7 +195,7 @@ func (o *Ocpp201) sendBootNotification(r provisioning.BootReason) (res *provisio
 
 	o.logger.log(lm, resp.(*provisioning.BootNotificationResponse), assets.Info)
 
-	o.bootStatus = resp.(*provisioning.BootNotificationResponse).Status
+	o.bootSeq.bootStatus = resp.(*provisioning.BootNotificationResponse).Status
 
 	return resp.(*provisioning.BootNotificationResponse), nil
 }
@@ -211,16 +210,16 @@ r	-	Boot reason in case the request needs to be done again (provisioning.BootRea
 func (o *Ocpp201) processBootResponse(res *provisioning.BootNotificationResponse) {
 	if res.Status != provisioning.RegistrationStatusAccepted {
 		// B03.FR.06 Not accepted and interval grater than 0
-		o.bootInterval = res.Interval
+		o.bootSeq.bootInterval = res.Interval
 
 		// B03.FR.05 Not accepted and interval is 0
 		if res.Interval <= 0 {
-			o.bootInterval = int(assets.DefHeartbeatInterval)
+			o.bootSeq.bootInterval = int(assets.DefHeartbeatInterval)
 		}
 
 		if res.Status == provisioning.RegistrationStatusAccepted {
-			o.bootSeq = false
-			o.bootInterval = 0
+			o.bootSeq.isToTrigger = false
+			o.bootSeq.bootInterval = 0
 		}
 	} else {
 		if res.Interval > 0 {
@@ -254,12 +253,12 @@ func (o *Ocpp201) processBootResponse(res *provisioning.BootNotificationResponse
 			}
 		}
 
-		o.bootInterval = 0
+		o.bootSeq.bootInterval = 0
 
-		o.bootSeq = false
+		o.bootSeq.isToTrigger = false
 	}
 
-	o.bootReason = provisioning.BootReasonPowerUp
+	o.bootSeq.bootReason = provisioning.BootReasonPowerUp
 }
 
 /*
@@ -706,9 +705,9 @@ func (o *Ocpp201) processSetVariables(k []provisioning.SetVariableData) (r []pro
 
 		o.connectSeq = true
 
-		o.bootSeq = true
+		o.bootSeq.isToTrigger = true
 
-		o.bootReason = provisioning.BootReasonApplicationReset
+		o.bootSeq.bootReason = provisioning.BootReasonApplicationReset
 
 		o.secEventSeq = secEventSeq{
 			isToTrigger: true,
@@ -774,7 +773,7 @@ if not returns nil.
 lm	-	The logging fields (map[string]string)
 */
 func (o *Ocpp201) isBootRejected(lm map[string]string) error {
-	if o.bootStatus == provisioning.RegistrationStatusRejected {
+	if o.bootSeq.bootStatus == provisioning.RegistrationStatusRejected {
 		o.logger.log(lm, ocppj.SecurityError, assets.Error)
 
 		return ocpp.NewError(ocppj.SecurityError, "", "")
