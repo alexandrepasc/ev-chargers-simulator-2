@@ -392,7 +392,7 @@ charging state, if not returns false.
 
 el 	-	Asset EVSEs list ([]*simulator.Evse)
 */
-func IsAssetWithTransaction(el []*simulator.Evse) bool {
+func IsAssetWithTransaction(el []simulator.Evse) bool {
 	for _, e := range el {
 		if IsEvseWithTransaction(e) {
 			return true
@@ -408,7 +408,7 @@ none of the connectors is in the that state.
 
 e	-	Asset EVSE (*simulator.Evse)
 */
-func IsEvseWithTransaction(e *simulator.Evse) bool {
+func IsEvseWithTransaction(e simulator.Evse) bool {
 	for _, c := range e.Connectors {
 		if c.Data[c.DP.Position].ChargingState == int64(Charging) {
 			return true
@@ -420,15 +420,15 @@ func IsEvseWithTransaction(e *simulator.Evse) bool {
 
 /*
 Get the EVSE index and structure (int, *simulator.Evse) from the asset using the identifier. In
-case none is found or the id is nil returns the index as -1 and the EVSE as nil.
+case none is found or the id is nil returns the index as -1 and an empty EVSE structure.
 
 id	-	The EVSE identifier (*int)
 
 el	-	The asset EVSE list ([]*simulator.Evse)
 */
-func GetEvseByID(id *int, el []*simulator.Evse) (i int, evse *simulator.Evse) {
+func GetEvseByID(id *int, el []simulator.Evse) (i int, evse simulator.Evse) {
 	if id == nil {
-		return -1, nil
+		return -1, simulator.Evse{}
 	}
 
 	for idx, e := range el {
@@ -437,7 +437,7 @@ func GetEvseByID(id *int, el []*simulator.Evse) (i int, evse *simulator.Evse) {
 		}
 	}
 
-	return -1, nil
+	return -1, simulator.Evse{}
 }
 
 func IsDataChanClosed(ch <-chan common.Channel) bool {
