@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/alexandrepasc/ev-chargers-simulator-2/assets"
+	"github.com/alexandrepasc/ev-chargers-simulator-2/simulator"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/translation/text"
 	"github.com/lorenzodonini/ocpp-go/ocpp"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/availability"
@@ -765,6 +766,53 @@ func (o *Ocpp201) sendSecurityEventNotification(t securityEventType, i string) {
 }
 
 /*
+Handles the reset request logic handlig the requirements of the functionality, and triggering
+the needed behaviours that the request type mandates. Will return the reset status
+(provisioning.ResetStatus), the additional information in case it is needed (*types.StatusInfo)
+
+id	-	The EVSE indentifier sent by the cs (*int)
+
+ty	-	The reset type (provisioning.ResetType)
+*/
+func (o *Ocpp201) processResetRequest(id *int, _ provisioning.ResetType) (st provisioning.ResetStatus, inf *types.StatusInfo) {
+	// B11 Without Ongoing Transaction
+	if !assets.IsAssetWithTransaction(o.Asset.Evses) {
+		if id == nil {
+			o.disconnectSeq = true
+
+			o.connectSeq = true
+
+			o.bootSeq.isToTrigger = true
+			o.bootSeq.bootReason = provisioning.BootReasonRemoteReset
+
+			o.secEventSeq = secEventSeq{
+				isToTrigger: true,
+				eventType:   resetOrReboot,
+				eventInfo:   "",
+			}
+
+			return provisioning.ResetStatusAccepted, nil
+		}
+
+		var idx, _ = assets.GetEvseByID(id, o.Asset.Evses)
+
+		if idx == -1 {
+			inf = &types.StatusInfo{
+				ReasonCode: string(unknownEvse),
+			}
+
+			return provisioning.ResetStatusRejected, inf
+		}
+
+		go o.resetEvse(idx)
+
+		return provisioning.ResetStatusAccepted, nil
+	}
+
+	return provisioning.ResetStatusRejected, nil
+}
+
+/*
 B03.FR.08 Boot rejected and not trigger message BootNotification
 
 Checks if the boot status is rejected, if so returns the ocpp security error (error),
@@ -780,6 +828,31 @@ func (o *Ocpp201) isBootRejected(lm map[string]string) error {
 	}
 
 	return nil
+}
+
+/*
+Will pass trough all the connectors of the EVSE set the data position, and enabled to the starting
+position. Send the status notification with the new availability status, and at the end re-send the
+status notification request with the curret charging state of the connector.
+
+idx	-	Asset EVSE array index (int)
+*/
+// TODO: the status need to be reviewed i'm not confurtable with the way this is done
+func (o *Ocpp201) resetEvse(idx int) {
+	for _, c := range o.Asset.Evses[idx].Connectors {
+		o.sendStatusNotification(o.Asset.Evses[idx].ID, c.ID, int64(assets.Unavailable))
+	}
+
+	for ci, c := range o.Asset.Evses[idx].Connectors {
+		o.Asset.Evses[idx].Connectors[ci].DP = simulator.DataPosition{
+			Position: 0,
+			Ticker:   0,
+		}
+
+		o.Asset.Evses[idx].Connectors[ci].Enabled = false
+
+		o.sendStatusNotification(o.Asset.Evses[idx].ID, c.ID, o.Asset.Evses[idx].Connectors[ci].Data[c.DP.Position].ChargingState)
+	}
 }
 
 /*

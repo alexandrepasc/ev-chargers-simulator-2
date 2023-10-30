@@ -146,9 +146,16 @@ func (o *Ocpp201) OnReset(req *provisioning.ResetRequest) (res *provisioning.Res
 		return nil, ocpp.NewError(ocppj.SecurityError, "", "")
 	}
 
-	res = provisioning.NewResetResponse(provisioning.ResetStatusAccepted)
+	var ty, inf = o.processResetRequest(req.EvseID, req.Type)
 
-	return
+	res = &provisioning.ResetResponse{
+		Status:     ty,
+		StatusInfo: inf,
+	}
+
+	o.logger.log(lm, res, assets.Info)
+
+	return res, nil
 }
 
 func (o *Ocpp201) OnGetBaseReport(req *provisioning.GetBaseReportRequest) (res *provisioning.GetBaseReportResponse, err error) {
