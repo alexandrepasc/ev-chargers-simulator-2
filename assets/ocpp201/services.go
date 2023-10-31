@@ -43,6 +43,11 @@ func (o *Ocpp201) setStartUpConfigurations() {
 		eventInfo:   "",
 	}
 
+	o.resetSeq = resetSeq{
+		isToTrigger: false,
+		evseID:      nil,
+	}
+
 	o.logger.log(map[string]string{"protocol": string(o.Asset.Protocol), "function": "setStartUpConfigurations", "simulator": o.Asset.Name},
 		o.L.Get(text.StartUpConfigurations), assets.Info)
 

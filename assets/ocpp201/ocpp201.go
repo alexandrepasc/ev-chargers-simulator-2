@@ -32,6 +32,7 @@ type Ocpp201 struct {
 	tick          int64                   // Ticker to enable trigger scheduled events
 	heartbeatC    int64                   // Heartbeat counter to handle the request interval
 	secEventSeq   secEventSeq             // The security sequence structure
+	resetSeq      resetSeq
 }
 
 /*
