@@ -45,7 +45,7 @@ func (o *Ocpp201) setStartUpConfigurations() {
 
 	o.resetSeq = resetSeq{
 		isToTrigger: false,
-		evseID:      nil,
+		evseIndex:   nil,
 	}
 
 	o.logger.log(map[string]string{"protocol": string(o.Asset.Protocol), "function": "setStartUpConfigurations", "simulator": o.Asset.Name},
@@ -779,7 +779,7 @@ id	-	The EVSE indentifier sent by the cs (*int)
 
 ty	-	The reset type (provisioning.ResetType)
 */
-func (o *Ocpp201) processResetRequest(id *int, _ provisioning.ResetType) (st provisioning.ResetStatus, inf *types.StatusInfo) {
+func (o *Ocpp201) processResetRequest(id *int, ty provisioning.ResetType) (st provisioning.ResetStatus, inf *types.StatusInfo) {
 	// B11 Without Ongoing Transaction
 	if !assets.IsAssetWithTransaction(o.Asset.Evses) {
 		if id == nil {
@@ -812,6 +812,48 @@ func (o *Ocpp201) processResetRequest(id *int, _ provisioning.ResetType) (st pro
 		go o.resetEvse(idx)
 
 		return provisioning.ResetStatusAccepted, nil
+	}
+
+	// B12 - With Ongoing Transaction
+
+	// Immediate reset request
+	if ty == provisioning.ResetTypeImmediate {
+		// The cs requested an evse reboot
+		if id != nil {
+			var idx, e = assets.GetEvseByID(id, o.Asset.Evses)
+
+			// The requested evse is not the active one
+			if !assets.IsEvseWithTransaction(e) {
+				go o.resetEvse(idx)
+
+				return provisioning.ResetStatusAccepted, nil
+			}
+
+			// The requested evse is the active one
+			var cIdx, _ = assets.GetActiveConnector(&o.Asset.Evses[idx])
+
+			// No active connector found in the requested evse
+			if cIdx == nil {
+				go o.resetEvse(idx)
+
+				return provisioning.ResetStatusAccepted, nil
+			}
+
+			// Set the connector data position to the second last position with the max ticker value
+			const length = 2
+			o.Asset.Evses[idx].Connectors[*cIdx].DP = simulator.DataPosition{
+				Position: int64(len(o.Asset.Evses[idx].Connectors[*cIdx].Data) - length),
+				Ticker:   o.Asset.Evses[idx].Connectors[*cIdx].Data[len(o.Asset.Evses[idx].Connectors[*cIdx].Data)-2].Duration,
+			}
+
+			// Set the reset sequence to the trigger and the evse id
+			o.resetSeq = resetSeq{
+				isToTrigger: true,
+				evseIndex:   &idx,
+			}
+
+			return provisioning.ResetStatusAccepted, nil
+		}
 	}
 
 	return provisioning.ResetStatusRejected, nil
