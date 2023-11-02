@@ -440,6 +440,39 @@ func GetEvseByID(id *int, el []simulator.Evse) (i int, evse simulator.Evse) {
 	return -1, simulator.Evse{}
 }
 
+/*
+Gets the index (*int) and the structure (simulator.Evse) of the active evse. If there is no
+active evse returns nil for the index and an empty structure.
+
+el	-	The asset EVSE list ([]simulator.Evse)
+*/
+func GetActiveEvse(el []simulator.Evse) (idx *int, evse simulator.Evse) {
+	for i, ie := range el {
+		if IsEvseWithTransaction(ie) {
+			return &i, ie
+		}
+	}
+
+	return nil, simulator.Evse{}
+}
+
+/*
+Get the active connector of given EVSE from an asset. It will return the connector index (*int)
+and the connector structure (*simulator.Connector) of the active one. If there is no active
+connector it returns nil in both.
+
+e	-	Asset evse structure (*simulator.Evse)
+*/
+func GetActiveConnector(e *simulator.Evse) (idx *int, c *simulator.Connector) {
+	for i, ic := range e.Connectors {
+		if e.Connectors[i].Data[e.Connectors[i].DP.Position].ChargingState == int64(Charging) {
+			return &i, &ic
+		}
+	}
+
+	return nil, nil
+}
+
 func IsDataChanClosed(ch <-chan common.Channel) bool {
 	select {
 	case <-ch:
