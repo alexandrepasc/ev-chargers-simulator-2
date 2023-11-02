@@ -852,8 +852,64 @@ func (o *Ocpp201) processResetRequest(id *int, ty provisioning.ResetType) (st pr
 				evseIndex:   &idx,
 			}
 
+			return provisioning.ResetStatusScheduled, nil
+		}
+
+		// The cs request an asset reset
+		var idx, _ = assets.GetActiveEvse(o.Asset.Evses)
+
+		// No active evse found in the asset
+		if idx == nil {
+			o.disconnectSeq = true
+
+			o.connectSeq = true
+
+			o.bootSeq.isToTrigger = true
+			o.bootSeq.bootReason = provisioning.BootReasonRemoteReset
+
+			o.secEventSeq = secEventSeq{
+				isToTrigger: true,
+				eventType:   resetOrReboot,
+				eventInfo:   "",
+			}
+
 			return provisioning.ResetStatusAccepted, nil
 		}
+
+		var cIdx, _ = assets.GetActiveConnector(&o.Asset.Evses[*idx])
+
+		// No active connector found in the requested evse
+		if cIdx == nil {
+			o.disconnectSeq = true
+
+			o.connectSeq = true
+
+			o.bootSeq.isToTrigger = true
+			o.bootSeq.bootReason = provisioning.BootReasonRemoteReset
+
+			o.secEventSeq = secEventSeq{
+				isToTrigger: true,
+				eventType:   resetOrReboot,
+				eventInfo:   "",
+			}
+
+			return provisioning.ResetStatusAccepted, nil
+		}
+
+		// Set the connector data position to the second last position with the max ticker value
+		const length = 2
+		o.Asset.Evses[*idx].Connectors[*cIdx].DP = simulator.DataPosition{
+			Position: int64(len(o.Asset.Evses[*idx].Connectors[*cIdx].Data) - length),
+			Ticker:   o.Asset.Evses[*idx].Connectors[*cIdx].Data[len(o.Asset.Evses[*idx].Connectors[*cIdx].Data)-2].Duration,
+		}
+
+		// Set the reset sequence to the trigger and the evse id
+		o.resetSeq = resetSeq{
+			isToTrigger: true,
+			evseIndex:   idx,
+		}
+
+		return provisioning.ResetStatusScheduled, nil
 	}
 
 	return provisioning.ResetStatusRejected, nil
