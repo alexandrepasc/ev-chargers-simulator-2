@@ -277,7 +277,7 @@ Now looking into the core of this application, the **Simulators**. There is on e
 - `name`: Simulator name
 - `type`: Type of the asset that the configuration will be used to (evc, pm)
 - `protocol`: Protocol used by the asset
-- `tls`: Set if the asset will connect using TLS or not, the default is false (if yes model is required)
+- `tls`: Set if the asset will connect using TLS or not, the default is false (if true the model is required)
 - `basicAuth`: Set if the asset will use the basic http auth to connect, the default is false (if yes model is required)
 - `model`: Id of the configuration file set in the model's folder
 - `port`: Communication ip port
@@ -571,7 +571,7 @@ If the application is running will return the following body, in case it is not 
 
 ### Protocols <protocol>
 - `ocpp16`: Ocpp version 1.6
-- `ocpp201`: Ocpp version 2.0.1 (not supported)
+- `ocpp201`: Ocpp version 2.0.1 (limited)
 - `modbus`: Modbus protocol (only supported for pm)
 
 ### Phase Rotation <phaseRotation>
