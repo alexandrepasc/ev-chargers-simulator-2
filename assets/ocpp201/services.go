@@ -801,6 +801,7 @@ func (o *Ocpp201) processResetRequest(id *int, ty provisioning.ResetType) (st pr
 
 		var idx, _ = assets.GetEvseByID(id, o.Asset.Evses)
 
+		// No matching evse id found
 		if idx == -1 {
 			inf = &types.StatusInfo{
 				ReasonCode: string(unknownEvse),
@@ -818,9 +819,18 @@ func (o *Ocpp201) processResetRequest(id *int, ty provisioning.ResetType) (st pr
 
 	// Immediate reset request
 	if ty == provisioning.ResetTypeImmediate {
-		// The cs requested an evse reboot
+		// The cs requested an evse reset
 		if id != nil {
 			var idx, e = assets.GetEvseByID(id, o.Asset.Evses)
+
+			// No matching evse id found
+			if idx == -1 {
+				inf = &types.StatusInfo{
+					ReasonCode: string(unknownEvse),
+				}
+
+				return provisioning.ResetStatusRejected, inf
+			}
 
 			// The requested evse is not the active one
 			if !assets.IsEvseWithTransaction(e) {
@@ -912,7 +922,63 @@ func (o *Ocpp201) processResetRequest(id *int, ty provisioning.ResetType) (st pr
 		return provisioning.ResetStatusScheduled, nil
 	}
 
-	return provisioning.ResetStatusRejected, nil
+	// On idle reset request
+
+	// The cs requested an evse reset
+	if id != nil {
+		var idx, e = assets.GetEvseByID(id, o.Asset.Evses)
+
+		// No matching evse id found
+		if idx == -1 {
+			inf = &types.StatusInfo{
+				ReasonCode: string(unknownEvse),
+			}
+
+			return provisioning.ResetStatusRejected, inf
+		}
+
+		// The requested evse is not the active one
+		if !assets.IsEvseWithTransaction(e) {
+			go o.resetEvse(idx)
+
+			return provisioning.ResetStatusAccepted, nil
+		}
+
+		o.resetSeq = resetSeq{
+			isToTrigger: true,
+			evseIndex:   &idx,
+		}
+
+		return provisioning.ResetStatusScheduled, nil
+	}
+
+	// The cs request an asset reset
+	var idx, _ = assets.GetActiveEvse(o.Asset.Evses)
+
+	// No active evse
+	if idx == nil {
+		o.disconnectSeq = true
+
+		o.connectSeq = true
+
+		o.bootSeq.isToTrigger = true
+		o.bootSeq.bootReason = provisioning.BootReasonRemoteReset
+
+		o.secEventSeq = secEventSeq{
+			isToTrigger: true,
+			eventType:   resetOrReboot,
+			eventInfo:   "",
+		}
+
+		return provisioning.ResetStatusAccepted, nil
+	}
+
+	o.resetSeq = resetSeq{
+		isToTrigger: true,
+		evseIndex:   nil,
+	}
+
+	return provisioning.ResetStatusScheduled, nil
 }
 
 /*
