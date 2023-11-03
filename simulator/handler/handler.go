@@ -8,6 +8,7 @@ import (
 	"github.com/alexandrepasc/ev-chargers-simulator-2/assets"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/assets/modbus"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/assets/ocpp16"
+	"github.com/alexandrepasc/ev-chargers-simulator-2/assets/ocpp201"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/common"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/simulator"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/simulator/model"
@@ -64,6 +65,16 @@ func (h *Handler) Start() []chan bool {
 
 			go s.Start(h.Channel[i], h.Quit[i])
 		case simulator.Ocpp201:
+			var s = ocpp201.Ocpp201{
+				L:       h.L,
+				Timeout: h.Tout,
+				CSAddr:  h.Addr,
+				CSPort:  h.Port,
+				Asset:   a,
+				Mod:     m,
+			}
+
+			go s.Start(h.Channel[i], h.Quit[i])
 
 		case simulator.Modbus:
 		}
@@ -200,7 +211,17 @@ func (h *Handler) SetInfoStartValues() {
 }
 
 // TODO: Handle modbus protocol
-/**/
+/*
+Returns the module structure in the case if matches the selected id in the asset configuration
+and if matches the protocol (*model.Struct). In case there is no module configured it will return
+the default module.
+
+id	-	Asset model identifier (uuid.UUID)
+
+p	-	Asset protocol (simulator.Protocol)
+
+al	-	Model configuration list ([]*model.Struct)
+*/
 func getModel(id uuid.UUID, p simulator.Protocol, al []*model.Struct) *model.Struct {
 	for _, m := range al {
 		if m.ID == id {

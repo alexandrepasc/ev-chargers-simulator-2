@@ -17,7 +17,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const defSCFolder string = "/simConf"
+const (
+	defSCFolder string = "/simConf"
+	jsonEx      string = ".json"
+	sim0        string = "/sim0.json"
+)
 
 func TestGetSimulatorData(t *testing.T) {
 	tmp := t.TempDir()
@@ -59,6 +63,7 @@ func TestCreateSimulator(t *testing.T) {
 		Type:            simulator.Evc,
 		Protocol:        simulator.Ocpp201,
 		Model:           mID,
+		CPId:            "12344",
 		StartCharging:   true,
 		Phases:          simulator.One,
 		PhaseRotation:   simulator.NotApplicable,
@@ -87,7 +92,7 @@ func TestCreateSimulator(t *testing.T) {
 
 	s.CreateSimConf(&sim)
 
-	nf := tmp + defSCFolder + "/" + sim.Name + ".json"
+	nf := tmp + defSCFolder + "/" + sim.Name + jsonEx
 
 	assert.FileExists(t, nf)
 
@@ -113,7 +118,7 @@ func TestCreateEmptySimulator(t *testing.T) {
 
 	s.CreateSimConf(&sim)
 
-	nf := tmp + defSCFolder + "/" + sim.Name + ".json"
+	nf := tmp + defSCFolder + "/" + sim.Name + jsonEx
 
 	assert.NoFileExists(t, nf)
 }
@@ -139,7 +144,7 @@ func TestCreateSimulatorRequiredFields(t *testing.T) {
 
 	ok, _, _ := s.CreateSimConf(&sim)
 
-	nf := tmp + defSCFolder + "/" + sim.Name + ".json"
+	nf := tmp + defSCFolder + "/" + sim.Name + jsonEx
 
 	assert.NoFileExists(t, nf)
 
@@ -157,7 +162,7 @@ func TestCreateSimulatorRequiredFields(t *testing.T) {
 
 	ok, _, _ = s.CreateSimConf(&sim)
 
-	nf = tmp + defSCFolder + "/" + sim.Name + ".json"
+	nf = tmp + defSCFolder + "/" + sim.Name + jsonEx
 
 	assert.NoFileExists(t, nf)
 
@@ -175,7 +180,7 @@ func TestCreateSimulatorRequiredFields(t *testing.T) {
 
 	ok, _, _ = s.CreateSimConf(&sim)
 
-	nf = tmp + defSCFolder + "/" + sim.Name + ".json"
+	nf = tmp + defSCFolder + "/" + sim.Name + jsonEx
 
 	assert.NoFileExists(t, nf)
 
@@ -193,7 +198,7 @@ func TestCreateSimulatorRequiredFields(t *testing.T) {
 
 	ok, _, _ = s.CreateSimConf(&sim)
 
-	nf = tmp + defSCFolder + "/" + sim.Name + ".json"
+	nf = tmp + defSCFolder + "/" + sim.Name + jsonEx
 
 	assert.NoFileExists(t, nf)
 
@@ -211,7 +216,7 @@ func TestCreateSimulatorRequiredFields(t *testing.T) {
 
 	ok, _, _ = s.CreateSimConf(&sim)
 
-	nf = tmp + defSCFolder + "/" + sim.Name + ".json"
+	nf = tmp + defSCFolder + "/" + sim.Name + jsonEx
 
 	assert.NoFileExists(t, nf)
 
@@ -229,7 +234,48 @@ func TestCreateSimulatorRequiredFields(t *testing.T) {
 
 	ok, _, _ = s.CreateSimConf(&sim)
 
-	nf = tmp + defSCFolder + "/" + sim.Name + ".json"
+	nf = tmp + defSCFolder + "/" + sim.Name + jsonEx
+
+	assert.NoFileExists(t, nf)
+
+	assert.False(t, ok)
+
+	// cpid
+	sim = simulator.Asset{
+		Name:        "name",
+		Type:        simulator.Evc,
+		Protocol:    simulator.Ocpp16,
+		Model:       mID,
+		Phases:      simulator.One,
+		CurrentType: simulator.Ac,
+	}
+
+	ok, _, _ = s.CreateSimConf(&sim)
+
+	nf = tmp + defSCFolder + "/" + sim.Name + jsonEx
+
+	assert.NoFileExists(t, nf)
+
+	assert.False(t, ok)
+
+	// model
+	sim = simulator.Asset{
+		Name:        "name",
+		Type:        simulator.Evc,
+		Protocol:    simulator.Ocpp16,
+		TLS:         true,
+		CPId:        "12344",
+		Phases:      simulator.One,
+		CurrentType: simulator.Ac,
+		Evses:       []simulator.Evse{{}},
+	}
+
+	msg := ""
+	ok, msg, _ = s.CreateSimConf(&sim)
+
+	assert.Equal(t, s.L.Get(text.MissingModelError), msg)
+
+	nf = tmp + defSCFolder + "/" + sim.Name + jsonEx
 
 	assert.NoFileExists(t, nf)
 
@@ -279,7 +325,7 @@ func TestCanNotCreateSimulatorSameName(t *testing.T) {
 
 	assert.False(t, ok)
 
-	nf := tmp + defSCFolder + "/" + sim.Name + ".json"
+	nf := tmp + defSCFolder + "/" + sim.Name + jsonEx
 
 	assert.FileExists(t, nf)
 
@@ -314,6 +360,7 @@ func TestCanNotCreateSimulatorOcpp16MoreThen1Evse(t *testing.T) {
 		Type:            simulator.Evc,
 		Protocol:        simulator.Ocpp16,
 		Model:           mID,
+		CPId:            "12344",
 		StartCharging:   true,
 		Phases:          simulator.Three,
 		PhaseRotation:   simulator.RST,
@@ -360,9 +407,9 @@ func TestCanNotCreateSimulatorOcpp16MoreThen1Evse(t *testing.T) {
 
 	assert.False(t, ok)
 
-	assert.Equal(t, msg, s.L.Get(text.Ocpp16SimConfFileMoreEvse))
+	assert.Equal(t, s.L.Get(text.Ocpp16SimConfFileMoreEvse), msg)
 
-	nf := tmp + defSCFolder + "/" + sim.Name + ".json"
+	nf := tmp + defSCFolder + "/" + sim.Name + jsonEx
 
 	assert.NoFileExists(t, nf)
 }
@@ -383,6 +430,7 @@ func TestCreateSimulatorOcpp201MoreThen1Evse(t *testing.T) {
 		Type:            simulator.Evc,
 		Protocol:        simulator.Ocpp201,
 		Model:           mID,
+		CPId:            "12344",
 		StartCharging:   true,
 		Phases:          simulator.Three,
 		PhaseRotation:   simulator.RST,
@@ -431,7 +479,7 @@ func TestCreateSimulatorOcpp201MoreThen1Evse(t *testing.T) {
 
 	assert.Empty(t, msg)
 
-	nf := tmp + defSCFolder + "/" + sim.Name + ".json"
+	nf := tmp + defSCFolder + "/" + sim.Name + jsonEx
 
 	assert.FileExists(t, nf)
 
@@ -444,6 +492,50 @@ func TestCreateSimulatorOcpp201MoreThen1Evse(t *testing.T) {
 	assert.Equal(t, sim.Type, a.Type)
 
 	assert.Equal(t, sim, a)
+}
+
+func TestCreateSimulatorAuthModelRequired(t *testing.T) {
+	tmp := t.TempDir()
+
+	createFolders(tmp)
+
+	s := before(tmp)
+
+	mID, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0")
+
+	sim := simulator.Asset{
+		Name:        "name",
+		Type:        simulator.Evc,
+		Protocol:    simulator.Ocpp16,
+		TLS:         false,
+		BasicAuth:   true,
+		CPId:        "12344",
+		Phases:      simulator.One,
+		CurrentType: simulator.Ac,
+		Evses:       []simulator.Evse{{}},
+	}
+
+	ok, msg, _ := s.CreateSimConf(&sim)
+
+	assert.Equal(t, s.L.Get(text.MissingModelError), msg)
+
+	nf := tmp + defSCFolder + "/" + sim.Name + jsonEx
+
+	assert.NoFileExists(t, nf)
+
+	assert.False(t, ok)
+
+	sim.Model = mID
+
+	ok, msg, _ = s.CreateSimConf(&sim)
+
+	assert.Empty(t, msg)
+
+	nf = tmp + defSCFolder + "/" + sim.Name + jsonEx
+
+	assert.FileExists(t, nf)
+
+	assert.True(t, ok)
 }
 
 func TestUpdateSimulator(t *testing.T) {
@@ -460,6 +552,7 @@ func TestUpdateSimulator(t *testing.T) {
 	a := simulator.Asset{
 		Type:            simulator.Pm,
 		Protocol:        simulator.Ocpp16,
+		CPId:            "12344",
 		Phases:          simulator.Three,
 		PhaseRotation:   simulator.RST,
 		CurrentType:     simulator.Dc,
@@ -486,7 +579,7 @@ func TestUpdateSimulator(t *testing.T) {
 
 	assert.Equal(t, simulator.RST, aa.PhaseRotation)
 
-	p := tmp + defSCFolder + "/sim0.json"
+	p := tmp + defSCFolder + sim0
 
 	af := readFile(p)
 
@@ -530,7 +623,7 @@ func TestUpdateSimulatorWithWrongId(t *testing.T) {
 
 	assert.Empty(t, aa)
 
-	p := tmp + defSCFolder + "/sim0.json"
+	p := tmp + defSCFolder + sim0
 
 	af := readFile(p)
 
@@ -568,7 +661,7 @@ func TestUpdateSimulatorEmpty(t *testing.T) {
 
 	assert.Equal(t, s.L.Get(text.RequestBodyDoesntMatch), am)
 
-	p := tmp + defSCFolder + "/sim0.json"
+	p := tmp + defSCFolder + sim0
 
 	af := readFile(p)
 
@@ -600,6 +693,7 @@ func TestUpdateSimulatorChangeName(t *testing.T) {
 		Name:            "asdasd",
 		Type:            simulator.Pm,
 		Protocol:        simulator.Ocpp16,
+		CPId:            "12344",
 		Phases:          simulator.Three,
 		PhaseRotation:   simulator.NotApplicable,
 		CurrentType:     simulator.Dc,
@@ -628,7 +722,7 @@ func TestUpdateSimulatorChangeName(t *testing.T) {
 
 	assert.Equal(t, simulator.NotApplicable, aa.PhaseRotation)
 
-	p := tmp + defSCFolder + "/sim0.json"
+	p := tmp + defSCFolder + sim0
 
 	af := readFile(p)
 
@@ -661,6 +755,7 @@ func TestCanNotUpdateSimulatorOcpp16MoreThen1Evse(t *testing.T) {
 	a := simulator.Asset{
 		Type:            simulator.Evc,
 		Protocol:        simulator.Ocpp16,
+		CPId:            "12344",
 		Phases:          simulator.Three,
 		PhaseRotation:   simulator.RST,
 		CurrentType:     simulator.Dc,
@@ -712,7 +807,7 @@ func TestCanNotUpdateSimulatorOcpp16MoreThen1Evse(t *testing.T) {
 
 	assert.Empty(t, aa)
 
-	p := tmp + defSCFolder + "/sim0.json"
+	p := tmp + defSCFolder + sim0
 
 	af := readFile(p)
 
@@ -735,6 +830,7 @@ func TestUpdateSimulatorOcpp201MoreThen1Evse(t *testing.T) {
 	a := simulator.Asset{
 		Type:            simulator.Pm,
 		Protocol:        simulator.Ocpp201,
+		CPId:            "12344",
 		Phases:          simulator.Three,
 		PhaseRotation:   simulator.RST,
 		CurrentType:     simulator.Dc,
@@ -794,7 +890,158 @@ func TestUpdateSimulatorOcpp201MoreThen1Evse(t *testing.T) {
 
 	assert.Equal(t, simulator.RST, aa.PhaseRotation)
 
-	p := tmp + defSCFolder + "/sim0.json"
+	p := tmp + defSCFolder + sim0
+
+	af := readFile(p)
+
+	assert.Equal(t, id, af.SimID)
+
+	assert.Equal(t, "sim0", af.Name)
+
+	assert.Equal(t, simulator.Pm, af.Type)
+
+	assert.Equal(t, simulator.Ocpp201, af.Protocol)
+
+	assert.Equal(t, simulator.Three, af.Phases)
+
+	assert.Equal(t, simulator.RST, af.PhaseRotation)
+}
+
+func TestUpdateSimulatorTlsModelRequired(t *testing.T) {
+	tmp := t.TempDir()
+
+	createFolders(tmp)
+
+	s := before(tmp)
+
+	generateAssetConfFiles(1, tmp)
+
+	id, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0")
+
+	a := simulator.Asset{
+		Type:            simulator.Pm,
+		Protocol:        simulator.Ocpp201,
+		TLS:             true,
+		CPId:            "12344",
+		Phases:          simulator.Three,
+		PhaseRotation:   simulator.RST,
+		CurrentType:     simulator.Dc,
+		AuthorizeRemote: true,
+		AuthList:        true,
+		Evses: []simulator.Evse{
+			{},
+		},
+	}
+
+	ab, am, c, aa := s.UpdateSimConf(id, &a)
+
+	assert.False(t, ab)
+
+	assert.Equal(t, s.L.Get(text.MissingModelError), am)
+
+	assert.Equal(t, http.StatusBadRequest, c)
+
+	assert.Empty(t, aa)
+
+	a.Model = uuid.MustParse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0")
+
+	ab, am, c, aa = s.UpdateSimConf(id, &a)
+
+	assert.True(t, ab)
+
+	assert.Empty(t, am)
+
+	assert.Equal(t, http.StatusOK, c)
+
+	assert.Equal(t, id, aa.SimID)
+
+	assert.Equal(t, "sim0", aa.Name)
+
+	assert.Equal(t, simulator.Pm, aa.Type)
+
+	assert.Equal(t, simulator.Ocpp201, aa.Protocol)
+
+	assert.Equal(t, simulator.Three, aa.Phases)
+
+	assert.Equal(t, simulator.RST, aa.PhaseRotation)
+
+	p := tmp + defSCFolder + sim0
+
+	af := readFile(p)
+
+	assert.Equal(t, id, af.SimID)
+
+	assert.Equal(t, "sim0", af.Name)
+
+	assert.Equal(t, simulator.Pm, af.Type)
+
+	assert.Equal(t, simulator.Ocpp201, af.Protocol)
+
+	assert.Equal(t, simulator.Three, af.Phases)
+
+	assert.Equal(t, simulator.RST, af.PhaseRotation)
+}
+
+func TestUpdateSimulatorAuthModelRequired(t *testing.T) {
+	tmp := t.TempDir()
+
+	createFolders(tmp)
+
+	s := before(tmp)
+
+	generateAssetConfFiles(1, tmp)
+
+	id, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0")
+
+	a := simulator.Asset{
+		Type:            simulator.Pm,
+		Protocol:        simulator.Ocpp201,
+		TLS:             false,
+		BasicAuth:       true,
+		CPId:            "12344",
+		Phases:          simulator.Three,
+		PhaseRotation:   simulator.RST,
+		CurrentType:     simulator.Dc,
+		AuthorizeRemote: true,
+		AuthList:        true,
+		Evses: []simulator.Evse{
+			{},
+		},
+	}
+
+	ab, am, c, aa := s.UpdateSimConf(id, &a)
+
+	assert.False(t, ab)
+
+	assert.Equal(t, s.L.Get(text.MissingModelError), am)
+
+	assert.Equal(t, http.StatusBadRequest, c)
+
+	assert.Empty(t, aa)
+
+	a.Model = uuid.MustParse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0")
+
+	ab, am, c, aa = s.UpdateSimConf(id, &a)
+
+	assert.True(t, ab)
+
+	assert.Empty(t, am)
+
+	assert.Equal(t, http.StatusOK, c)
+
+	assert.Equal(t, id, aa.SimID)
+
+	assert.Equal(t, "sim0", aa.Name)
+
+	assert.Equal(t, simulator.Pm, aa.Type)
+
+	assert.Equal(t, simulator.Ocpp201, aa.Protocol)
+
+	assert.Equal(t, simulator.Three, aa.Phases)
+
+	assert.Equal(t, simulator.RST, aa.PhaseRotation)
+
+	p := tmp + defSCFolder + sim0
 
 	af := readFile(p)
 
@@ -824,7 +1071,7 @@ func TestDeleteSimulator(t *testing.T) {
 
 	ab, am, ac := s.DeleteSimConf(id)
 
-	p0 := tmp + defSCFolder + "/sim0.json"
+	p0 := tmp + defSCFolder + sim0
 	p1 := tmp + defSCFolder + "/sim1.json"
 
 	assert.True(t, ab)
@@ -851,7 +1098,7 @@ func TestDeleteSimulatorWrongId(t *testing.T) {
 
 	ab, am, ac := s.DeleteSimConf(id)
 
-	p0 := tmp + defSCFolder + "/sim0.json"
+	p0 := tmp + defSCFolder + sim0
 	p1 := tmp + defSCFolder + "/sim1.json"
 
 	assert.False(t, ab)
@@ -896,7 +1143,7 @@ func generateAssetConfFiles(n int64, tmp string) { //nolint:unparam,nolintlint /
 			Phases:   simulator.One,
 		}
 
-		p := tmp + defSCFolder + "/sim" + strconv.FormatInt(i, 10) + ".json"
+		p := tmp + defSCFolder + "/sim" + strconv.FormatInt(i, 10) + jsonEx
 
 		f, _ := os.Create(p)
 		f.Close()

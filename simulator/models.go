@@ -7,13 +7,15 @@ type Asset struct {
 	Name            string        `json:"name" validate:"required"`                                                                         // Simulator name
 	Type            AssetType     `json:"type" validate:"required,oneof=evc pm"`                                                            // Type of the asset that the configuration will be used to (evc, pm)
 	Protocol        Protocol      `json:"protocol" validate:"required,oneof=ocpp201 ocpp16 modbus"`                                         // Protocol used by the asset
+	TLS             bool          `json:"tls"`                                                                                              // Set if the asset will connect using TLS or not, the default is false (if yes model is required)
+	BasicAuth       bool          `json:"basicAuth"`                                                                                        // Set if the asset will use the basic http auth to connect, the default is false (if yes model is required)
 	Model           uuid.UUID     `json:"model"`                                                                                            // Id of the configuration file set in the model's folder
 	Port            string        `json:"port,omitempty"`                                                                                   // Communication ip port
 	CPId            string        `json:"cPId,omitempty"`                                                                                   // Charge point id to identify the unit (used in the ocpp protocol)
 	StartCharging   bool          `json:"startCharging" validate:"boolean"`                                                                 // Set the asset to start charging behaviour by itself
 	Phases          Phases        `json:"phases,omitempty" validate:"omitempty,oneof=1 3"`                                                  // Phases number
 	PhaseRotation   PhaseRotation `json:"phaseRotation,omitempty" validate:"omitempty,oneof=NotApplicable Unknown RST RTS SRT STR TRS TSR"` // The asset phase rotation, if the asset is DC the value should be NotApplicable
-	CurrentType     CurrentType   `json:"curentType,omitempty" validate:"omitempty,oneof=ac dc"`                                            // Type of current of the asset (AC or DC)
+	CurrentType     CurrentType   `json:"currentType,omitempty" validate:"omitempty,oneof=ac dc"`                                           // Type of current of the asset (AC or DC)
 	AuthorizeRemote bool          `json:"authorizeRemote" validate:"boolean"`                                                               // Configurataion AuthorizeRemoteTxRequests
 	AuthList        bool          `json:"authList" validate:"boolean"`                                                                      // Enable or disable authorization local list
 	Evses           []Evse        `json:"evses,omitempty" validate:"omitempty,required"`                                                    // List of evses that the asset has

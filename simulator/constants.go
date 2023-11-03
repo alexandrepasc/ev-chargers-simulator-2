@@ -18,6 +18,7 @@ const (
 	STR           PhaseRotation = "STR"           // L2 L3 L1
 	TRS           PhaseRotation = "TRS"           // L3 L1 L2
 	TSR           PhaseRotation = "TSR"           // L3 L2 L1
+	jsonEx        string        = ".json"         // Json file extension
 )
 
 var (

@@ -1,12 +1,18 @@
 package assets
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"math"
+	"os"
 	"strconv"
 	"time"
 
 	"github.com/alexandrepasc/ev-chargers-simulator-2/common"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/simulator"
+	"github.com/alexandrepasc/ev-chargers-simulator-2/translation"
+	"github.com/alexandrepasc/ev-chargers-simulator-2/translation/text"
+	"github.com/lorenzodonini/ocpp-go/ws"
 )
 
 /*
@@ -251,6 +257,220 @@ func GetMaxPower(e *simulator.Evse) int64 {
 	}
 
 	return p
+}
+
+// TODO: reuse this to all the ocpp models
+/*
+Create a new websocket client with the parameter timeout and returns it (*ws.Client).
+
+t	-	Timeout value (int64)
+
+u		-	Basic authentication username (string)
+
+p		-	Basic authentication password (string)
+
+ba	-	If the client should have the http basic authentication (bool)
+*/
+func GetWsClient(t int64, u, p string, ba bool) (wsc *ws.Client) {
+	wsc = ws.NewClient()
+
+	if ba {
+		wsc.SetBasicAuth(u, p)
+	}
+
+	var cfg = ws.ClientTimeoutConfig{
+		HandshakeTimeout: time.Second * time.Duration(t),
+		WriteWait:        time.Second * time.Duration(t),
+		PingPeriod:       time.Second * time.Duration(t),
+		PongWait:         time.Second * time.Duration(t),
+	}
+
+	wsc.SetTimeoutConfig(cfg)
+
+	return wsc
+}
+
+/*
+Create a new tls websocket client with the parameters sent and returns it (*ws.Client).
+
+t		-	Timeout value (int64)
+
+ca		-	CA certificate path and name (string)
+
+cert	-	Client certificate path and name (string)
+
+key		-	Client certificate key path and name (string)
+
+u		-	Basic authentication username (string)
+
+p		-	Basic authentication password (string)
+
+ba		-	If the client should have the http basic authentication (bool)
+
+l		-	Translation language (translation.Translation)
+*/
+func GetTLSWsClient(t int64, ca, cert, key, u, p string, ba bool, l translation.Translation) (wsc *ws.Client) {
+	var certPool, errcp = x509.SystemCertPool()
+	if errcp != nil {
+		common.Log("GetTlsWsClient").Error(errcp)
+	}
+
+	var caCert, errca = os.ReadFile(ca)
+	if errca != nil {
+		common.Log("GetTlsWsClient").Fatal(errca)
+	} else if !certPool.AppendCertsFromPEM(caCert) {
+		common.Log("GetTlsWsClient").Info(l.Get(text.CaCertNotFound))
+	}
+
+	var clientCertificates []tls.Certificate
+
+	var certificate, errc = tls.LoadX509KeyPair(cert, key)
+	if errc != nil {
+		common.Log("GetTlsWsClient").Fatal(errc)
+	}
+
+	clientCertificates = []tls.Certificate{certificate}
+
+	wsc = ws.NewTLSClient(&tls.Config{
+		RootCAs:      certPool,
+		Certificates: clientCertificates,
+		MinVersion:   tls.VersionTLS13,
+	})
+
+	if ba {
+		wsc.SetBasicAuth(u, p)
+	}
+
+	var cfg = ws.ClientTimeoutConfig{
+		HandshakeTimeout: time.Second * time.Duration(t),
+		WriteWait:        time.Second * time.Duration(t),
+		PingPeriod:       time.Second * time.Duration(t),
+		PongWait:         time.Second * time.Duration(t),
+	}
+
+	wsc.SetTimeoutConfig(cfg)
+
+	return wsc
+}
+
+/*
+Handles the counter from the simulator and handles the max int64 value, in case it is reaching the
+max value (max int64 value - 7) it will be reseted to 0 and will return the value (int64).
+
+t	-	Ticker value (int64)
+*/
+// TODO: add this to all the implementations
+func HandleTick(t int64) int64 {
+	const rInt64 = math.MaxInt64 - 7
+
+	if t > rInt64 {
+		t = 0
+	} else {
+		t++
+	}
+
+	return t
+}
+
+/*
+Get the connection protocol string depending if the tls is enabled for the asset or not (string).
+
+t	-	Is the tls activated to the asset (bool)
+*/
+// TODO: add this to all the implementations
+func GetConnProtocol(t bool) string {
+	if t {
+		return string(wssConn)
+	}
+
+	return string(wsConn)
+}
+
+/*
+Runs through all the asset EVSEs and retursn true (bool) in case one of the connectors is in the
+charging state, if not returns false.
+
+el 	-	Asset EVSEs list ([]*simulator.Evse)
+*/
+func IsAssetWithTransaction(el []simulator.Evse) bool {
+	for _, e := range el {
+		if IsEvseWithTransaction(e) {
+			return true
+		}
+	}
+
+	return false
+}
+
+/*
+Returns true (bool) in case any of the EVSE connector is in the charging state and false if
+none of the connectors is in the that state.
+
+e	-	Asset EVSE (*simulator.Evse)
+*/
+func IsEvseWithTransaction(e simulator.Evse) bool {
+	for _, c := range e.Connectors {
+		if c.Data[c.DP.Position].ChargingState == int64(Charging) {
+			return true
+		}
+	}
+
+	return false
+}
+
+/*
+Get the EVSE index and structure (int, *simulator.Evse) from the asset using the identifier. In
+case none is found or the id is nil returns the index as -1 and an empty EVSE structure.
+
+id	-	The EVSE identifier (*int)
+
+el	-	The asset EVSE list ([]*simulator.Evse)
+*/
+func GetEvseByID(id *int, el []simulator.Evse) (i int, evse simulator.Evse) {
+	if id == nil {
+		return -1, simulator.Evse{}
+	}
+
+	for idx, e := range el {
+		if e.ID == int64(*id) {
+			return idx, e
+		}
+	}
+
+	return -1, simulator.Evse{}
+}
+
+/*
+Gets the index (*int) and the structure (simulator.Evse) of the active evse. If there is no
+active evse returns nil for the index and an empty structure.
+
+el	-	The asset EVSE list ([]simulator.Evse)
+*/
+func GetActiveEvse(el []simulator.Evse) (idx *int, evse simulator.Evse) {
+	for i, ie := range el {
+		if IsEvseWithTransaction(ie) {
+			return &i, ie
+		}
+	}
+
+	return nil, simulator.Evse{}
+}
+
+/*
+Get the active connector of given EVSE from an asset. It will return the connector index (*int)
+and the connector structure (*simulator.Connector) of the active one. If there is no active
+connector it returns nil in both.
+
+e	-	Asset evse structure (*simulator.Evse)
+*/
+func GetActiveConnector(e *simulator.Evse) (idx *int, c *simulator.Connector) {
+	for i, ic := range e.Connectors {
+		if e.Connectors[i].Data[e.Connectors[i].DP.Position].ChargingState == int64(Charging) {
+			return &i, &ic
+		}
+	}
+
+	return nil, nil
 }
 
 func IsDataChanClosed(ch <-chan common.Channel) bool {

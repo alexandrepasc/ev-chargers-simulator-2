@@ -20,6 +20,7 @@ import (
 const (
 	defSCFolder string = "/simConf"
 	defFolder   string = "/simConf" + common.DefMCFolder
+	mod0        string = "/model0.json"
 )
 
 func TestGetModelData(t *testing.T) {
@@ -274,7 +275,7 @@ func TestUpdateModelFile(t *testing.T) {
 
 	m.UpdateModel(id, &e)
 
-	nf := tmp + defFolder + "/model0.json"
+	nf := tmp + defFolder + mod0
 
 	assert.FileExists(t, nf)
 
@@ -390,7 +391,7 @@ func TestDeleteModel(t *testing.T) {
 
 	id, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0")
 
-	p0 := tmp + defFolder + "/model0.json"
+	p0 := tmp + defFolder + mod0
 	p1 := tmp + defFolder + "/model1.json"
 
 	ab, as, ai := m.DeleteModel(id)
@@ -417,7 +418,7 @@ func TestDeleteModelWrongId(t *testing.T) {
 
 	id, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaab")
 
-	p0 := tmp + defFolder + "/model0.json"
+	p0 := tmp + defFolder + mod0
 	p1 := tmp + defFolder + "/model1.json"
 
 	ab, as, ai := m.DeleteModel(id)

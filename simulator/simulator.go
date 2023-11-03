@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/alexandrepasc/ev-chargers-simulator-2/common"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/translation"
@@ -67,10 +68,20 @@ func (s *Simulator) CreateSimConf(a *Asset) (ok bool, msg string, na *Asset) {
 		}
 	}
 
+	if strings.Contains(string(a.Protocol), "ocpp") {
+		if a.CPId == "" {
+			return false, s.L.Get(text.OcppMissingCPIdError), &Asset{}
+		}
+	}
+
 	if a.Protocol == Ocpp16 {
 		if len(a.Evses) > 1 {
 			return false, s.L.Get(text.Ocpp16SimConfFileMoreEvse), &Asset{}
 		}
+	}
+
+	if (a.TLS || a.BasicAuth) && a.Model.String() == "00000000-0000-0000-0000-000000000000" {
+		return false, s.L.Get(text.MissingModelError), &Asset{}
 	}
 
 	var al = s.GetSimulators()
@@ -135,6 +146,12 @@ func (s *Simulator) UpdateSimConf(id uuid.UUID, a *Asset) (ok bool, msg string, 
 			return false, s.L.Get(text.RequestBodyDoesntMatch), http.StatusBadRequest, &Asset{}
 		}
 
+		if strings.Contains(string(a.Protocol), "ocpp") {
+			if a.CPId == "" {
+				return false, s.L.Get(text.OcppMissingCPIdError), http.StatusBadRequest, &Asset{}
+			}
+		}
+
 		if a.Type == Evc {
 			var o, m = validateEvcFields(a, s.L)
 
@@ -149,11 +166,15 @@ func (s *Simulator) UpdateSimConf(id uuid.UUID, a *Asset) (ok bool, msg string, 
 			}
 		}
 
+		if (a.TLS || a.BasicAuth) && a.Model.String() == "00000000-0000-0000-0000-000000000000" {
+			return false, s.L.Get(text.MissingModelError), http.StatusBadRequest, &Asset{}
+		}
+
 		common.Log("UpdateSimConf").Info(s.L.Get(text.UpdateSimConfFile))
 
 		_, b := marshalAssetToJSON(na)
 
-		err := os.WriteFile(s.Scp+"/"+na.Name+".json", b, fs.FileMode(common.FilePermissions))
+		err := os.WriteFile(s.Scp+"/"+na.Name+jsonEx, b, fs.FileMode(common.FilePermissions))
 
 		if err != nil {
 			common.Log("UpdateSimConf").Error(err)
@@ -185,7 +206,7 @@ func (s *Simulator) DeleteSimConf(id uuid.UUID) (ok bool, msg string, code int) 
 			continue
 		}
 
-		err := os.Remove(s.Scp + "/" + i.Name + ".json")
+		err := os.Remove(s.Scp + "/" + i.Name + jsonEx)
 
 		if err != nil {
 			common.Log("DeleteSimConf").Error(err)
@@ -275,7 +296,7 @@ p	-	Path where the file will be created (string).
 n	-	Name for the file (string).
 */
 func generateFile(p, n string, l translation.Translation) (ok bool, f *os.File) {
-	f, err := os.Create(p + "/" + n + ".json")
+	f, err := os.Create(p + "/" + n + jsonEx)
 
 	if err != nil {
 		common.Log("generateFile").Error(err)

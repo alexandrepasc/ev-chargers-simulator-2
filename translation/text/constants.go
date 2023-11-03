@@ -43,9 +43,13 @@ const (
 	DeleteSimConfFileError        Key = "DeleteSimConfFileError"        // Not able to delete the configuration file
 	DeleteSimConfFile             Key = "DeleteSimConfFile"             // Delete simulator configuration file
 	Ocpp16SimConfFileMoreEvse     Key = "Ocpp16SimConfFileMoreEvse"     // Ocpp 1.6 only can handle 1 evse per charge point error
+	Ocpp201ServerStarted          Key = "Ocpp201ServerStarted"          // Simulator ocpp 2.0.1 server started
+	Ocpp201ServerStopped          Key = "Ocpp201ServerStopped"          // Simulator ocpp 2.0.1 server stopped
 	EvcMissingPhasesError         Key = "EvcMissingPhasesError"         // The phases property is required
 	EvcMissingCurrentTypeError    Key = "EvcMissingCurrentTypeError"    // The current type property is required
 	EvcMissingEvsesError          Key = "EvcMissingEvsesError"          // The evses property is required
+	OcppMissingCPIdError          Key = "OcppMissingCPIdError"          // The CP Id property is required
+	MissingModelError             Key = "MissingModelError"             // The model property is required
 	OpenSimConfFileError          Key = "OpenSimConfFileError"          // Error opening the simulator configuration file
 	WriteSimConfFileError         Key = "WriteSimConfFileError"         // Error writing the simulator configuration file
 	InternalServerError           Key = "InternalServerError"           // API message returned when something breaks
@@ -53,4 +57,6 @@ const (
 	UUIDParsingError              Key = "UUIDParsingError"              // API message returned when couldn't parse the id to uuid
 	ModbusServerStarted           Key = "ModbusServerStarted"           // Simulator modbus server started
 	ModbusServerStopped           Key = "ModbusServerStopped"           // Simulator modbus server stopped
+	CaCertNotFound                Key = "CaCertNotFound"                // No CA certificate found
+	StartUpConfigurations         Key = "StartUpConfigurations"         // Set the startup configurations for an asset
 )

@@ -52,6 +52,9 @@ const (
 	DefFrequency                         string = "1"
 	DefReactivePower                     string = "0"
 	DefRPM                               string = "100"
+
+	wsConn  ConnectType = "ws://"
+	wssConn ConnectType = "wss://"
 )
 
 var (

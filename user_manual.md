@@ -2,7 +2,7 @@
 
 |         |    Version   |
 | ------- | ------------ |
-| Product | **v0.17.10** |
+| Product | **v0.18.11** |
 | Manual  | **Rev1**     |
 
 <div class="page"/>
@@ -38,7 +38,7 @@
 		- [Asset Type <type>](#asset-type-type)
 		- [Protocols <protocol>](#protocols-protocol)
 		- [Phase Rotation <phaseRotation>](#phase-rotation-phaserotation)
-		- [Current Type <curentType>](#current-type-curenttype)
+		- [Current Type <currentType>](#current-type-currenttype)
 		- [Charging States <chargingState>](#charging-states-chargingstate)
 		- [Error Code <errorCode>](#error-code-errorcode)
 		- [Modbus Keys](#modbus-keys)
@@ -161,6 +161,12 @@ The **Models** are used to add configurations to the simulators, for example the
 - `id`: Model identifier
 - `name`: Model name
 - `type`: Type of asset that this config can be used (ocpp, modbus)
+- `ca`: CA certificate location and name, full path
+- `cert`: Client certificate location and name, full path
+- `key`: Client certificate key location and name, full path
+- `basicAuth`: HTTP basic authentication credentials
+  - `username`: HTTP basic authentication username
+  - `password`: HTTP basic authentication password
 - `ocpp`: Ocpp structure
   - `serialNumb`: Equipment serial number
   - `model`: Equipment model name
@@ -271,13 +277,15 @@ Now looking into the core of this application, the **Simulators**. There is on e
 - `name`: Simulator name
 - `type`: Type of the asset that the configuration will be used to (evc, pm)
 - `protocol`: Protocol used by the asset
+- `tls`: Set if the asset will connect using TLS or not, the default is false (if true the model is required)
+- `basicAuth`: Set if the asset will use the basic http auth to connect, the default is false (if yes model is required)
 - `model`: Id of the configuration file set in the model's folder
 - `port`: Communication ip port
 - `cPId`: Charge point id to identify the unit (used in the ocpp protocol)
 - `startCharging`: Set the asset to start charging behaviour by itself
 - `phases`: Phases number
 - `phaseRotation`: The asset phase rotation, if the asset is DC the value should be NotApplicable
-- `curentType`: Type of current of the asset (AC or DC)
+- `currentType`: Type of current of the asset (ac or dc)
 - `authorizeRemote`: Configurataion AuthorizeRemoteTxRequests
 - `authList`: Enable or disable authorization local list
 - `evses`: List of evses that the asset has
@@ -320,7 +328,7 @@ It will return the total number of number of existing *simulators* and their lis
             "startCharging": false,
             "phases": 1,
             "phaseRotation": "NotApplicable",
-            "curentType": "dc",
+            "currentType": "dc",
             "authorizeRemote": true,
             "authList": true,
             "evses": [
@@ -368,7 +376,7 @@ POST http://{apiAddr}:{apiPort}/simulators
     "startCharging": false,
     "phases": 1,
     "phaseRotation": "NotApplicable",
-    "curentType": "dc",
+    "currentType": "dc",
     "authorizeRemote": true,
     "authList": true,
     "evses": [
@@ -419,7 +427,7 @@ PUT http://{apiAddr}:{apiPort}/simulators/{simulator-identifier-here}
     "startCharging": false,
     "phases": 1,
     "phaseRotation": "NotApplicable",
-    "curentType": "dc",
+    "currentType": "dc",
     "authorizeRemote": true,
     "authList": true,
     "evses": [
@@ -563,7 +571,7 @@ If the application is running will return the following body, in case it is not 
 
 ### Protocols <protocol>
 - `ocpp16`: Ocpp version 1.6
-- `ocpp201`: Ocpp version 2.0.1 (not supported)
+- `ocpp201`: Ocpp version 2.0.1 (limited)
 - `modbus`: Modbus protocol (only supported for pm)
 
 ### Phase Rotation <phaseRotation>
@@ -576,7 +584,7 @@ If the application is running will return the following body, in case it is not 
 - `TRS`: L3 L1 L2
 - `TSR`: L3 L2 L1
 
-### Current Type <curentType>
+### Current Type <currentType>
 - `ac`: Alternating current
 - `dc`: Direct current
 

@@ -124,7 +124,7 @@ func (m *Model) UpdateModel(id uuid.UUID, s *Struct) (ok bool, msg string, code 
 
 		_, b := marshalModelToJSON(ns)
 
-		err := os.WriteFile(m.Scp+common.DefMCFolder+"/"+ns.Name+".json", b, fs.FileMode(common.FilePermissions))
+		err := os.WriteFile(m.Scp+common.DefMCFolder+"/"+ns.Name+jsonEx, b, fs.FileMode(common.FilePermissions))
 
 		if err != nil {
 			common.Log("UpdateModel").Error(err)
@@ -156,7 +156,7 @@ func (m *Model) DeleteModel(id uuid.UUID) (ok bool, msg string, code int) {
 			continue
 		}
 
-		err := os.Remove(m.Scp + common.DefMCFolder + "/" + i.Name + ".json")
+		err := os.Remove(m.Scp + common.DefMCFolder + "/" + i.Name + jsonEx)
 
 		if err != nil {
 			common.Log("DeleteModel").Error(err)
@@ -239,7 +239,7 @@ p	-	Path where the file will be created (string).
 n	-	Name for the file (string).
 */
 func generateFile(p, n string, l translation.Translation) (ok bool, f *os.File) {
-	f, err := os.Create(p + "/" + n + ".json")
+	f, err := os.Create(p + "/" + n + jsonEx)
 
 	if err != nil {
 		common.Log("generateFile").Error(err)
