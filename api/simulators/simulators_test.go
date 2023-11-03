@@ -198,7 +198,7 @@ func TestPostSimulators(t *testing.T) {
 
 	assert.Equal(t, body.Evses, a.Evses)
 
-	assert.FileExists(t, tmp+simConf+body.Name+jsonEx)
+	assert.FileExists(t, tmp+simConf+"/"+body.Name+jsonEx)
 }
 
 func TestPostSimulatorsRequiredFields(t *testing.T) {
