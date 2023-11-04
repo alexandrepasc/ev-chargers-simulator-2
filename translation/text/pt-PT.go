@@ -45,6 +45,7 @@ var PtPT = map[Key]string{
 	RequestBodyDoesntMatch:        "O corpo do pedido está mal formado.",
 	UUIDParsingError:              "O id não pôde ser convertido para UUID.",
 	NoAssetsToRunError:            "Não há simuladores para executar, crie-os primeiro.",
+	NoAssetsToStopError:           "Não há simuladores a executar para serem parados.",
 	ModbusServerStarted:           "O servidor de modbus iniciou.",
 	ModbusServerStopped:           "O servidor de modbus parou.",
 	CaCertNotFound:                "Não foi encontrado nenhum ficheiro ca.cert, irá ser usado os certificados CA do sistema.",

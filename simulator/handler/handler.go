@@ -2,6 +2,7 @@ package handler
 
 import (
 	"fmt"
+	"net/http"
 	"strings"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/alexandrepasc/ev-chargers-simulator-2/simulator"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/simulator/model"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/translation"
+	"github.com/alexandrepasc/ev-chargers-simulator-2/translation/text"
 	"github.com/google/uuid"
 )
 
@@ -105,9 +107,15 @@ func (h *Handler) Start() []chan bool {
 }
 
 /*
-Stops all the simulators routines using the Quit channel array.
+Stops all the simulators routines using the Quit channel array. Returns an empty string and
+the http response status code, if some issue occurres it will return the error message and
+the http status code.
 */
-func (h *Handler) Stop() {
+func (h *Handler) Stop() (msg string, code int) {
+	if len(h.Quit) == 0 {
+		return h.L.Get(text.NoAssetsToStopError), http.StatusTooEarly
+	}
+
 	for i := range h.Quit {
 		h.Quit[i] <- true
 	}
@@ -123,6 +131,10 @@ func (h *Handler) Stop() {
 		h.Info[i].Power = 0
 		h.Info[i].Energy = 0
 	}
+
+	h.Quit = []chan bool{}
+
+	return "", http.StatusNoContent
 }
 
 func (h *Handler) GetStatus() Status {

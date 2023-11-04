@@ -419,9 +419,21 @@ Sets the post stop endpoint controller
 c	-	request  context (*gin.context)
 */
 func (s *Simulators) postStop(c *gin.Context) {
-	s.H.Stop()
+	var msg, cod = s.H.Stop()
 
-	c.IndentedJSON(http.StatusNoContent, http.NoBody)
+	if msg != "" {
+		var r = errors.ErroMsg{
+			Message: msg,
+		}
+
+		v := errors.StructValidate(r, c, s.Lang)
+
+		if v {
+			c.IndentedJSON(cod, r)
+		}
+	}
+
+	c.IndentedJSON(cod, http.NoBody)
 }
 
 func (s *Simulators) getStatus(c *gin.Context) {
