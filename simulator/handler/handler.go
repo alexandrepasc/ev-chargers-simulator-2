@@ -39,6 +39,7 @@ It returns an array of boolean channels ([]chan bool), one for each simulator ru
 func (h *Handler) Start() []chan bool {
 	h.Channel = make([]chan common.Channel, len(h.Al))
 	h.Quit = make([]chan bool, len(h.Al))
+	h.Info = make([]assets.DataInfo, len(h.Al))
 
 	for i, a := range h.Al {
 		h.Channel[i] = make(chan common.Channel, cBuf)
