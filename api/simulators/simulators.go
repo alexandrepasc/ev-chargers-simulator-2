@@ -394,6 +394,20 @@ func (s *Simulators) postRun(c *gin.Context) {
 	s.H.Al = s.Sim.Al
 	s.H.Ml = s.Mod.Ml
 
+	if len(s.Sim.Al) == 0 {
+		var r = errors.ErroMsg{
+			Message: s.Lang.Get(text.NoAssetsToRunError),
+		}
+
+		v := errors.StructValidate(r, c, s.Lang)
+
+		if v {
+			c.IndentedJSON(http.StatusTooEarly, r)
+		}
+
+		return
+	}
+
 	s.H.Quit = s.H.Start()
 
 	c.IndentedJSON(http.StatusNoContent, http.NoBody)

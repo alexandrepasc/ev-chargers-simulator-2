@@ -27,6 +27,7 @@ type method string
 const (
 	ep       string = "/simulators"
 	modelsEp string = ep + "/models"
+	runEp    string = ep + "/run"
 	mGet     method = "GET"
 	mPost    method = "POST"
 	mPut     method = "PUT"
@@ -1821,6 +1822,33 @@ func TestDeleteModelsInvalidId(t *testing.T) {
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 
 	assert.Equal(t, s.Lang.Get(text.UUIDParsingError), a.Message)
+}
+
+func TestPostRunWithoutSimulators(t *testing.T) {
+	r := gin.Default()
+
+	sm, mo, _ := before(t, []*simulator.Asset{}, []*model.Struct{})
+
+	s := simulators.Simulators{
+		Sim:  sm,
+		Mod:  mo,
+		Lang: sm.L,
+	}
+
+	s.Simulators(r)
+
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest(string(mPost), runEp, http.NoBody)
+
+	r.ServeHTTP(w, req)
+
+	a := errors.ErroMsg{}
+	json.Unmarshal(w.Body.Bytes(), &a)
+
+	assert.Equal(t, http.StatusTooEarly, w.Code)
+
+	assert.Equal(t, s.Lang.Get(text.NoAssetsToRunError), a.Message)
 }
 
 // TODO: Add tests to the run and stop endpoints

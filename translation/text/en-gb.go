@@ -53,6 +53,7 @@ var EnGB = map[Key]string{
 	InternalServerError:           "Something went very wrong.",
 	RequestBodyDoesntMatch:        "The request body is malformed.",
 	UUIDParsingError:              "The id could not be parsed to UUID.",
+	NoAssetsToRunError:            "There is no simulators to run, create them first.",
 	ModbusServerStarted:           "Modbus server started.",
 	ModbusServerStopped:           "Modbus server stopped.",
 	CaCertNotFound:                "No ca.cert file found, will use system CA certificates.",
