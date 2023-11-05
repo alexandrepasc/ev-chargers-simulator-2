@@ -83,21 +83,21 @@ func (h *Handler) Start() []chan bool {
 		}
 	}
 
-	if getPmIndex(h.Al) != -1 {
+	if getPmIndex(h.Al) != nil {
 		var i = getPmIndex(h.Al)
 
-		var m = getModel(h.Al[i].Model, h.Al[i].Protocol, h.Ml)
+		var m = getModel(h.Al[*i].Model, h.Al[*i].Protocol, h.Ml)
 
 		var s = modbus.Modbus{
 			L:       h.L,
 			HostIP:  h.HostIP,
 			Timeout: h.Tout,
-			Asset:   h.Al[i],
+			Asset:   h.Al[*i],
 			Mod:     m,
 			Info:    &h.Info,
 		}
 
-		go s.Start(h.Channel, h.Quit[i])
+		go s.Start(h.Channel, h.Quit[*i])
 	} else {
 		h.stop = make(chan bool)
 		go h.receiver(h.Channel, h.stop)
@@ -120,7 +120,7 @@ func (h *Handler) Stop() (msg string, code int) {
 		h.Quit[i] <- true
 	}
 
-	if getPmIndex(h.Al) == -1 {
+	if getPmIndex(h.Al) == nil {
 		h.stop <- true
 	}
 
@@ -143,7 +143,7 @@ func (h *Handler) GetStatus() Status {
 	var pmi = getPmIndex(h.Al)
 
 	var a []Assets
-	if pmi > -1 {
+	if pmi != nil {
 		a = make([]Assets, len(h.Al)-1)
 
 		resp.Total = int64(len(h.Al) - 1)
@@ -153,8 +153,10 @@ func (h *Handler) GetStatus() Status {
 		resp.Total = int64(len(h.Al))
 	}
 
+	var ai int
+
 	for i := range h.Al {
-		if pmi == i {
+		if pmi == &i {
 			continue
 		}
 
@@ -166,7 +168,9 @@ func (h *Handler) GetStatus() Status {
 			Energy: h.Info[i].Energy,
 		}
 
-		a[i-1] = aux
+		a[ai] = aux
+
+		ai++
 	}
 
 	resp.Assets = a
@@ -256,12 +260,18 @@ func getModel(id uuid.UUID, p simulator.Protocol, al []*model.Struct) *model.Str
 	}
 }
 
-func getPmIndex(al []*simulator.Asset) int {
+/*
+Get the power meter asset index (*int) if it exists, in case there are no assets with the power
+meter type will return nil.
+
+al	-	Asset structure array ([]*simulator.Asset)
+*/
+func getPmIndex(al []*simulator.Asset) *int {
 	for i, a := range al {
 		if a.Type == simulator.Pm {
-			return i
+			return &i
 		}
 	}
 
-	return -1
+	return nil
 }

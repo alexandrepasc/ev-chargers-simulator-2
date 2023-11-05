@@ -436,7 +436,14 @@ func (s *Simulators) postStop(c *gin.Context) {
 	c.IndentedJSON(cod, http.NoBody)
 }
 
+/*
+Sets the get status endpoint controller
+*/
 func (s *Simulators) getStatus(c *gin.Context) {
+	s.Sim.GetSimulators()
+
+	s.H.Al = s.Sim.Al
+
 	var resp = s.H.GetStatus()
 
 	c.IndentedJSON(http.StatusOK, resp)
