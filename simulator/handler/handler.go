@@ -124,13 +124,7 @@ func (h *Handler) Stop() (msg string, code int) {
 		h.stop <- true
 	}
 
-	for i := range h.Al {
-		h.Info[i].UUID = h.Al[i].SimID
-		h.Info[i].Name = h.Al[i].Name
-		h.Info[i].Status = assets.Inactive
-		h.Info[i].Power = 0
-		h.Info[i].Energy = 0
-	}
+	h.Info = []assets.DataInfo{}
 
 	h.Quit = []chan bool{}
 
@@ -144,18 +138,18 @@ func (h *Handler) GetStatus() Status {
 
 	var a []Assets
 	if pmi != nil {
-		a = make([]Assets, len(h.Al)-1)
+		a = make([]Assets, len(h.Info)-1)
 
-		resp.Total = int64(len(h.Al) - 1)
+		resp.Total = int64(len(h.Info) - 1)
 	} else {
-		a = make([]Assets, len(h.Al))
+		a = make([]Assets, len(h.Info))
 
-		resp.Total = int64(len(h.Al))
+		resp.Total = int64(len(h.Info))
 	}
 
 	var ai int
 
-	for i := range h.Al {
+	for i := range h.Info {
 		if pmi == &i {
 			continue
 		}
