@@ -46,6 +46,7 @@ func TestGetSimulators(t *testing.T) {
 
 	al := []*simulator.Asset{
 		{
+			SimID:       mID0,
 			Name:        "a_name",
 			Type:        simulator.Evc,
 			Protocol:    simulator.Ocpp201,
@@ -55,6 +56,7 @@ func TestGetSimulators(t *testing.T) {
 			Evses:       []simulator.Evse{},
 		},
 		{
+			SimID:       mID1,
 			Name:        "b_name",
 			Type:        simulator.Evc,
 			Protocol:    simulator.Ocpp16,
@@ -339,10 +341,14 @@ func TestPostSimulatorsBadRequestBody(t *testing.T) {
 
 func TestNotAblePostSimulatorsSameName(t *testing.T) {
 	r := gin.Default()
+	mID0, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0")
 
 	al := []*simulator.Asset{
 		{
-			Name: "test1",
+			SimID:    mID0,
+			Name:     "test1",
+			Type:     simulator.Evc,
+			Protocol: simulator.Modbus,
 		},
 	}
 	ml := []*model.Struct{}

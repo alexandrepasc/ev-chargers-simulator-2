@@ -49,6 +49,45 @@ func TestGetSimulatorDataNoFiles(t *testing.T) {
 	assert.Equal(t, 0, len(al))
 }
 
+func TestGetSimulatorInvalidData(t *testing.T) {
+	tmp := t.TempDir()
+
+	createFolders(tmp)
+
+	s := before(tmp)
+
+	a := `{
+		"simId": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1",
+		"name": "sim1",
+		"type": "asd",
+		"protocol": "ocpp16"
+	}`
+
+	p := tmp + defSCFolder + "/sim1" + jsonEx
+
+	f, _ := os.Create(p)
+	f.Close()
+
+	os.WriteFile(p, []byte(a), fs.FileMode(common.FilePermissions))
+
+	al := s.GetSimulators()
+
+	assert.Equal(t, 0, len(al))
+
+	a = `{
+		"simId": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1",
+		"name": "sim1",
+		"type": "evc",
+		"protocol": "asd"
+	}`
+
+	os.WriteFile(p, []byte(a), fs.FileMode(common.FilePermissions))
+
+	al = s.GetSimulators()
+
+	assert.Equal(t, 0, len(al))
+}
+
 func TestCreateSimulator(t *testing.T) {
 	tmp := t.TempDir()
 

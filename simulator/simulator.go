@@ -239,7 +239,6 @@ func (s *Simulator) getSimConfigFIles() []fs.DirEntry {
 	return f
 }
 
-// TODO: add struct validator after unmarshal
 /*
 Read the configuration files, unmarshal each to the Asset struct, and return and asset array ([]Asset).
 
@@ -259,6 +258,14 @@ func (s *Simulator) readSimConfigFiles(f []fs.DirEntry) (as []*Asset) {
 			a, e := unmarshalAssetJSON(bv)
 
 			if e {
+				var ev = validator.New().Struct(a)
+
+				if ev != nil {
+					common.Log("readSimConfigFiles").Error(ev)
+
+					continue
+				}
+
 				as = append(as, &a)
 			}
 		}
