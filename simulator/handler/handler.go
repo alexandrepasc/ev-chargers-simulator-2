@@ -32,7 +32,6 @@ type Handler struct {
 	stop    chan bool
 }
 
-// TODO: add logic to handle the models
 /*
 Build the channels, the simulators routines, and start the routines.
 
