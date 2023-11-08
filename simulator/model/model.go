@@ -189,7 +189,6 @@ func (m *Model) getModelsCofigFiles() []fs.DirEntry {
 	return f
 }
 
-// TODO: complete the logic after implementing the modbus logic
 /*
 Read the models files, unmarshal each to the Model struct, and return and asset array ([]Struct).
 

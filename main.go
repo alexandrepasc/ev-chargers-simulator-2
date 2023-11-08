@@ -41,7 +41,6 @@ func main() {
 		HostIP: g.HostIP,
 		Tout:   g.ConnTimeout,
 	}
-	h.SetInfoStartValues()
 
 	var a = api.API{
 		Lang:        t,

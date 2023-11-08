@@ -210,7 +210,6 @@ func TestCanNotCreateModelSameName(t *testing.T) {
 
 	assert.False(t, ab)
 
-	// TODO: need to create translation to this error
 	assert.Equal(t, m.L.Get(text.CreateModelConfFileNameExists), as)
 
 	assert.Equal(t, http.StatusConflict, ac)

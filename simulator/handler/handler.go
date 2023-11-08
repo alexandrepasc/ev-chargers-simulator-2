@@ -2,6 +2,7 @@ package handler
 
 import (
 	"fmt"
+	"net/http"
 	"strings"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/alexandrepasc/ev-chargers-simulator-2/simulator"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/simulator/model"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/translation"
+	"github.com/alexandrepasc/ev-chargers-simulator-2/translation/text"
 	"github.com/google/uuid"
 )
 
@@ -30,7 +32,6 @@ type Handler struct {
 	stop    chan bool
 }
 
-// TODO: add logic to handle the models
 /*
 Build the channels, the simulators routines, and start the routines.
 
@@ -39,6 +40,7 @@ It returns an array of boolean channels ([]chan bool), one for each simulator ru
 func (h *Handler) Start() []chan bool {
 	h.Channel = make([]chan common.Channel, len(h.Al))
 	h.Quit = make([]chan bool, len(h.Al))
+	h.Info = make([]assets.DataInfo, len(h.Al))
 
 	for i, a := range h.Al {
 		h.Channel[i] = make(chan common.Channel, cBuf)
@@ -80,21 +82,21 @@ func (h *Handler) Start() []chan bool {
 		}
 	}
 
-	if getPmIndex(h.Al) != -1 {
+	if getPmIndex(h.Al) != nil {
 		var i = getPmIndex(h.Al)
 
-		var m = getModel(h.Al[i].Model, h.Al[i].Protocol, h.Ml)
+		var m = getModel(h.Al[*i].Model, h.Al[*i].Protocol, h.Ml)
 
 		var s = modbus.Modbus{
 			L:       h.L,
 			HostIP:  h.HostIP,
 			Timeout: h.Tout,
-			Asset:   h.Al[i],
+			Asset:   h.Al[*i],
 			Mod:     m,
 			Info:    &h.Info,
 		}
 
-		go s.Start(h.Channel, h.Quit[i])
+		go s.Start(h.Channel, h.Quit[*i])
 	} else {
 		h.stop = make(chan bool)
 		go h.receiver(h.Channel, h.stop)
@@ -104,24 +106,28 @@ func (h *Handler) Start() []chan bool {
 }
 
 /*
-Stops all the simulators routines using the Quit channel array.
+Stops all the simulators routines using the Quit channel array. Returns an empty string and
+the http response status code, if some issue occurres it will return the error message and
+the http status code.
 */
-func (h *Handler) Stop() {
+func (h *Handler) Stop() (msg string, code int) {
+	if len(h.Quit) == 0 {
+		return h.L.Get(text.NoAssetsToStopError), http.StatusTooEarly
+	}
+
 	for i := range h.Quit {
 		h.Quit[i] <- true
 	}
 
-	if getPmIndex(h.Al) == -1 {
+	if getPmIndex(h.Al) == nil {
 		h.stop <- true
 	}
 
-	for i := range h.Al {
-		h.Info[i].UUID = h.Al[i].SimID
-		h.Info[i].Name = h.Al[i].Name
-		h.Info[i].Status = assets.Inactive
-		h.Info[i].Power = 0
-		h.Info[i].Energy = 0
-	}
+	h.Info = []assets.DataInfo{}
+
+	h.Quit = []chan bool{}
+
+	return "", http.StatusNoContent
 }
 
 func (h *Handler) GetStatus() Status {
@@ -130,18 +136,20 @@ func (h *Handler) GetStatus() Status {
 	var pmi = getPmIndex(h.Al)
 
 	var a []Assets
-	if pmi > -1 {
-		a = make([]Assets, len(h.Al)-1)
+	if pmi != nil {
+		a = make([]Assets, len(h.Info)-1)
 
-		resp.Total = int64(len(h.Al) - 1)
+		resp.Total = int64(len(h.Info) - 1)
 	} else {
-		a = make([]Assets, len(h.Al))
+		a = make([]Assets, len(h.Info))
 
-		resp.Total = int64(len(h.Al))
+		resp.Total = int64(len(h.Info))
 	}
 
-	for i := range h.Al {
-		if pmi == i {
+	var ai int
+
+	for i := range h.Info {
+		if pmi == &i {
 			continue
 		}
 
@@ -153,7 +161,9 @@ func (h *Handler) GetStatus() Status {
 			Energy: h.Info[i].Energy,
 		}
 
-		a[i-1] = aux
+		a[ai] = aux
+
+		ai++
 	}
 
 	resp.Assets = a
@@ -243,12 +253,18 @@ func getModel(id uuid.UUID, p simulator.Protocol, al []*model.Struct) *model.Str
 	}
 }
 
-func getPmIndex(al []*simulator.Asset) int {
+/*
+Get the power meter asset index (*int) if it exists, in case there are no assets with the power
+meter type will return nil.
+
+al	-	Asset structure array ([]*simulator.Asset)
+*/
+func getPmIndex(al []*simulator.Asset) *int {
 	for i, a := range al {
 		if a.Type == simulator.Pm {
-			return i
+			return &i
 		}
 	}
 
-	return -1
+	return nil
 }

@@ -2,7 +2,7 @@
 
 |         |    Version   |
 | ------- | ------------ |
-| Product | **v0.18.11** |
+| Product | **v0.18.12** |
 | Manual  | **Rev1**     |
 
 <div class="page"/>
@@ -484,7 +484,7 @@ POST http://{apiAddr}:{apiPort}/simulators/stop
 ```
 
 #### /simulators/status
-During the application execution there is a way to retreive some information about the status of all of the EV Chargers configured. With the following endpoint the assets are returned in the response body with the state of each.
+During the application execution there is a way to retreive some information about the status of all of the running EV Chargers. With the following endpoint the assets are returned in the response body with the state of each.
 
 - `total`: Total number of assets
 - `assets`: List of assets

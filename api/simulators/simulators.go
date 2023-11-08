@@ -394,6 +394,20 @@ func (s *Simulators) postRun(c *gin.Context) {
 	s.H.Al = s.Sim.Al
 	s.H.Ml = s.Mod.Ml
 
+	if len(s.Sim.Al) == 0 {
+		var r = errors.ErroMsg{
+			Message: s.Lang.Get(text.NoAssetsToRunError),
+		}
+
+		v := errors.StructValidate(r, c, s.Lang)
+
+		if v {
+			c.IndentedJSON(http.StatusTooEarly, r)
+		}
+
+		return
+	}
+
 	s.H.Quit = s.H.Start()
 
 	c.IndentedJSON(http.StatusNoContent, http.NoBody)
@@ -405,12 +419,31 @@ Sets the post stop endpoint controller
 c	-	request  context (*gin.context)
 */
 func (s *Simulators) postStop(c *gin.Context) {
-	s.H.Stop()
+	var msg, cod = s.H.Stop()
 
-	c.IndentedJSON(http.StatusNoContent, http.NoBody)
+	if msg != "" {
+		var r = errors.ErroMsg{
+			Message: msg,
+		}
+
+		v := errors.StructValidate(r, c, s.Lang)
+
+		if v {
+			c.IndentedJSON(cod, r)
+		}
+	}
+
+	c.IndentedJSON(cod, http.NoBody)
 }
 
+/*
+Sets the get status endpoint controller
+*/
 func (s *Simulators) getStatus(c *gin.Context) {
+	s.Sim.GetSimulators()
+
+	s.H.Al = s.Sim.Al
+
 	var resp = s.H.GetStatus()
 
 	c.IndentedJSON(http.StatusOK, resp)
