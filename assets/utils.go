@@ -259,7 +259,6 @@ func GetMaxPower(e *simulator.Evse) int64 {
 	return p
 }
 
-// TODO: reuse this to all the ocpp models
 /*
 Create a new websocket client with the parameter timeout and returns it (*ws.Client).
 
@@ -377,7 +376,6 @@ Get the connection protocol string depending if the tls is enabled for the asset
 
 t	-	Is the tls activated to the asset (bool)
 */
-// TODO: add this to all the implementations
 func GetConnProtocol(t bool) string {
 	if t {
 		return string(wssConn)

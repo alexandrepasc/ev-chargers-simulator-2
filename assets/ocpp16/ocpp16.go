@@ -15,7 +15,6 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/localauth"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
-	"github.com/lorenzodonini/ocpp-go/ws"
 )
 
 type Ocpp16 struct {
@@ -51,9 +50,9 @@ func (o *Ocpp16) Start(c chan common.Channel, q chan bool) {
 
 	o.setStartUpConfigurations()
 
-	o.s = setupServer(o.Asset.CPId, o.Timeout, o)
+	o.s = setupServer(o.Asset.CPId, o.Timeout, o, o.L)
 
-	sErr := o.s.Start("ws://" + o.CSAddr + ":" + o.CSPort)
+	sErr := o.s.Start(assets.GetConnProtocol(o.Asset.TLS) + o.CSAddr + ":" + o.CSPort)
 
 	if sErr != nil {
 		o.logger.log(map[string]string{"protocol": "ocpp1.6", "function": "Start"}, sErr.Error(), assets.Error)
@@ -90,38 +89,51 @@ func (o *Ocpp16) Start(c chan common.Channel, q chan bool) {
 			return
 		default:
 			channelComm(c, o.Asset.Evses, o.st, o.Asset.Name, o.Asset.SimID)
-			break
 		}
 
 		time.Sleep(1 * time.Second)
 	}
 }
 
-/**/
-func setupServer(id string, t int64, h *Ocpp16) (s ocpp16.ChargePoint) {
-	s = ocpp16.NewChargePoint(id, nil, getWsClient(t))
+/*
+Create the websocket and the charge station server, define the configurations for the charge
+station and the handler. Returns the server after (ocpp16.ChargingStation).
 
-	s.SetCoreHandler(h)
-	s.SetLocalAuthListHandler(h)
-	s.SetRemoteTriggerHandler(h)
+id	-	Charge station identifier (string)
 
-	return s
-}
+t	-	Timeout value to set to the server (int64)
 
-/**/
-func getWsClient(t int64) (wsc *ws.Client) {
-	wsc = ws.NewClient()
+o	-	Ocpp16 project structure (*Ocpp16)
 
-	var cfg = ws.ClientTimeoutConfig{
-		HandshakeTimeout: time.Second * time.Duration(t),
-		WriteWait:        time.Second * time.Duration(t),
-		PingPeriod:       time.Second * time.Duration(t),
-		PongWait:         time.Second * time.Duration(t),
+l	-	Translation language (translation.Translation)
+*/
+func setupServer(id string, t int64, o *Ocpp16, l translation.Translation) (s ocpp16.ChargePoint) {
+	// The basic auth is using the username directly from the Model and the password from the AuthorizationKey
+	if o.Asset.TLS {
+		s = ocpp16.NewChargePoint(id, nil, assets.GetTLSWsClient(
+			t,
+			o.Mod.CA,
+			o.Mod.Cert,
+			o.Mod.Key,
+			o.Mod.BasicAuth.Username,
+			*o.Conf["AuthorizationKey"].Value,
+			o.Asset.BasicAuth,
+			l,
+		))
+	} else {
+		s = ocpp16.NewChargePoint(id, nil, assets.GetWsClient(
+			t,
+			o.Mod.BasicAuth.Username,
+			*o.Conf["AuthorizationKey"].Value,
+			o.Asset.BasicAuth,
+		))
 	}
 
-	wsc.SetTimeoutConfig(cfg)
+	s.SetCoreHandler(o)
+	s.SetLocalAuthListHandler(o)
+	s.SetRemoteTriggerHandler(o)
 
-	return wsc
+	return s
 }
 
 /*
