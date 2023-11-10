@@ -9,6 +9,7 @@ import (
 
 	"github.com/alexandrepasc/ev-chargers-simulator-2/assets"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/simulator"
+	"github.com/alexandrepasc/ev-chargers-simulator-2/translation/text"
 	"github.com/lorenzodonini/ocpp-go/ocpp"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/localauth"
@@ -22,7 +23,17 @@ Set the starting configurations for the asset.
 func (o *Ocpp16) setStartUpConfigurations() {
 	o.Conf = config
 
-	o.logger.log(map[string]string{"protocol": "ocpp1.6", "function": "setConfigurations", "simulator": o.Asset.Name}, "Set startup configurations", assets.Info)
+	o.logger.log(map[string]string{"protocol": string(o.Asset.Protocol), "function": "setStartUpConfigurations", "simulator": o.Asset.Name},
+		o.L.Get(text.StartUpConfigurations), assets.Info)
+
+	// This will load only the password since there is no information in the documentation regarding how to set the user in the cp
+	if o.Asset.BasicAuth {
+		o.Conf["AuthorizationKey"] = core.ConfigurationKey{
+			Key:      o.Conf["AuthorizationKey"].Key,
+			Readonly: o.Conf["AuthorizationKey"].Readonly,
+			Value:    assets.GetStringPointer(o.Mod.BasicAuth.Password),
+		}
+	}
 
 	var artr = o.Conf["AuthorizeRemoteTxRequests"]
 

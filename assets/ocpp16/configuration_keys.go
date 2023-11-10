@@ -6,6 +6,10 @@ import (
 )
 
 var config = map[string]core.ConfigurationKey{
+	"AuthorizationKey": {
+		Key:      "AuthorizationKey",
+		Readonly: false,
+	},
 	// CORE PROFILE
 	// optional boolean
 	// "AllowOfflineTxForUnknownId": {

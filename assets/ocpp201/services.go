@@ -22,6 +22,9 @@ defined by the user in the asset and module configuration files.
 func (o *Ocpp201) setStartUpConfigurations() {
 	o.components = components
 
+	o.logger.log(map[string]string{"protocol": string(o.Asset.Protocol), "function": "setStartUpConfigurations", "simulator": o.Asset.Name},
+		o.L.Get(text.StartUpConfigurations), assets.Info)
+
 	o.connectSeq = true
 
 	o.bootSeq = bootSeq{
@@ -47,9 +50,6 @@ func (o *Ocpp201) setStartUpConfigurations() {
 		isToTrigger: false,
 		evseIndex:   nil,
 	}
-
-	o.logger.log(map[string]string{"protocol": string(o.Asset.Protocol), "function": "setStartUpConfigurations", "simulator": o.Asset.Name},
-		o.L.Get(text.StartUpConfigurations), assets.Info)
 
 	var status = provisioning.GetVariableStatusAccepted
 
