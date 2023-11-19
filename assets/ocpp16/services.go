@@ -27,13 +27,13 @@ func (o *Ocpp16) setStartUpConfigurations() {
 
 	// This will load only the password since there is no information in the documentation regarding how to set the user in the cp
 	// TODO: do not think that this is correct another review to this shoud be made
-	if o.Asset.BasicAuth {
-		o.Conf["AuthorizationKey"] = core.ConfigurationKey{
-			Key:      o.Conf["AuthorizationKey"].Key,
-			Readonly: o.Conf["AuthorizationKey"].Readonly,
-			Value:    assets.GetStringPointer(o.Mod.BasicAuth.Password),
-		}
-	}
+	// if o.Asset.BasicAuth {
+	// 	o.Conf["AuthorizationKey"] = core.ConfigurationKey{
+	// 		Key:      o.Conf["AuthorizationKey"].Key,
+	// 		Readonly: o.Conf["AuthorizationKey"].Readonly,
+	// 		Value:    assets.GetStringPointer(o.Mod.BasicAuth.Password),
+	// 	}
+	// }
 
 	o.Conf["AuthorizeRemoteTxRequests"] = core.ConfigurationKey{
 		Key:      o.Conf["AuthorizeRemoteTxRequests"].Key,

@@ -108,7 +108,7 @@ o	-	Ocpp16 project structure (*Ocpp16)
 l	-	Translation language (translation.Translation)
 */
 func setupServer(id string, t int64, o *Ocpp16, l translation.Translation) (s ocpp16.ChargePoint) {
-	// The basic auth is using the username directly from the Model and the password from the AuthorizationKey
+	// The basic auth is using the username and password directly from the Model
 	if o.Asset.TLS {
 		s = ocpp16.NewChargePoint(id, nil, assets.GetTLSWsClient(
 			t,
@@ -116,15 +116,15 @@ func setupServer(id string, t int64, o *Ocpp16, l translation.Translation) (s oc
 			o.Mod.Cert,
 			o.Mod.Key,
 			o.Mod.BasicAuth.Username,
-			*o.Conf["AuthorizationKey"].Value,
+			o.Mod.BasicAuth.Password,
 			o.Asset.BasicAuth,
 			l,
 		))
 	} else {
 		s = ocpp16.NewChargePoint(id, nil, assets.GetWsClient(
 			t,
-			o.Mod.BasicAuth.Username,
-			*o.Conf["AuthorizationKey"].Value,
+			&o.Mod.BasicAuth.Username,
+			&o.Mod.BasicAuth.Password,
 			o.Asset.BasicAuth,
 		))
 	}

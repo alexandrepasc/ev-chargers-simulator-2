@@ -153,8 +153,8 @@ func setupServer(id string, t int64, o *Ocpp201, l translation.Translation) (s o
 	} else {
 		s = ocpp201.NewChargingStation(id, nil, assets.GetWsClient(
 			t,
-			o.components["SecurityCtrlr"].variables["Identity"].item[0].AttributeValue,
-			o.components["SecurityCtrlr"].variables["BasicAuthPassword"].item[0].AttributeValue,
+			&o.components["SecurityCtrlr"].variables["Identity"].item[0].AttributeValue,
+			&o.components["SecurityCtrlr"].variables["BasicAuthPassword"].item[0].AttributeValue,
 			o.Asset.BasicAuth,
 		))
 	}
