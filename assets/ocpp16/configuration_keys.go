@@ -6,6 +6,11 @@ import (
 )
 
 var config = map[string]core.ConfigurationKey{
+	// This is ignored at the moment, this should receive the hash key and not the password
+	"AuthorizationKey": {
+		Key:      "AuthorizationKey",
+		Readonly: false,
+	},
 	// CORE PROFILE
 	// optional boolean
 	// "AllowOfflineTxForUnknownId": {

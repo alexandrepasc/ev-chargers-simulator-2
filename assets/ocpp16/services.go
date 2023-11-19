@@ -9,6 +9,7 @@ import (
 
 	"github.com/alexandrepasc/ev-chargers-simulator-2/assets"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/simulator"
+	"github.com/alexandrepasc/ev-chargers-simulator-2/translation/text"
 	"github.com/lorenzodonini/ocpp-go/ocpp"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/localauth"
@@ -18,55 +19,63 @@ import (
 /*
 Set the starting configurations for the asset.
 */
-// TODO: need to review the way the conf default values are being set
 func (o *Ocpp16) setStartUpConfigurations() {
 	o.Conf = config
 
-	o.logger.log(map[string]string{"protocol": "ocpp1.6", "function": "setConfigurations", "simulator": o.Asset.Name}, "Set startup configurations", assets.Info)
+	o.logger.log(map[string]string{"protocol": string(o.Asset.Protocol), "function": "setStartUpConfigurations", "simulator": o.Asset.Name},
+		o.L.Get(text.StartUpConfigurations), assets.Info)
 
-	var artr = o.Conf["AuthorizeRemoteTxRequests"]
+	// This will load only the password since there is no information in the documentation regarding how to set the user in the cp
+	// TODO: do not think that this is correct another review to this shoud be made
+	// if o.Asset.BasicAuth {
+	// 	o.Conf["AuthorizationKey"] = core.ConfigurationKey{
+	// 		Key:      o.Conf["AuthorizationKey"].Key,
+	// 		Readonly: o.Conf["AuthorizationKey"].Readonly,
+	// 		Value:    assets.GetStringPointer(o.Mod.BasicAuth.Password),
+	// 	}
+	// }
 
-	artr.Value = assets.GetStringPointer(strconv.FormatBool(o.Asset.AuthorizeRemote))
+	o.Conf["AuthorizeRemoteTxRequests"] = core.ConfigurationKey{
+		Key:      o.Conf["AuthorizeRemoteTxRequests"].Key,
+		Readonly: o.Conf["AuthorizeRemoteTxRequests"].Readonly,
+		Value:    assets.GetStringPointer(strconv.FormatBool(o.Asset.AuthorizeRemote)),
+	}
 
-	o.Conf["AuthorizeRemoteTxRequests"] = artr
+	o.Conf["NumberOfConnectors"] = core.ConfigurationKey{
+		Key:      o.Conf["NumberOfConnectors"].Key,
+		Readonly: o.Conf["NumberOfConnectors"].Readonly,
+		Value:    assets.GetStringPointer(strconv.Itoa(len(o.Asset.Evses[0].Connectors))),
+	}
 
-	var noc = o.Conf["NumberOfConnectors"]
+	o.Conf["ResetRetries"] = core.ConfigurationKey{
+		Key:      o.Conf["ResetRetries"].Key,
+		Readonly: o.Conf["ResetRetries"].Readonly,
+		Value:    assets.GetStringPointer(strconv.FormatInt(assets.DefResetRetries, 10)),
+	}
 
-	noc.Value = assets.GetStringPointer(strconv.Itoa(len(o.Asset.Evses[0].Connectors)))
+	o.Conf["StopTransactionOnEVSideDisconnect"] = core.ConfigurationKey{
+		Key:      o.Conf["StopTransactionOnEVSideDisconnect"].Key,
+		Readonly: o.Conf["StopTransactionOnEVSideDisconnect"].Readonly,
+		Value:    assets.GetStringPointer(strconv.FormatBool(assets.DefStopTransactionOnEvSideDisconnect)),
+	}
 
-	o.Conf["NumberOfConnectors"] = noc
+	o.Conf["StopTransactionOnInvalidId"] = core.ConfigurationKey{
+		Key:      o.Conf["StopTransactionOnInvalidId"].Key,
+		Readonly: o.Conf["StopTransactionOnInvalidId"].Readonly,
+		Value:    assets.GetStringPointer(strconv.FormatBool(assets.DefStopTransactionOnInvalidID)),
+	}
 
-	var rr = o.Conf["ResetRetries"]
+	o.Conf["ConnectionTimeOut"] = core.ConfigurationKey{
+		Key:      o.Conf["ConnectionTimeOut"].Key,
+		Readonly: o.Conf["ConnectionTimeOut"].Readonly,
+		Value:    assets.GetStringPointer(strconv.FormatInt(o.Timeout, 10)),
+	}
 
-	rr.Value = assets.GetStringPointer(strconv.FormatInt(assets.DefResetRetries, 10))
-
-	o.Conf["ResetRetries"] = rr
-
-	var stoesd = o.Conf["StopTransactionOnEVSideDisconnect"]
-
-	stoesd.Value = assets.GetStringPointer(strconv.FormatBool(assets.DefStopTransactionOnEvSideDisconnect))
-
-	o.Conf["StopTransactionOnEVSideDisconnect"] = stoesd
-
-	var stoii = o.Conf["StopTransactionOnInvalidId"]
-
-	stoii.Value = assets.GetStringPointer(strconv.FormatBool(assets.DefStopTransactionOnInvalidID))
-
-	o.Conf["StopTransactionOnInvalidId"] = stoii
-
-	var t = strconv.FormatInt(o.Timeout, 10)
-
-	var cto = o.Conf["ConnectionTimeOut"]
-
-	cto.Value = &t
-
-	o.Conf["ConnectionTimeOut"] = cto
-
-	var hb = o.Conf["HeartbeatInterval"]
-
-	hb.Value = assets.GetStringPointer(strconv.FormatInt(assets.DefHeartbeatInterval, 10))
-
-	o.Conf["HeartbeatInterval"] = hb
+	o.Conf["HeartbeatInterval"] = core.ConfigurationKey{
+		Key:      o.Conf["HeartbeatInterval"].Key,
+		Readonly: o.Conf["HeartbeatInterval"].Readonly,
+		Value:    assets.GetStringPointer(strconv.FormatInt(assets.DefHeartbeatInterval, 10)),
+	}
 
 	o.Conf["MeterValueSampleInterval"] = core.ConfigurationKey{
 		Key:      o.Conf["MeterValueSampleInterval"].Key,

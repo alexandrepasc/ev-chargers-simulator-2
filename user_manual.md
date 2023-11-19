@@ -2,7 +2,7 @@
 
 |         |    Version   |
 | ------- | ------------ |
-| Product | **v0.18.12** |
+| Product | **v0.19.12** |
 | Manual  | **Rev1**     |
 
 <div class="page"/>
@@ -278,7 +278,7 @@ Now looking into the core of this application, the **Simulators**. There is on e
 - `type`: Type of the asset that the configuration will be used to (evc, pm)
 - `protocol`: Protocol used by the asset
 - `tls`: Set if the asset will connect using TLS or not, the default is false (if true the model is required)
-- `basicAuth`: Set if the asset will use the basic http auth to connect, the default is false (if yes model is required)
+- `basicAuth`: Set if the asset will use the basic http auth to connect, the default is false (if true model is required)
 - `model`: Id of the configuration file set in the model's folder
 - `port`: Communication ip port
 - `cPId`: Charge point id to identify the unit (used in the ocpp protocol)
