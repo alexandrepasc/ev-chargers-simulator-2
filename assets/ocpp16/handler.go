@@ -349,7 +349,8 @@ func (o *Ocpp16) OnTriggerMessage(req *remotetrigger.TriggerMessageRequest) (res
 
 	switch req.RequestedMessage {
 	case core.BootNotificationFeatureName:
-		go o.sendBootNotification()
+		o.bootSeq.IsToTrigger = true
+		o.bootSeq.BootInterval = 0
 
 		res = &remotetrigger.TriggerMessageConfirmation{Status: remotetrigger.TriggerMessageStatusAccepted}
 

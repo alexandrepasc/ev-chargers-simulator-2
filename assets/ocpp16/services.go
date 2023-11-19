@@ -22,6 +22,13 @@ Set the starting configurations for the asset.
 func (o *Ocpp16) setStartUpConfigurations() {
 	o.Conf = config
 
+	o.bootSeq = assets.BootSeq{
+		IsToTrigger:  true,
+		BootStatus:   core.RegistrationStatusAccepted,
+		BootReason:   nil,
+		BootInterval: 0,
+	}
+
 	o.logger.log(map[string]string{"protocol": string(o.Asset.Protocol), "function": "setStartUpConfigurations", "simulator": o.Asset.Name},
 		o.L.Get(text.StartUpConfigurations), assets.Info)
 
@@ -176,7 +183,7 @@ func (o *Ocpp16) setStartUpConfigurations() {
 /*
 Sends the boot notification to the central system, using the model to get the information.
 */
-func (o *Ocpp16) sendBootNotification() {
+func (o *Ocpp16) sendBootNotification() (resp *core.BootNotificationConfirmation, err error) {
 	var lm = map[string]string{
 		"protocol":  string(o.Asset.Protocol),
 		"function":  "sendBootNotification",
@@ -198,18 +205,60 @@ func (o *Ocpp16) sendBootNotification() {
 
 	o.logger.log(lm, req, assets.Info)
 
-	var res, err = o.s.SendRequest(req)
+	var res, e = o.s.SendRequest(req)
 
 	lm["sender"] = assets.CS
 	lm["type"] = assets.Response
 
-	if err != nil {
-		o.logger.log(lm, err, assets.Error)
+	if e != nil {
+		o.logger.log(lm, e, assets.Error)
+
+		return nil, e
 	}
 
 	o.logger.log(lm, res.(*core.BootNotificationConfirmation), assets.Info)
 
+	o.bootSeq.BootStatus = res.(*core.BootNotificationConfirmation).Status
+
+	// TODO: this might be changed to the connection logic
 	o.st = time.Now()
+
+	return res.(*core.BootNotificationConfirmation), nil
+}
+
+/*
+Have the logic needed to process the boot notification response.
+
+res	-	Boot notification response from the cs (*core.BootNotificationConfirmation)
+*/
+func (o *Ocpp16) processBootResponse(res *core.BootNotificationConfirmation) {
+	if res.Status != core.RegistrationStatusAccepted {
+		o.bootSeq.BootInterval = res.Interval
+
+		if res.Interval <= 0 {
+			o.bootSeq.BootInterval = int(assets.DefHeartbeatInterval)
+		}
+	} else {
+		if res.Interval > 0 {
+			o.Conf["HeartbeatInterval"] = core.ConfigurationKey{
+				Key:      o.Conf["HeartbeatInterval"].Key,
+				Readonly: o.Conf["HeartbeatInterval"].Readonly,
+				Value:    assets.GetStringPointer(strconv.FormatInt(int64(res.Interval), 10)),
+			}
+		} else {
+			o.Conf["HeartbeatInterval"] = core.ConfigurationKey{
+				Key:      o.Conf["HeartbeatInterval"].Key,
+				Readonly: o.Conf["HeartbeatInterval"].Readonly,
+				Value:    assets.GetStringPointer(strconv.FormatInt(assets.DefHeartbeatInterval, 10)),
+			}
+		}
+
+		// TODO: Internal clock synchronization needs to be done
+
+		o.bootSeq.BootInterval = 0
+
+		o.bootSeq.IsToTrigger = false
+	}
 }
 
 /*
@@ -445,7 +494,8 @@ func (o *Ocpp16) processReset(r *core.ResetRequest) *core.ResetConfirmation {
 	o.chargeProfile = nil
 	o.t = 0
 
-	go o.sendBootNotification()
+	o.bootSeq.IsToTrigger = true
+	o.bootSeq.BootInterval = 0
 
 	return &core.ResetConfirmation{Status: core.ResetStatusAccepted}
 }
