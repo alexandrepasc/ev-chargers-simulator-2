@@ -590,6 +590,10 @@ if any of the connectors is active to send the request. If a connector is active
 information and call the send function.
 */
 func (o *Ocpp16) processSampledData() {
+	if o.bootSeq.BootStatus.(core.RegistrationStatus) != core.RegistrationStatusAccepted {
+		return
+	}
+
 	var v, errI = strconv.ParseInt(*o.Conf["MeterValueSampleInterval"].Value, 10, 64)
 
 	if errI != nil {
@@ -933,6 +937,10 @@ If a connector is active get the transaction aligned data values and append them
 be used in the stop transaction message.
 */
 func (o *Ocpp16) processAlignedData() {
+	if o.bootSeq.BootStatus.(core.RegistrationStatus) != core.RegistrationStatusAccepted {
+		return
+	}
+
 	var i = time.Now().UTC().Sub(time.Date(time.Now().UTC().Year(), time.Now().UTC().Month(), time.Now().UTC().Day(), 0, 0, 0, 0, time.UTC)).Seconds()
 
 	var v, errV = strconv.ParseFloat(*o.Conf["ClockAlignedDataInterval"].Value, 32)
@@ -1225,6 +1233,10 @@ function to handle the logic.
 // TODO: the total power calculation need to be reviewed, at the moment with 100 w in a couple of secs the result is 0
 // TODO: this function was not updated to remove the loop through the evses list, this func as it is may be relevant to the ocpp 2.0.1
 func (o *Ocpp16) updateData() {
+	if o.bootSeq.BootStatus.(core.RegistrationStatus) != core.RegistrationStatusAccepted {
+		return
+	}
+
 	for x, e := range o.Asset.Evses {
 		for y, c := range e.Connectors {
 			if o.Asset.StartCharging {
