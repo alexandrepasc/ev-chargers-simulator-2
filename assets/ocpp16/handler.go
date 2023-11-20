@@ -170,6 +170,17 @@ func (o *Ocpp16) OnRemoteStartTransaction(req *core.RemoteStartTransactionReques
 
 	o.logger.log(lm, req, assets.Info)
 
+	lm["sender"] = assets.CP
+	lm["type"] = assets.Response
+
+	if o.bootSeq.BootStatus.(core.RegistrationStatus) != core.RegistrationStatusAccepted {
+		res = &core.RemoteStartTransactionConfirmation{Status: types.RemoteStartStopStatusRejected}
+
+		o.logger.log(lm, res, assets.Info)
+
+		return res, nil
+	}
+
 	res = &core.RemoteStartTransactionConfirmation{Status: types.RemoteStartStopStatusRejected}
 
 	if canEnable(o.Asset.Evses[0].Connectors) {
@@ -177,9 +188,6 @@ func (o *Ocpp16) OnRemoteStartTransaction(req *core.RemoteStartTransactionReques
 
 		go o.processRemoteStartTransaction(req)
 	}
-
-	lm["sender"] = assets.CP
-	lm["type"] = assets.Response
 
 	o.logger.log(lm, res, assets.Info)
 
@@ -202,10 +210,18 @@ func (o *Ocpp16) OnRemoteStopTransaction(req *core.RemoteStopTransactionRequest)
 
 	o.logger.log(lm, req, assets.Info)
 
-	res = o.processRemoteStopTransaction(req)
-
 	lm["sender"] = assets.CP
 	lm["type"] = assets.Response
+
+	if o.bootSeq.BootStatus.(core.RegistrationStatus) != core.RegistrationStatusAccepted {
+		res = &core.RemoteStopTransactionConfirmation{Status: types.RemoteStartStopStatusRejected}
+
+		o.logger.log(lm, res, assets.Info)
+
+		return res, nil
+	}
+
+	res = o.processRemoteStopTransaction(req)
 
 	o.logger.log(lm, res, assets.Info)
 
