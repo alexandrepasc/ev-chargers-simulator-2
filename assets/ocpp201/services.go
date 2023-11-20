@@ -210,8 +210,6 @@ func (o *Ocpp201) sendBootNotification(r provisioning.BootReason) (res *provisio
 Have the logic needed to process the boot notification response.
 
 res	-	The cs boot response (provisioning.BootNotificationResponse)
-
-r	-	Boot reason in case the request needs to be done again (provisioning.BootReason)
 */
 func (o *Ocpp201) processBootResponse(res *provisioning.BootNotificationResponse) {
 	if res.Status != provisioning.RegistrationStatusAccepted {

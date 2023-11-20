@@ -1,7 +1,6 @@
 package ocpp16
 
 import (
-	"strconv"
 	"sync"
 	"time"
 
@@ -28,6 +27,7 @@ type Ocpp16 struct {
 	Mod       *model.Struct                    // Model data for the asset
 	s         ocpp16.ChargePoint               // Ocpp charge point server
 	Conf      map[string]core.ConfigurationKey // Configuration key map
+	bootSeq   assets.BootSeq                   // Boot sequence structure
 	localAuth struct {                         // Local auth list
 		version int64                         // Version identifier
 		list    []localauth.AuthorizationData // List with the authorization information
@@ -35,7 +35,8 @@ type Ocpp16 struct {
 	chargeProfile  *types.ChargingProfile // Charging profile set by the CS
 	txnAlignedData []types.MeterValue     // Store the transaction aligned data
 	txnSampledData []types.MeterValue     // store the transaction sampled data
-	t              int64
+	tick           int64                  // Ticker to enable trigger scheduled events
+	heartbeatC     int64                  // Heartbeat count to handle the request interval
 	st             time.Time
 }
 
@@ -61,21 +62,25 @@ func (o *Ocpp16) Start(c chan common.Channel, q chan bool) {
 
 	o.logger.log(map[string]string{"protocol": "ocpp1.6", "function": "Start", "simulator": o.Asset.Name}, "Ocpp 1.6 server started", assets.Info)
 
-	go o.sendBootNotification()
-
 	for {
+		if o.bootSeq.IsToTrigger {
+			if o.bootSeq.BootInterval == 0 || o.tick%int64(o.bootSeq.BootInterval) == 0 {
+				var br, be = o.sendBootNotification()
+				if be == nil {
+					o.processBootResponse(br)
+				}
+			}
+		}
+
 		go o.updateData()
 
 		go o.processSampledData()
 
-		var hbi, _ = strconv.ParseInt(*o.Conf["HeartbeatInterval"].Value, 10, 64)
-		if o.t%hbi == 0 {
-			go o.heartbeat()
-		}
-
 		o.processAlignedData()
 
-		o.handleTick()
+		o.processHeartbeat()
+
+		o.tick = assets.HandleTick(o.tick)
 
 		select {
 		case <-q:

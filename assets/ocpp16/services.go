@@ -2,7 +2,6 @@ package ocpp16
 
 import (
 	"fmt"
-	"math"
 	"strconv"
 	"strings"
 	"time"
@@ -21,6 +20,15 @@ Set the starting configurations for the asset.
 */
 func (o *Ocpp16) setStartUpConfigurations() {
 	o.Conf = config
+
+	o.bootSeq = assets.BootSeq{
+		IsToTrigger:  true,
+		BootStatus:   core.RegistrationStatusAccepted,
+		BootReason:   nil,
+		BootInterval: 0,
+	}
+
+	o.heartbeatC = 0
 
 	o.logger.log(map[string]string{"protocol": string(o.Asset.Protocol), "function": "setStartUpConfigurations", "simulator": o.Asset.Name},
 		o.L.Get(text.StartUpConfigurations), assets.Info)
@@ -155,7 +163,7 @@ func (o *Ocpp16) setStartUpConfigurations() {
 		Value:    assets.GetStringPointer(strconv.FormatBool(assets.DefLocalPreAuthorize)),
 	}
 
-	o.t = 0
+	o.tick = 0
 
 	for y := range o.Asset.Evses[0].Connectors {
 		o.Asset.Evses[0].Connectors[y].DP.Position = 0
@@ -176,7 +184,7 @@ func (o *Ocpp16) setStartUpConfigurations() {
 /*
 Sends the boot notification to the central system, using the model to get the information.
 */
-func (o *Ocpp16) sendBootNotification() {
+func (o *Ocpp16) sendBootNotification() (resp *core.BootNotificationConfirmation, err error) {
 	var lm = map[string]string{
 		"protocol":  string(o.Asset.Protocol),
 		"function":  "sendBootNotification",
@@ -198,18 +206,62 @@ func (o *Ocpp16) sendBootNotification() {
 
 	o.logger.log(lm, req, assets.Info)
 
-	var res, err = o.s.SendRequest(req)
+	var res, e = o.s.SendRequest(req)
+
+	o.heartbeatC = 0
 
 	lm["sender"] = assets.CS
 	lm["type"] = assets.Response
 
-	if err != nil {
-		o.logger.log(lm, err, assets.Error)
+	if e != nil {
+		o.logger.log(lm, e, assets.Error)
+
+		return nil, e
 	}
 
 	o.logger.log(lm, res.(*core.BootNotificationConfirmation), assets.Info)
 
+	o.bootSeq.BootStatus = res.(*core.BootNotificationConfirmation).Status
+
+	// TODO: this might be changed to the connection logic
 	o.st = time.Now()
+
+	return res.(*core.BootNotificationConfirmation), nil
+}
+
+/*
+Have the logic needed to process the boot notification response.
+
+res	-	Boot notification response from the cs (*core.BootNotificationConfirmation)
+*/
+func (o *Ocpp16) processBootResponse(res *core.BootNotificationConfirmation) {
+	if res.Status != core.RegistrationStatusAccepted {
+		o.bootSeq.BootInterval = res.Interval
+
+		if res.Interval <= 0 {
+			o.bootSeq.BootInterval = int(assets.DefHeartbeatInterval)
+		}
+	} else {
+		if res.Interval > 0 {
+			o.Conf["HeartbeatInterval"] = core.ConfigurationKey{
+				Key:      o.Conf["HeartbeatInterval"].Key,
+				Readonly: o.Conf["HeartbeatInterval"].Readonly,
+				Value:    assets.GetStringPointer(strconv.FormatInt(int64(res.Interval), 10)),
+			}
+		} else {
+			o.Conf["HeartbeatInterval"] = core.ConfigurationKey{
+				Key:      o.Conf["HeartbeatInterval"].Key,
+				Readonly: o.Conf["HeartbeatInterval"].Readonly,
+				Value:    assets.GetStringPointer(strconv.FormatInt(assets.DefHeartbeatInterval, 10)),
+			}
+		}
+
+		// TODO: Internal clock synchronization needs to be done
+
+		o.bootSeq.BootInterval = 0
+
+		o.bootSeq.IsToTrigger = false
+	}
 }
 
 /*
@@ -443,9 +495,9 @@ func (o *Ocpp16) processReset(r *core.ResetRequest) *core.ResetConfirmation {
 	o.localAuth.version = 0
 	o.localAuth.list = nil
 	o.chargeProfile = nil
-	o.t = 0
 
-	go o.sendBootNotification()
+	o.bootSeq.IsToTrigger = true
+	o.bootSeq.BootInterval = 0
 
 	return &core.ResetConfirmation{Status: core.ResetStatusAccepted}
 }
@@ -542,6 +594,10 @@ if any of the connectors is active to send the request. If a connector is active
 information and call the send function.
 */
 func (o *Ocpp16) processSampledData() {
+	if o.bootSeq.BootStatus.(core.RegistrationStatus) != core.RegistrationStatusAccepted {
+		return
+	}
+
 	var v, errI = strconv.ParseInt(*o.Conf["MeterValueSampleInterval"].Value, 10, 64)
 
 	if errI != nil {
@@ -560,7 +616,7 @@ func (o *Ocpp16) processSampledData() {
 		return
 	}
 
-	if o.t%v != 0 {
+	if o.tick%v != 0 {
 		return
 	}
 
@@ -885,6 +941,10 @@ If a connector is active get the transaction aligned data values and append them
 be used in the stop transaction message.
 */
 func (o *Ocpp16) processAlignedData() {
+	if o.bootSeq.BootStatus.(core.RegistrationStatus) != core.RegistrationStatusAccepted {
+		return
+	}
+
 	var i = time.Now().UTC().Sub(time.Date(time.Now().UTC().Year(), time.Now().UTC().Month(), time.Now().UTC().Day(), 0, 0, 0, 0, time.UTC)).Seconds()
 
 	var v, errV = strconv.ParseFloat(*o.Conf["ClockAlignedDataInterval"].Value, 32)
@@ -1177,6 +1237,10 @@ function to handle the logic.
 // TODO: the total power calculation need to be reviewed, at the moment with 100 w in a couple of secs the result is 0
 // TODO: this function was not updated to remove the loop through the evses list, this func as it is may be relevant to the ocpp 2.0.1
 func (o *Ocpp16) updateData() {
+	if o.bootSeq.BootStatus.(core.RegistrationStatus) != core.RegistrationStatusAccepted {
+		return
+	}
+
 	for x, e := range o.Asset.Evses {
 		for y, c := range e.Connectors {
 			if o.Asset.StartCharging {
@@ -1330,6 +1394,8 @@ func (o *Ocpp16) statusNotification(c *simulator.Connector) {
 
 	err := o.s.SendRequestAsync(req, cb)
 
+	o.heartbeatC = 0
+
 	lm["type"] = assets.Response
 
 	if err != nil {
@@ -1362,6 +1428,8 @@ func (o *Ocpp16) startTransaction(id string, c *simulator.Connector) *core.Start
 	o.logger.log(lm, req, assets.Info)
 
 	var res, err = o.s.SendRequest(req)
+
+	o.heartbeatC = 0
 
 	lm["sender"] = assets.CS
 	lm["type"] = assets.Response
@@ -1433,6 +1501,8 @@ func (o *Ocpp16) stopTransaction(id string, c *simulator.Connector) {
 
 	var _, err = o.s.SendRequest(req)
 
+	o.heartbeatC = 0
+
 	lm["sender"] = assets.CS
 	lm["type"] = assets.Response
 
@@ -1487,6 +1557,8 @@ func (o *Ocpp16) authorize(id string) bool {
 
 	res, err := o.s.SendRequest(req)
 
+	o.heartbeatC = 0
+
 	lm["sender"] = assets.CS
 	lm["type"] = assets.Response
 
@@ -1500,6 +1572,38 @@ func (o *Ocpp16) authorize(id string) bool {
 	return res.(*core.AuthorizeConfirmation).IdTagInfo.Status == types.AuthorizationStatusAccepted
 }
 
+/*
+Logic to handle the heartbeat interval timer, in case reaches the time calls the send heartbeat
+function and resets it. If the it didn't reached the time just increments it.
+*/
+func (o *Ocpp16) processHeartbeat() {
+	if o.bootSeq.BootStatus.(core.RegistrationStatus) != core.RegistrationStatusAccepted {
+		return
+	}
+
+	var lm = map[string]string{
+		"protocol":  string(o.Asset.Protocol),
+		"function":  "processHeartbeat",
+		"feature":   core.HeartbeatFeatureName,
+		"simulator": o.Asset.Name,
+	}
+
+	o.heartbeatC++
+
+	var hb, hbE = strconv.ParseInt(*o.Conf["HeartbeatInterval"].Value, 10, 64)
+	if hbE != nil {
+		o.logger.log(lm, hbE, assets.Error)
+		return
+	}
+
+	if o.heartbeatC == hb {
+		o.heartbeat()
+
+		o.heartbeatC = 0
+	}
+}
+
+// TODO: review the functions that have the send requests name, it might be better to use the same name logic from the ocpp201
 /*
 Send the heartbeat request to the CS.
 */
@@ -1525,6 +1629,8 @@ func (o *Ocpp16) heartbeat() {
 	if err != nil {
 		o.logger.log(lm, err, assets.Error)
 	}
+
+	// TODO: it is missing the synchronization of the internal clock logic
 
 	o.logger.log(lm, res.(*core.HeartbeatConfirmation), assets.Info)
 }
@@ -1554,6 +1660,8 @@ func (o *Ocpp16) meterValues(id int64, mvl []types.MeterValue) {
 	o.logger.log(lm, req, assets.Info)
 
 	var res, err = o.s.SendRequest(req)
+
+	o.heartbeatC = 0
 
 	lm["sender"] = assets.CS
 	lm["type"] = assets.Response
@@ -1664,20 +1772,6 @@ func (o *Ocpp16) setConfiguration(c *core.ChangeConfigurationRequest) core.Confi
 	}
 
 	return core.ConfigurationStatusAccepted
-}
-
-/*
-Handles the counter from the simulator and handles the max int64 value, in case it is reaching the
-max value (max int64 value - 7) it will be reseted to 0.
-*/
-func (o *Ocpp16) handleTick() {
-	const rInt64 = math.MaxInt64 - 7
-
-	if o.t > rInt64 {
-		o.t = 0
-	} else {
-		o.t++
-	}
 }
 
 /*

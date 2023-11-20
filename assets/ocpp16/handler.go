@@ -1,14 +1,18 @@
+//nolint:dupl // Because still in dev
 package ocpp16
 
 import (
 	"github.com/alexandrepasc/ev-chargers-simulator-2/assets"
+	"github.com/lorenzodonini/ocpp-go/ocpp"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/firmware"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/localauth"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/remotetrigger"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
+	"github.com/lorenzodonini/ocpp-go/ocppj"
 )
 
+// TODO: Review nolint
 type Handler struct{}
 
 /*
@@ -28,10 +32,19 @@ func (o *Ocpp16) OnChangeAvailability(req *core.ChangeAvailabilityRequest) (res 
 
 	o.logger.log(lm, req, assets.Info)
 
-	res = o.processChangeAvailability(req)
-
 	lm["sender"] = assets.CP
 	lm["type"] = assets.Response
+
+	if o.bootSeq.BootStatus.(core.RegistrationStatus) != core.RegistrationStatusAccepted {
+		res = &core.ChangeAvailabilityConfirmation{Status: core.AvailabilityStatusRejected}
+
+		o.logger.log(lm, res, assets.Info)
+
+		// TODO: not sure if this is the correct response
+		return res, nil
+	}
+
+	res = o.processChangeAvailability(req)
 
 	o.logger.log(lm, res, assets.Info)
 
@@ -56,14 +69,23 @@ func (o *Ocpp16) OnGetConfiguration(req *core.GetConfigurationRequest) (res *cor
 
 	o.logger.log(lm, req, assets.Info)
 
+	lm["sender"] = assets.CP
+	lm["type"] = assets.Response
+
+	if o.bootSeq.BootStatus.(core.RegistrationStatus) == core.RegistrationStatusRejected {
+		err = ocpp.NewError(ocppj.SecurityError, "", "")
+
+		o.logger.log(lm, err, assets.Error)
+
+		// TODO: not sure if this is the correct response
+		return nil, err
+	}
+
 	k, u := o.getConfigurationKeys(req.Key)
 
 	res = &core.GetConfigurationConfirmation{ConfigurationKey: k}
 
 	res.UnknownKey = u
-
-	lm["sender"] = assets.CP
-	lm["type"] = assets.Response
 
 	o.logger.log(lm, res, assets.Info)
 
@@ -86,10 +108,19 @@ func (o *Ocpp16) OnChangeConfiguration(req *core.ChangeConfigurationRequest) (re
 
 	o.logger.log(lm, req, assets.Info)
 
-	res = &core.ChangeConfigurationConfirmation{Status: o.setConfiguration(req)}
-
 	lm["sender"] = assets.CP
 	lm["type"] = assets.Response
+
+	if o.bootSeq.BootStatus.(core.RegistrationStatus) == core.RegistrationStatusRejected {
+		err = ocpp.NewError(ocppj.SecurityError, "", "")
+
+		o.logger.log(lm, err, assets.Error)
+
+		// TODO: not sure if this is the correct response
+		return nil, err
+	}
+
+	res = &core.ChangeConfigurationConfirmation{Status: o.setConfiguration(req)}
 
 	o.logger.log(lm, res, assets.Info)
 
@@ -112,13 +143,22 @@ func (o *Ocpp16) OnClearCache(req *core.ClearCacheRequest) (res *core.ClearCache
 
 	o.logger.log(lm, req, assets.Info)
 
+	lm["sender"] = assets.CP
+	lm["type"] = assets.Response
+
+	if o.bootSeq.BootStatus.(core.RegistrationStatus) != core.RegistrationStatusAccepted {
+		res = &core.ClearCacheConfirmation{Status: core.ClearCacheStatusRejected}
+
+		o.logger.log(lm, res, assets.Info)
+
+		// TODO: not sure if this is the correct response
+		return res, nil
+	}
+
 	o.localAuth.version = 0
 	o.localAuth.list = nil
 
 	res = &core.ClearCacheConfirmation{Status: core.ClearCacheStatusAccepted}
-
-	lm["sender"] = assets.CP
-	lm["type"] = assets.Response
 
 	o.logger.log(lm, res, assets.Info)
 
@@ -140,14 +180,23 @@ func (o *Ocpp16) OnDataTransfer(req *core.DataTransferRequest) (res *core.DataTr
 
 	o.logger.log(lm, req, assets.Info)
 
+	lm["sender"] = assets.CP
+	lm["type"] = assets.Response
+
+	if o.bootSeq.BootStatus.(core.RegistrationStatus) != core.RegistrationStatusAccepted {
+		res = &core.DataTransferConfirmation{Status: core.DataTransferStatusRejected}
+
+		o.logger.log(lm, res, assets.Info)
+
+		// TODO: not sure if this is the correct response
+		return res, nil
+	}
+
 	res = &core.DataTransferConfirmation{Status: core.DataTransferStatusAccepted}
 
 	if req.VendorId != o.Mod.Ocpp.VendorID {
 		res = &core.DataTransferConfirmation{Status: core.DataTransferStatusUnknownVendorId}
 	}
-
-	lm["sender"] = assets.CP
-	lm["type"] = assets.Response
 
 	o.logger.log(lm, res, assets.Info)
 
@@ -170,6 +219,18 @@ func (o *Ocpp16) OnRemoteStartTransaction(req *core.RemoteStartTransactionReques
 
 	o.logger.log(lm, req, assets.Info)
 
+	lm["sender"] = assets.CP
+	lm["type"] = assets.Response
+
+	if o.bootSeq.BootStatus.(core.RegistrationStatus) != core.RegistrationStatusAccepted {
+		res = &core.RemoteStartTransactionConfirmation{Status: types.RemoteStartStopStatusRejected}
+
+		o.logger.log(lm, res, assets.Info)
+
+		// TODO: not sure if this is the correct response
+		return res, nil
+	}
+
 	res = &core.RemoteStartTransactionConfirmation{Status: types.RemoteStartStopStatusRejected}
 
 	if canEnable(o.Asset.Evses[0].Connectors) {
@@ -177,9 +238,6 @@ func (o *Ocpp16) OnRemoteStartTransaction(req *core.RemoteStartTransactionReques
 
 		go o.processRemoteStartTransaction(req)
 	}
-
-	lm["sender"] = assets.CP
-	lm["type"] = assets.Response
 
 	o.logger.log(lm, res, assets.Info)
 
@@ -202,10 +260,19 @@ func (o *Ocpp16) OnRemoteStopTransaction(req *core.RemoteStopTransactionRequest)
 
 	o.logger.log(lm, req, assets.Info)
 
-	res = o.processRemoteStopTransaction(req)
-
 	lm["sender"] = assets.CP
 	lm["type"] = assets.Response
+
+	if o.bootSeq.BootStatus.(core.RegistrationStatus) != core.RegistrationStatusAccepted {
+		res = &core.RemoteStopTransactionConfirmation{Status: types.RemoteStartStopStatusRejected}
+
+		o.logger.log(lm, res, assets.Info)
+
+		// TODO: not sure if this is the correct response
+		return res, nil
+	}
+
+	res = o.processRemoteStopTransaction(req)
 
 	o.logger.log(lm, res, assets.Info)
 
@@ -228,10 +295,19 @@ func (o *Ocpp16) OnReset(req *core.ResetRequest) (res *core.ResetConfirmation, e
 
 	o.logger.log(lm, req, assets.Info)
 
-	res = o.processReset(req)
-
 	lm["sender"] = assets.CP
 	lm["type"] = assets.Response
+
+	if o.bootSeq.BootStatus.(core.RegistrationStatus) != core.RegistrationStatusAccepted {
+		res = &core.ResetConfirmation{Status: core.ResetStatusRejected}
+
+		o.logger.log(lm, res, assets.Info)
+
+		// TODO: not sure if this is the correct response
+		return res, nil
+	}
+
+	res = o.processReset(req)
 
 	o.logger.log(lm, res, assets.Info)
 
@@ -255,6 +331,18 @@ func (o *Ocpp16) OnUnlockConnector(req *core.UnlockConnectorRequest) (res *core.
 
 	o.logger.log(lm, req, assets.Info)
 
+	lm["sender"] = assets.CP
+	lm["type"] = assets.Response
+
+	if o.bootSeq.BootStatus.(core.RegistrationStatus) != core.RegistrationStatusAccepted {
+		err = ocpp.NewError(ocppj.SecurityError, "", "")
+
+		o.logger.log(lm, err, assets.Error)
+
+		// TODO: not sure if this is the correct response
+		return nil, err
+	}
+
 	res = &core.UnlockConnectorConfirmation{Status: core.UnlockStatusUnlockFailed}
 
 	// at the moment this is only supporting 1 evse for simulator so the evse is set to 0
@@ -265,9 +353,6 @@ func (o *Ocpp16) OnUnlockConnector(req *core.UnlockConnectorRequest) (res *core.
 
 		res = &core.UnlockConnectorConfirmation{Status: core.UnlockStatusUnlocked}
 	}
-
-	lm["sender"] = assets.CP
-	lm["type"] = assets.Response
 
 	o.logger.log(lm, res, assets.Info)
 
@@ -289,10 +374,19 @@ func (o *Ocpp16) OnGetLocalListVersion(req *localauth.GetLocalListVersionRequest
 
 	o.logger.log(lm, req, assets.Info)
 
-	res = &localauth.GetLocalListVersionConfirmation{ListVersion: int(o.localAuth.version)}
-
 	lm["sender"] = assets.CP
 	lm["type"] = assets.Response
+
+	if o.bootSeq.BootStatus.(core.RegistrationStatus) != core.RegistrationStatusAccepted {
+		err = ocpp.NewError(ocppj.SecurityError, "", "")
+
+		o.logger.log(lm, err, assets.Error)
+
+		// TODO: not sure if this is the correct response
+		return nil, err
+	}
+
+	res = &localauth.GetLocalListVersionConfirmation{ListVersion: int(o.localAuth.version)}
 
 	o.logger.log(lm, res, assets.Info)
 
@@ -315,14 +409,23 @@ func (o *Ocpp16) OnSendLocalList(req *localauth.SendLocalListRequest) (res *loca
 
 	o.logger.log(lm, req, assets.Info)
 
+	lm["sender"] = assets.CP
+	lm["type"] = assets.Response
+
+	if o.bootSeq.BootStatus.(core.RegistrationStatus) != core.RegistrationStatusAccepted {
+		res = &localauth.SendLocalListConfirmation{Status: localauth.UpdateStatusFailed}
+
+		o.logger.log(lm, res, assets.Info)
+
+		// TODO: not sure if this is the correct response
+		return res, nil
+	}
+
 	if o.Asset.AuthList {
 		res = o.processSendLocalList(req)
 	} else {
 		res = &localauth.SendLocalListConfirmation{Status: localauth.UpdateStatusNotSupported}
 	}
-
-	lm["sender"] = assets.CP
-	lm["type"] = assets.Response
 
 	o.logger.log(lm, res, assets.Info)
 
@@ -347,24 +450,64 @@ func (o *Ocpp16) OnTriggerMessage(req *remotetrigger.TriggerMessageRequest) (res
 
 	o.logger.log(lm, req, assets.Info)
 
+	lm["sender"] = assets.CP
+	lm["type"] = assets.Response
+
 	switch req.RequestedMessage {
 	case core.BootNotificationFeatureName:
-		go o.sendBootNotification()
+		o.bootSeq.IsToTrigger = true
+		o.bootSeq.BootInterval = 0
 
 		res = &remotetrigger.TriggerMessageConfirmation{Status: remotetrigger.TriggerMessageStatusAccepted}
 
 	case firmware.DiagnosticsStatusNotificationFeatureName:
+		if o.bootSeq.BootStatus.(core.RegistrationStatus) == core.RegistrationStatusRejected {
+			res = &remotetrigger.TriggerMessageConfirmation{Status: remotetrigger.TriggerMessageStatusRejected}
+
+			o.logger.log(lm, res, assets.Info)
+
+			// TODO: not sure if this is the correct response
+			return res, nil
+		}
+
 		res = &remotetrigger.TriggerMessageConfirmation{Status: remotetrigger.TriggerMessageStatusNotImplemented}
 
 	case firmware.FirmwareStatusNotificationFeatureName:
+		if o.bootSeq.BootStatus.(core.RegistrationStatus) == core.RegistrationStatusRejected {
+			res = &remotetrigger.TriggerMessageConfirmation{Status: remotetrigger.TriggerMessageStatusRejected}
+
+			o.logger.log(lm, res, assets.Info)
+
+			// TODO: not sure if this is the correct response
+			return res, nil
+		}
+
 		res = &remotetrigger.TriggerMessageConfirmation{Status: remotetrigger.TriggerMessageStatusNotImplemented}
 
 	case core.HeartbeatFeatureName:
+		if o.bootSeq.BootStatus.(core.RegistrationStatus) == core.RegistrationStatusRejected {
+			res = &remotetrigger.TriggerMessageConfirmation{Status: remotetrigger.TriggerMessageStatusRejected}
+
+			o.logger.log(lm, res, assets.Info)
+
+			// TODO: not sure if this is the correct response
+			return res, nil
+		}
+
 		go o.heartbeat()
 
 		res = &remotetrigger.TriggerMessageConfirmation{Status: remotetrigger.TriggerMessageStatusAccepted}
 
 	case core.MeterValuesFeatureName:
+		if o.bootSeq.BootStatus.(core.RegistrationStatus) == core.RegistrationStatusRejected {
+			res = &remotetrigger.TriggerMessageConfirmation{Status: remotetrigger.TriggerMessageStatusRejected}
+
+			o.logger.log(lm, res, assets.Info)
+
+			// TODO: not sure if this is the correct response
+			return res, nil
+		}
+
 		var c, _ = o.getConnectorAndIndex(req.ConnectorId)
 
 		if c == nil {
@@ -377,6 +520,15 @@ func (o *Ocpp16) OnTriggerMessage(req *remotetrigger.TriggerMessageRequest) (res
 		res = &remotetrigger.TriggerMessageConfirmation{Status: remotetrigger.TriggerMessageStatusAccepted}
 
 	case core.StatusNotificationFeatureName:
+		if o.bootSeq.BootStatus.(core.RegistrationStatus) == core.RegistrationStatusRejected {
+			res = &remotetrigger.TriggerMessageConfirmation{Status: remotetrigger.TriggerMessageStatusRejected}
+
+			o.logger.log(lm, res, assets.Info)
+
+			// TODO: not sure if this is the correct response
+			return res, nil
+		}
+
 		// the ocpp 1.6 only supports 1 evse so this is coded to only use the 0 index
 		for i := range o.Asset.Evses[0].Connectors {
 			go o.statusNotification(&o.Asset.Evses[0].Connectors[i])
@@ -387,9 +539,6 @@ func (o *Ocpp16) OnTriggerMessage(req *remotetrigger.TriggerMessageRequest) (res
 	default:
 		res = &remotetrigger.TriggerMessageConfirmation{Status: remotetrigger.TriggerMessageStatusRejected}
 	}
-
-	lm["sender"] = assets.CP
-	lm["type"] = assets.Response
 
 	o.logger.log(lm, res, assets.Info)
 
