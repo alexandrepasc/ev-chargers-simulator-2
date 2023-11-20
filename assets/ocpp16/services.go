@@ -28,6 +28,8 @@ func (o *Ocpp16) setStartUpConfigurations() {
 		BootInterval: 0,
 	}
 
+	o.heartbeatC = 0
+
 	o.logger.log(map[string]string{"protocol": string(o.Asset.Protocol), "function": "setStartUpConfigurations", "simulator": o.Asset.Name},
 		o.L.Get(text.StartUpConfigurations), assets.Info)
 
@@ -205,6 +207,8 @@ func (o *Ocpp16) sendBootNotification() (resp *core.BootNotificationConfirmation
 	o.logger.log(lm, req, assets.Info)
 
 	var res, e = o.s.SendRequest(req)
+
+	o.heartbeatC = 0
 
 	lm["sender"] = assets.CS
 	lm["type"] = assets.Response
@@ -1390,6 +1394,8 @@ func (o *Ocpp16) statusNotification(c *simulator.Connector) {
 
 	err := o.s.SendRequestAsync(req, cb)
 
+	o.heartbeatC = 0
+
 	lm["type"] = assets.Response
 
 	if err != nil {
@@ -1422,6 +1428,8 @@ func (o *Ocpp16) startTransaction(id string, c *simulator.Connector) *core.Start
 	o.logger.log(lm, req, assets.Info)
 
 	var res, err = o.s.SendRequest(req)
+
+	o.heartbeatC = 0
 
 	lm["sender"] = assets.CS
 	lm["type"] = assets.Response
@@ -1493,6 +1501,8 @@ func (o *Ocpp16) stopTransaction(id string, c *simulator.Connector) {
 
 	var _, err = o.s.SendRequest(req)
 
+	o.heartbeatC = 0
+
 	lm["sender"] = assets.CS
 	lm["type"] = assets.Response
 
@@ -1547,6 +1557,8 @@ func (o *Ocpp16) authorize(id string) bool {
 
 	res, err := o.s.SendRequest(req)
 
+	o.heartbeatC = 0
+
 	lm["sender"] = assets.CS
 	lm["type"] = assets.Response
 
@@ -1560,6 +1572,38 @@ func (o *Ocpp16) authorize(id string) bool {
 	return res.(*core.AuthorizeConfirmation).IdTagInfo.Status == types.AuthorizationStatusAccepted
 }
 
+/*
+Logic to handle the heartbeat interval timer, in case reaches the time calls the send heartbeat
+function and resets it. If the it didn't reached the time just increments it.
+*/
+func (o *Ocpp16) processHeartbeat() {
+	if o.bootSeq.BootStatus.(core.RegistrationStatus) != core.RegistrationStatusAccepted {
+		return
+	}
+
+	var lm = map[string]string{
+		"protocol":  string(o.Asset.Protocol),
+		"function":  "processHeartbeat",
+		"feature":   core.HeartbeatFeatureName,
+		"simulator": o.Asset.Name,
+	}
+
+	o.heartbeatC++
+
+	var hb, hbE = strconv.ParseInt(*o.Conf["HeartbeatInterval"].Value, 10, 64)
+	if hbE != nil {
+		o.logger.log(lm, hbE, assets.Error)
+		return
+	}
+
+	if o.heartbeatC == hb {
+		o.heartbeat()
+
+		o.heartbeatC = 0
+	}
+}
+
+// TODO: review the functions that have the send requests name, it might be better to use the same name logic from the ocpp201
 /*
 Send the heartbeat request to the CS.
 */
@@ -1585,6 +1629,8 @@ func (o *Ocpp16) heartbeat() {
 	if err != nil {
 		o.logger.log(lm, err, assets.Error)
 	}
+
+	// TODO: it is missing the synchronization of the internal clock logic
 
 	o.logger.log(lm, res.(*core.HeartbeatConfirmation), assets.Info)
 }
@@ -1614,6 +1660,8 @@ func (o *Ocpp16) meterValues(id int64, mvl []types.MeterValue) {
 	o.logger.log(lm, req, assets.Info)
 
 	var res, err = o.s.SendRequest(req)
+
+	o.heartbeatC = 0
 
 	lm["sender"] = assets.CS
 	lm["type"] = assets.Response

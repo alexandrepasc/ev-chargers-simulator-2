@@ -1,7 +1,6 @@
 package ocpp16
 
 import (
-	"strconv"
 	"sync"
 	"time"
 
@@ -37,6 +36,7 @@ type Ocpp16 struct {
 	txnAlignedData []types.MeterValue     // Store the transaction aligned data
 	txnSampledData []types.MeterValue     // store the transaction sampled data
 	tick           int64                  // Ticker to enable trigger scheduled events
+	heartbeatC     int64                  // Heartbeat count to handle the request interval
 	st             time.Time
 }
 
@@ -76,12 +76,9 @@ func (o *Ocpp16) Start(c chan common.Channel, q chan bool) {
 
 		go o.processSampledData()
 
-		var hbi, _ = strconv.ParseInt(*o.Conf["HeartbeatInterval"].Value, 10, 64)
-		if o.tick%hbi == 0 {
-			go o.heartbeat()
-		}
-
 		o.processAlignedData()
+
+		o.processHeartbeat()
 
 		o.tick = assets.HandleTick(o.tick)
 
