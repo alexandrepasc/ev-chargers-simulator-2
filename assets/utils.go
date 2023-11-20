@@ -358,7 +358,6 @@ max value (max int64 value - 7) it will be reseted to 0 and will return the valu
 
 t	-	Ticker value (int64)
 */
-// TODO: add this to all the implementations
 func HandleTick(t int64) int64 {
 	const rInt64 = math.MaxInt64 - 7
 

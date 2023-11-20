@@ -36,7 +36,7 @@ type Ocpp16 struct {
 	chargeProfile  *types.ChargingProfile // Charging profile set by the CS
 	txnAlignedData []types.MeterValue     // Store the transaction aligned data
 	txnSampledData []types.MeterValue     // store the transaction sampled data
-	t              int64
+	tick           int64                  // Ticker to enable trigger scheduled events
 	st             time.Time
 }
 
@@ -64,7 +64,7 @@ func (o *Ocpp16) Start(c chan common.Channel, q chan bool) {
 
 	for {
 		if o.bootSeq.IsToTrigger {
-			if o.bootSeq.BootInterval == 0 || o.t%int64(o.bootSeq.BootInterval) == 0 {
+			if o.bootSeq.BootInterval == 0 || o.tick%int64(o.bootSeq.BootInterval) == 0 {
 				var br, be = o.sendBootNotification()
 				if be == nil {
 					o.processBootResponse(br)
@@ -77,13 +77,13 @@ func (o *Ocpp16) Start(c chan common.Channel, q chan bool) {
 		go o.processSampledData()
 
 		var hbi, _ = strconv.ParseInt(*o.Conf["HeartbeatInterval"].Value, 10, 64)
-		if o.t%hbi == 0 {
+		if o.tick%hbi == 0 {
 			go o.heartbeat()
 		}
 
 		o.processAlignedData()
 
-		o.handleTick()
+		o.tick = assets.HandleTick(o.tick)
 
 		select {
 		case <-q:

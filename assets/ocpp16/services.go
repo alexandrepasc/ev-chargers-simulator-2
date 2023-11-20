@@ -2,7 +2,6 @@ package ocpp16
 
 import (
 	"fmt"
-	"math"
 	"strconv"
 	"strings"
 	"time"
@@ -162,7 +161,7 @@ func (o *Ocpp16) setStartUpConfigurations() {
 		Value:    assets.GetStringPointer(strconv.FormatBool(assets.DefLocalPreAuthorize)),
 	}
 
-	o.t = 0
+	o.tick = 0
 
 	for y := range o.Asset.Evses[0].Connectors {
 		o.Asset.Evses[0].Connectors[y].DP.Position = 0
@@ -492,7 +491,6 @@ func (o *Ocpp16) processReset(r *core.ResetRequest) *core.ResetConfirmation {
 	o.localAuth.version = 0
 	o.localAuth.list = nil
 	o.chargeProfile = nil
-	o.t = 0
 
 	o.bootSeq.IsToTrigger = true
 	o.bootSeq.BootInterval = 0
@@ -610,7 +608,7 @@ func (o *Ocpp16) processSampledData() {
 		return
 	}
 
-	if o.t%v != 0 {
+	if o.tick%v != 0 {
 		return
 	}
 
@@ -1714,20 +1712,6 @@ func (o *Ocpp16) setConfiguration(c *core.ChangeConfigurationRequest) core.Confi
 	}
 
 	return core.ConfigurationStatusAccepted
-}
-
-/*
-Handles the counter from the simulator and handles the max int64 value, in case it is reaching the
-max value (max int64 value - 7) it will be reseted to 0.
-*/
-func (o *Ocpp16) handleTick() {
-	const rInt64 = math.MaxInt64 - 7
-
-	if o.t > rInt64 {
-		o.t = 0
-	} else {
-		o.t++
-	}
 }
 
 /*

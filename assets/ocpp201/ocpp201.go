@@ -14,6 +14,7 @@ import (
 	ocpp201 "github.com/lorenzodonini/ocpp-go/ocpp2.0.1"
 )
 
+// TODO: move bootSeq to the assets structure
 type Ocpp201 struct {
 	lock          sync.RWMutex            // Lock goroutine
 	logger        logging                 // Logging
