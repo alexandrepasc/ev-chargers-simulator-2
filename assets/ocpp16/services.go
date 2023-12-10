@@ -28,13 +28,18 @@ func (o *Ocpp16) setStartUpConfigurations() {
 		BootInterval: 0,
 	}
 
+	o.resetSeq = assets.ResetSeq{
+		IsToTrigger: false,
+		EvseIndex:   nil,
+	}
+
 	o.heartbeatC = 0
 
 	o.logger.log(map[string]string{"protocol": string(o.Asset.Protocol), "function": "setStartUpConfigurations", "simulator": o.Asset.Name},
 		o.L.Get(text.StartUpConfigurations), assets.Info)
 
 	// This will load only the password since there is no information in the documentation regarding how to set the user in the cp
-	// TODO: do not think that this is correct another review to this shoud be made
+	// TODO: do not think that this is correct another review to this should be made
 	// if o.Asset.BasicAuth {
 	// 	o.Conf["AuthorizationKey"] = core.ConfigurationKey{
 	// 		Key:      o.Conf["AuthorizationKey"].Key,
@@ -462,26 +467,34 @@ transaction request.
 
 In a hard reset will set all the connectors data and the asset data.
 */
-func (o *Ocpp16) processReset(r *core.ResetRequest) *core.ResetConfirmation {
+func (o *Ocpp16) processResetRequest(r *core.ResetRequest) *core.ResetConfirmation {
 	if r.Type == core.ResetType(assets.Soft) {
+		// if there is no active connectors
+		if canEnable(o.Asset.Evses[0].Connectors) {
+			o.bootSeq.BootInterval = 0
+			o.bootSeq.IsToTrigger = true
+
+			return &core.ResetConfirmation{Status: core.ResetStatusAccepted}
+		}
+
 		for y, c := range o.Asset.Evses[0].Connectors {
 			if !c.Enabled {
 				continue
 			}
 
-			o.Asset.Evses[0].Connectors[y].Enabled = false
-			o.Asset.Evses[0].Connectors[y].DP.Position = 0
-			o.Asset.Evses[0].Connectors[y].DP.Ticker = 0
-			o.Asset.Evses[0].Connectors[y].CurrentSoC = 0
-			o.txnAlignedData = []types.MeterValue{}
-			o.txnSampledData = []types.MeterValue{}
+			const dpr = 2
 
-			go o.stopTransaction(o.Asset.Evses[0].CIDTag, &o.Asset.Evses[0].Connectors[y])
+			// set the duration to the end of the last state before finish so the update data will trigger the stop transaction call
+			o.Asset.Evses[0].Connectors[y].DP.Position = int64(len(o.Asset.Evses[0].Connectors[y].Data) - dpr)
+			o.Asset.Evses[0].Connectors[y].DP.Ticker = o.Asset.Evses[0].Connectors[y].Data[o.Asset.Evses[0].Connectors[y].DP.Position].Duration
 		}
+
+		o.resetSeq.IsToTrigger = true
 
 		return &core.ResetConfirmation{Status: core.ResetStatusAccepted}
 	}
 
+	// if the reset has the type hard
 	for y := range o.Asset.Evses[0].Connectors {
 		o.Asset.Evses[0].Connectors[y].Enabled = false
 		o.Asset.Evses[0].Connectors[y].DP.Position = 0
@@ -1278,13 +1291,23 @@ func (o *Ocpp16) updateData() {
 							o.Asset.Evses[x].Connectors[y].Data[o.Asset.Evses[x].Connectors[y].DP.Position].StartSoC
 					}
 
+					// if the charging state has changed in the update
 					if cs != c.Data[o.Asset.Evses[x].Connectors[y].DP.Position].ChargingState {
 						o.statusNotification(&o.Asset.Evses[x].Connectors[y])
 
+						// if the connector goes to the finish state
 						if c.Data[o.Asset.Evses[x].Connectors[y].DP.Position].ChargingState == int64(assets.Finishing) {
 							o.stopTransaction(o.Asset.Evses[x].CIDTag, &o.Asset.Evses[x].Connectors[y])
 							o.txnAlignedData = []types.MeterValue{}
 							o.txnSampledData = []types.MeterValue{}
+
+							// if the reset request was used activate the boot sequence and disable the reset trigger
+							if o.resetSeq.IsToTrigger {
+								o.bootSeq.BootInterval = 0
+								o.bootSeq.IsToTrigger = true
+
+								o.resetSeq.IsToTrigger = false
+							}
 						}
 
 						// If the connector starts charging send the start transaction request
@@ -1775,7 +1798,7 @@ func (o *Ocpp16) setConfiguration(c *core.ChangeConfigurationRequest) core.Confi
 }
 
 /*
-Checks all the connectors from an EVSE and returs false if any of the connectors are enabled.
+Checks all the connectors from an EVSE and returns false if any of the connectors are enabled.
 If no connector is enabled it returns true (bool).
 
 cl	-	EVSE connectors list ([]simulator.Connector)

@@ -298,6 +298,7 @@ func (o *Ocpp16) OnReset(req *core.ResetRequest) (res *core.ResetConfirmation, e
 	lm["sender"] = assets.CP
 	lm["type"] = assets.Response
 
+	// Not accepting the reset request when CS didn't accepted the boot request message
 	if o.bootSeq.BootStatus.(core.RegistrationStatus) != core.RegistrationStatusAccepted {
 		res = &core.ResetConfirmation{Status: core.ResetStatusRejected}
 
@@ -307,7 +308,7 @@ func (o *Ocpp16) OnReset(req *core.ResetRequest) (res *core.ResetConfirmation, e
 		return res, nil
 	}
 
-	res = o.processReset(req)
+	res = o.processResetRequest(req)
 
 	o.logger.log(lm, res, assets.Info)
 

@@ -28,6 +28,7 @@ type Ocpp16 struct {
 	s         ocpp16.ChargePoint               // Ocpp charge point server
 	Conf      map[string]core.ConfigurationKey // Configuration key map
 	bootSeq   assets.BootSeq                   // Boot sequence structure
+	resetSeq  assets.ResetSeq                  // Reset sequence structure
 	localAuth struct {                         // Local auth list
 		version int64                         // Version identifier
 		list    []localauth.AuthorizationData // List with the authorization information
