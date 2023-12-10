@@ -46,9 +46,9 @@ func (o *Ocpp201) setStartUpConfigurations() {
 		eventInfo:   "",
 	}
 
-	o.resetSeq = resetSeq{
-		isToTrigger: false,
-		evseIndex:   nil,
+	o.resetSeq = assets.ResetSeq{
+		IsToTrigger: false,
+		EvseIndex:   nil,
 	}
 
 	var status = provisioning.GetVariableStatusAccepted
@@ -855,9 +855,9 @@ func (o *Ocpp201) processResetRequest(id *int, ty provisioning.ResetType) (st pr
 			}
 
 			// Set the reset sequence to the trigger and the evse id
-			o.resetSeq = resetSeq{
-				isToTrigger: true,
-				evseIndex:   &idx,
+			o.resetSeq = assets.ResetSeq{
+				IsToTrigger: true,
+				EvseIndex:   &idx,
 			}
 
 			return provisioning.ResetStatusScheduled, nil
@@ -912,9 +912,9 @@ func (o *Ocpp201) processResetRequest(id *int, ty provisioning.ResetType) (st pr
 		}
 
 		// Set the reset sequence to the trigger and the evse id
-		o.resetSeq = resetSeq{
-			isToTrigger: true,
-			evseIndex:   idx,
+		o.resetSeq = assets.ResetSeq{
+			IsToTrigger: true,
+			EvseIndex:   idx,
 		}
 
 		return provisioning.ResetStatusScheduled, nil
@@ -942,9 +942,9 @@ func (o *Ocpp201) processResetRequest(id *int, ty provisioning.ResetType) (st pr
 			return provisioning.ResetStatusAccepted, nil
 		}
 
-		o.resetSeq = resetSeq{
-			isToTrigger: true,
-			evseIndex:   &idx,
+		o.resetSeq = assets.ResetSeq{
+			IsToTrigger: true,
+			EvseIndex:   &idx,
 		}
 
 		return provisioning.ResetStatusScheduled, nil
@@ -971,9 +971,9 @@ func (o *Ocpp201) processResetRequest(id *int, ty provisioning.ResetType) (st pr
 		return provisioning.ResetStatusAccepted, nil
 	}
 
-	o.resetSeq = resetSeq{
-		isToTrigger: true,
-		evseIndex:   nil,
+	o.resetSeq = assets.ResetSeq{
+		IsToTrigger: true,
+		EvseIndex:   nil,
 	}
 
 	return provisioning.ResetStatusScheduled, nil
