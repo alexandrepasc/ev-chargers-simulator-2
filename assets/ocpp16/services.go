@@ -1876,7 +1876,13 @@ func (o *Ocpp16) notAutoChargePoint(c *simulator.Connector, x, y int) {
 			o.Asset.Evses[x].Connectors[y].CurrentSoC =
 				o.Asset.Evses[x].Connectors[y].Data[o.Asset.Evses[x].Connectors[y].DP.Position].StartSoC
 
+			// this loop could cause some issues, this function might need to be reviewed and refactored
 			for {
+				// break out of the loop in case the reset call was done
+				if o.resetSeq.IsToTrigger {
+					break
+				}
+
 				if c.Data[c.DP.Position].ChargingState == int64(assets.Charging) {
 					break
 				}
@@ -1897,6 +1903,14 @@ func (o *Ocpp16) notAutoChargePoint(c *simulator.Connector, x, y int) {
 
 				if c.Data[o.Asset.Evses[x].Connectors[y].DP.Position].ChargingState == int64(assets.Finishing) {
 					o.stopTransaction(o.Asset.Evses[x].CIDTag, &o.Asset.Evses[x].Connectors[y])
+
+					// if the reset request was used, activate the boot sequence and disable the reset trigger
+					if o.resetSeq.IsToTrigger {
+						o.bootSeq.BootInterval = 0
+						o.bootSeq.IsToTrigger = true
+	
+						o.resetSeq.IsToTrigger = false
+					}
 				}
 			}
 		}
