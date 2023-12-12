@@ -1908,7 +1908,7 @@ func (o *Ocpp16) notAutoChargePoint(c *simulator.Connector, x, y int) {
 					if o.resetSeq.IsToTrigger {
 						o.bootSeq.BootInterval = 0
 						o.bootSeq.IsToTrigger = true
-	
+
 						o.resetSeq.IsToTrigger = false
 					}
 				}
