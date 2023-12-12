@@ -46,9 +46,9 @@ func (o *Ocpp201) setStartUpConfigurations() {
 		eventInfo:   "",
 	}
 
-	o.resetSeq = resetSeq{
-		isToTrigger: false,
-		evseIndex:   nil,
+	o.resetSeq = assets.ResetSeq{
+		IsToTrigger: false,
+		EvseIndex:   nil,
 	}
 
 	var status = provisioning.GetVariableStatusAccepted
@@ -769,11 +769,11 @@ func (o *Ocpp201) sendSecurityEventNotification(t securityEventType, i string) {
 }
 
 /*
-Handles the reset request logic handlig the requirements of the functionality, and triggering
-the needed behaviours that the request type mandates. Will return the reset status
+Handles the reset request logic handling the requirements of the functionality, and triggering
+the needed behaviors that the request type mandates. Will return the reset status
 (provisioning.ResetStatus), the additional information in case it is needed (*types.StatusInfo)
 
-id	-	The EVSE indentifier sent by the cs (*int)
+id	-	The EVSE identifier sent by the cs (*int)
 
 ty	-	The reset type (provisioning.ResetType)
 */
@@ -855,9 +855,9 @@ func (o *Ocpp201) processResetRequest(id *int, ty provisioning.ResetType) (st pr
 			}
 
 			// Set the reset sequence to the trigger and the evse id
-			o.resetSeq = resetSeq{
-				isToTrigger: true,
-				evseIndex:   &idx,
+			o.resetSeq = assets.ResetSeq{
+				IsToTrigger: true,
+				EvseIndex:   &idx,
 			}
 
 			return provisioning.ResetStatusScheduled, nil
@@ -912,9 +912,9 @@ func (o *Ocpp201) processResetRequest(id *int, ty provisioning.ResetType) (st pr
 		}
 
 		// Set the reset sequence to the trigger and the evse id
-		o.resetSeq = resetSeq{
-			isToTrigger: true,
-			evseIndex:   idx,
+		o.resetSeq = assets.ResetSeq{
+			IsToTrigger: true,
+			EvseIndex:   idx,
 		}
 
 		return provisioning.ResetStatusScheduled, nil
@@ -942,9 +942,9 @@ func (o *Ocpp201) processResetRequest(id *int, ty provisioning.ResetType) (st pr
 			return provisioning.ResetStatusAccepted, nil
 		}
 
-		o.resetSeq = resetSeq{
-			isToTrigger: true,
-			evseIndex:   &idx,
+		o.resetSeq = assets.ResetSeq{
+			IsToTrigger: true,
+			EvseIndex:   &idx,
 		}
 
 		return provisioning.ResetStatusScheduled, nil
@@ -971,9 +971,9 @@ func (o *Ocpp201) processResetRequest(id *int, ty provisioning.ResetType) (st pr
 		return provisioning.ResetStatusAccepted, nil
 	}
 
-	o.resetSeq = resetSeq{
-		isToTrigger: true,
-		evseIndex:   nil,
+	o.resetSeq = assets.ResetSeq{
+		IsToTrigger: true,
+		EvseIndex:   nil,
 	}
 
 	return provisioning.ResetStatusScheduled, nil

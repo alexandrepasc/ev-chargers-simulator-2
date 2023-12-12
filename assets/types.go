@@ -18,3 +18,8 @@ type BootSeq struct {
 	BootReason   interface{} // Boot reason
 	BootInterval int         // Handle the boot interval when the boot fails
 }
+
+type ResetSeq struct {
+	IsToTrigger bool // To trigger the reset logic sequence
+	EvseIndex   *int // The evse index to be reset
+}

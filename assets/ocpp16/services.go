@@ -21,11 +21,20 @@ Set the starting configurations for the asset.
 func (o *Ocpp16) setStartUpConfigurations() {
 	o.Conf = config
 
+	o.connectSeq = true
+
 	o.bootSeq = assets.BootSeq{
 		IsToTrigger:  true,
 		BootStatus:   core.RegistrationStatusAccepted,
 		BootReason:   nil,
 		BootInterval: 0,
+	}
+
+	o.disconnectSeq = false
+
+	o.resetSeq = assets.ResetSeq{
+		IsToTrigger: false,
+		EvseIndex:   nil,
 	}
 
 	o.heartbeatC = 0
@@ -34,7 +43,7 @@ func (o *Ocpp16) setStartUpConfigurations() {
 		o.L.Get(text.StartUpConfigurations), assets.Info)
 
 	// This will load only the password since there is no information in the documentation regarding how to set the user in the cp
-	// TODO: do not think that this is correct another review to this shoud be made
+	// TODO: do not think that this is correct another review to this should be made
 	// if o.Asset.BasicAuth {
 	// 	o.Conf["AuthorizationKey"] = core.ConfigurationKey{
 	// 		Key:      o.Conf["AuthorizationKey"].Key,
@@ -222,9 +231,6 @@ func (o *Ocpp16) sendBootNotification() (resp *core.BootNotificationConfirmation
 	o.logger.log(lm, res.(*core.BootNotificationConfirmation), assets.Info)
 
 	o.bootSeq.BootStatus = res.(*core.BootNotificationConfirmation).Status
-
-	// TODO: this might be changed to the connection logic
-	o.st = time.Now()
 
 	return res.(*core.BootNotificationConfirmation), nil
 }
@@ -462,26 +468,38 @@ transaction request.
 
 In a hard reset will set all the connectors data and the asset data.
 */
-func (o *Ocpp16) processReset(r *core.ResetRequest) *core.ResetConfirmation {
+func (o *Ocpp16) processResetRequest(r *core.ResetRequest) *core.ResetConfirmation {
 	if r.Type == core.ResetType(assets.Soft) {
+		// if there is no active connectors
+		if canEnable(o.Asset.Evses[0].Connectors) {
+			o.disconnectSeq = true
+
+			o.connectSeq = true
+
+			o.bootSeq.BootInterval = 0
+			o.bootSeq.IsToTrigger = true
+
+			return &core.ResetConfirmation{Status: core.ResetStatusAccepted}
+		}
+
 		for y, c := range o.Asset.Evses[0].Connectors {
 			if !c.Enabled {
 				continue
 			}
 
-			o.Asset.Evses[0].Connectors[y].Enabled = false
-			o.Asset.Evses[0].Connectors[y].DP.Position = 0
-			o.Asset.Evses[0].Connectors[y].DP.Ticker = 0
-			o.Asset.Evses[0].Connectors[y].CurrentSoC = 0
-			o.txnAlignedData = []types.MeterValue{}
-			o.txnSampledData = []types.MeterValue{}
+			const dpr = 2
 
-			go o.stopTransaction(o.Asset.Evses[0].CIDTag, &o.Asset.Evses[0].Connectors[y])
+			// set the duration to the end of the last state before finish so the update data will trigger the stop transaction call
+			o.Asset.Evses[0].Connectors[y].DP.Position = int64(len(o.Asset.Evses[0].Connectors[y].Data) - dpr)
+			o.Asset.Evses[0].Connectors[y].DP.Ticker = o.Asset.Evses[0].Connectors[y].Data[o.Asset.Evses[0].Connectors[y].DP.Position].Duration
 		}
+
+		o.resetSeq.IsToTrigger = true
 
 		return &core.ResetConfirmation{Status: core.ResetStatusAccepted}
 	}
 
+	// if the reset has the type hard
 	for y := range o.Asset.Evses[0].Connectors {
 		o.Asset.Evses[0].Connectors[y].Enabled = false
 		o.Asset.Evses[0].Connectors[y].DP.Position = 0
@@ -495,6 +513,10 @@ func (o *Ocpp16) processReset(r *core.ResetRequest) *core.ResetConfirmation {
 	o.localAuth.version = 0
 	o.localAuth.list = nil
 	o.chargeProfile = nil
+
+	o.disconnectSeq = true
+
+	o.connectSeq = true
 
 	o.bootSeq.IsToTrigger = true
 	o.bootSeq.BootInterval = 0
@@ -1278,13 +1300,27 @@ func (o *Ocpp16) updateData() {
 							o.Asset.Evses[x].Connectors[y].Data[o.Asset.Evses[x].Connectors[y].DP.Position].StartSoC
 					}
 
+					// if the charging state has changed in the update
 					if cs != c.Data[o.Asset.Evses[x].Connectors[y].DP.Position].ChargingState {
 						o.statusNotification(&o.Asset.Evses[x].Connectors[y])
 
+						// if the connector goes to the finish state
 						if c.Data[o.Asset.Evses[x].Connectors[y].DP.Position].ChargingState == int64(assets.Finishing) {
 							o.stopTransaction(o.Asset.Evses[x].CIDTag, &o.Asset.Evses[x].Connectors[y])
 							o.txnAlignedData = []types.MeterValue{}
 							o.txnSampledData = []types.MeterValue{}
+
+							// if the reset request was used activate the boot sequence and disable the reset trigger
+							if o.resetSeq.IsToTrigger {
+								o.disconnectSeq = true
+
+								o.connectSeq = true
+
+								o.bootSeq.BootInterval = 0
+								o.bootSeq.IsToTrigger = true
+
+								o.resetSeq.IsToTrigger = false
+							}
 						}
 
 						// If the connector starts charging send the start transaction request
@@ -1775,7 +1811,7 @@ func (o *Ocpp16) setConfiguration(c *core.ChangeConfigurationRequest) core.Confi
 }
 
 /*
-Checks all the connectors from an EVSE and returs false if any of the connectors are enabled.
+Checks all the connectors from an EVSE and returns false if any of the connectors are enabled.
 If no connector is enabled it returns true (bool).
 
 cl	-	EVSE connectors list ([]simulator.Connector)
@@ -1853,7 +1889,13 @@ func (o *Ocpp16) notAutoChargePoint(c *simulator.Connector, x, y int) {
 			o.Asset.Evses[x].Connectors[y].CurrentSoC =
 				o.Asset.Evses[x].Connectors[y].Data[o.Asset.Evses[x].Connectors[y].DP.Position].StartSoC
 
+			// this loop could cause some issues, this function might need to be reviewed and refactored
 			for {
+				// break out of the loop in case the reset call was done
+				if o.resetSeq.IsToTrigger {
+					break
+				}
+
 				if c.Data[c.DP.Position].ChargingState == int64(assets.Charging) {
 					break
 				}
@@ -1874,6 +1916,18 @@ func (o *Ocpp16) notAutoChargePoint(c *simulator.Connector, x, y int) {
 
 				if c.Data[o.Asset.Evses[x].Connectors[y].DP.Position].ChargingState == int64(assets.Finishing) {
 					o.stopTransaction(o.Asset.Evses[x].CIDTag, &o.Asset.Evses[x].Connectors[y])
+
+					// if the reset request was used, activate the boot sequence and disable the reset trigger
+					if o.resetSeq.IsToTrigger {
+						o.disconnectSeq = true
+
+						o.connectSeq = true
+
+						o.bootSeq.BootInterval = 0
+						o.bootSeq.IsToTrigger = true
+
+						o.resetSeq.IsToTrigger = false
+					}
 				}
 			}
 		}

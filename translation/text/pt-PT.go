@@ -32,6 +32,8 @@ var PtPT = map[Key]string{
 	DeleteSimConfFileError:        "Erro inesperado ao apagar o ficheiro de configuração do simulador.",
 	DeleteSimConfFile:             "Apagar o ficheiro de configuração do simulador.",
 	Ocpp16SimConfFileMoreEvse:     "O OCPP 1.6 apenas suporta um EVSE por ponto de carregamento.",
+	Ocpp16ServerStarted:           "O servidor de OCPP 1.6 iniciou.",
+	Ocpp16ServerStopped:           "O servidor de OCPP 1.6 parou.",
 	Ocpp201ServerStarted:          "O servidor de OCPP 2.0.1 iniciou.",
 	Ocpp201ServerStopped:          "O servidor de OCPP 2.0.1 parou.",
 	EvcMissingPhasesError:         "A propriedade Phases (phases) é necessária para este tipo e o valor tem de ser válido.",

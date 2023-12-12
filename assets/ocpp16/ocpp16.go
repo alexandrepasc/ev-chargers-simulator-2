@@ -9,6 +9,7 @@ import (
 	"github.com/alexandrepasc/ev-chargers-simulator-2/simulator"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/simulator/model"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/translation"
+	"github.com/alexandrepasc/ev-chargers-simulator-2/translation/text"
 	"github.com/google/uuid"
 	ocpp16 "github.com/lorenzodonini/ocpp-go/ocpp1.6"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
@@ -17,18 +18,21 @@ import (
 )
 
 type Ocpp16 struct {
-	lock      sync.RWMutex                     // Lock goroutine
-	logger    logging                          // Logging
-	L         translation.Translation          // translation
-	Timeout   int64                            // Connection timeout
-	CSAddr    string                           // Central system ip address
-	CSPort    string                           // Central system port
-	Asset     *simulator.Asset                 // Asset data for the simulator
-	Mod       *model.Struct                    // Model data for the asset
-	s         ocpp16.ChargePoint               // Ocpp charge point server
-	Conf      map[string]core.ConfigurationKey // Configuration key map
-	bootSeq   assets.BootSeq                   // Boot sequence structure
-	localAuth struct {                         // Local auth list
+	lock          sync.RWMutex                     // Lock goroutine
+	logger        logging                          // Logging
+	L             translation.Translation          // translation
+	Timeout       int64                            // Connection timeout
+	CSAddr        string                           // Central system ip address
+	CSPort        string                           // Central system port
+	Asset         *simulator.Asset                 // Asset data for the simulator
+	Mod           *model.Struct                    // Model data for the asset
+	s             ocpp16.ChargePoint               // Ocpp charge point server
+	Conf          map[string]core.ConfigurationKey // Configuration key map
+	connectSeq    bool                             // To trigger the websocket connection
+	bootSeq       assets.BootSeq                   // Boot sequence structure
+	disconnectSeq bool                             // To trigger the simulator to close the server
+	resetSeq      assets.ResetSeq                  // Reset sequence structure
+	localAuth     struct {                         // Local auth list
 		version int64                         // Version identifier
 		list    []localauth.AuthorizationData // List with the authorization information
 	}
@@ -49,20 +53,40 @@ func (o *Ocpp16) Start(c chan common.Channel, q chan bool) {
 		file:   common.DefGSPath,
 	}
 
-	o.setStartUpConfigurations()
-
-	o.s = setupServer(o.Asset.CPId, o.Timeout, o, o.L)
-
-	sErr := o.s.Start(assets.GetConnProtocol(o.Asset.TLS) + o.CSAddr + ":" + o.CSPort)
-
-	if sErr != nil {
-		o.logger.log(map[string]string{"protocol": "ocpp1.6", "function": "Start"}, sErr.Error(), assets.Error)
-		return
+	var lm = map[string]string{
+		"protocol":  string(o.Asset.Protocol),
+		"function":  "Start",
+		"simulator": o.Asset.Name,
 	}
 
-	o.logger.log(map[string]string{"protocol": "ocpp1.6", "function": "Start", "simulator": o.Asset.Name}, "Ocpp 1.6 server started", assets.Info)
+	o.setStartUpConfigurations()
 
 	for {
+		if o.disconnectSeq {
+			o.logger.log(lm, o.L.Get(text.Ocpp16ServerStopped), assets.Info)
+
+			o.s.Stop()
+
+			o.disconnectSeq = false
+		}
+
+		if o.connectSeq {
+			o.s = setupServer(o.Asset.CPId, o.Timeout, o, o.L)
+
+			sErr := o.s.Start(assets.GetConnProtocol(o.Asset.TLS) + o.CSAddr + ":" + o.CSPort)
+
+			if sErr != nil {
+				o.logger.log(lm, sErr, assets.Error)
+				return
+			}
+
+			o.connectSeq = false
+
+			o.logger.log(lm, o.L.Get(text.Ocpp16ServerStarted), assets.Info)
+
+			o.st = time.Now()
+		}
+
 		if o.bootSeq.IsToTrigger {
 			if o.bootSeq.BootInterval == 0 || o.tick%int64(o.bootSeq.BootInterval) == 0 {
 				var br, be = o.sendBootNotification()
@@ -84,7 +108,7 @@ func (o *Ocpp16) Start(c chan common.Channel, q chan bool) {
 
 		select {
 		case <-q:
-			o.logger.log(map[string]string{"protocol": "ocpp1.6", "function": "Start", "simulator": o.Asset.Name}, "Ocpp 1.6 server stop", assets.Info)
+			o.logger.log(lm, o.L.Get(text.Ocpp16ServerStopped), assets.Info)
 
 			o.s.Stop()
 
