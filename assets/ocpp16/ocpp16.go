@@ -18,19 +18,21 @@ import (
 )
 
 type Ocpp16 struct {
-	lock      sync.RWMutex                     // Lock goroutine
-	logger    logging                          // Logging
-	L         translation.Translation          // translation
-	Timeout   int64                            // Connection timeout
-	CSAddr    string                           // Central system ip address
-	CSPort    string                           // Central system port
-	Asset     *simulator.Asset                 // Asset data for the simulator
-	Mod       *model.Struct                    // Model data for the asset
-	s         ocpp16.ChargePoint               // Ocpp charge point server
-	Conf      map[string]core.ConfigurationKey // Configuration key map
-	bootSeq   assets.BootSeq                   // Boot sequence structure
-	resetSeq  assets.ResetSeq                  // Reset sequence structure
-	localAuth struct {                         // Local auth list
+	lock          sync.RWMutex                     // Lock goroutine
+	logger        logging                          // Logging
+	L             translation.Translation          // translation
+	Timeout       int64                            // Connection timeout
+	CSAddr        string                           // Central system ip address
+	CSPort        string                           // Central system port
+	Asset         *simulator.Asset                 // Asset data for the simulator
+	Mod           *model.Struct                    // Model data for the asset
+	s             ocpp16.ChargePoint               // Ocpp charge point server
+	Conf          map[string]core.ConfigurationKey // Configuration key map
+	connectSeq    bool                             // To trigger the websocket connection
+	bootSeq       assets.BootSeq                   // Boot sequence structure
+	disconnectSeq bool                             // To trigger the simulator to close the server
+	resetSeq      assets.ResetSeq                  // Reset sequence structure
+	localAuth     struct {                         // Local auth list
 		version int64                         // Version identifier
 		list    []localauth.AuthorizationData // List with the authorization information
 	}
@@ -59,18 +61,32 @@ func (o *Ocpp16) Start(c chan common.Channel, q chan bool) {
 
 	o.setStartUpConfigurations()
 
-	o.s = setupServer(o.Asset.CPId, o.Timeout, o, o.L)
-
-	sErr := o.s.Start(assets.GetConnProtocol(o.Asset.TLS) + o.CSAddr + ":" + o.CSPort)
-
-	if sErr != nil {
-		o.logger.log(lm, sErr, assets.Error)
-		return
-	}
-
-	o.logger.log(lm, o.L.Get(text.Ocpp16ServerStarted), assets.Info)
-
 	for {
+		if o.disconnectSeq {
+			o.logger.log(lm, o.L.Get(text.Ocpp16ServerStopped), assets.Info)
+
+			o.s.Stop()
+
+			o.disconnectSeq = false
+		}
+
+		if o.connectSeq {
+			o.s = setupServer(o.Asset.CPId, o.Timeout, o, o.L)
+
+			sErr := o.s.Start(assets.GetConnProtocol(o.Asset.TLS) + o.CSAddr + ":" + o.CSPort)
+
+			if sErr != nil {
+				o.logger.log(lm, sErr, assets.Error)
+				return
+			}
+
+			o.connectSeq = false
+
+			o.logger.log(lm, o.L.Get(text.Ocpp16ServerStarted), assets.Info)
+
+			o.st = time.Now()
+		}
+
 		if o.bootSeq.IsToTrigger {
 			if o.bootSeq.BootInterval == 0 || o.tick%int64(o.bootSeq.BootInterval) == 0 {
 				var br, be = o.sendBootNotification()

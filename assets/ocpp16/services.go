@@ -21,12 +21,16 @@ Set the starting configurations for the asset.
 func (o *Ocpp16) setStartUpConfigurations() {
 	o.Conf = config
 
+	o.connectSeq = true
+
 	o.bootSeq = assets.BootSeq{
 		IsToTrigger:  true,
 		BootStatus:   core.RegistrationStatusAccepted,
 		BootReason:   nil,
 		BootInterval: 0,
 	}
+
+	o.disconnectSeq = false
 
 	o.resetSeq = assets.ResetSeq{
 		IsToTrigger: false,
@@ -227,9 +231,6 @@ func (o *Ocpp16) sendBootNotification() (resp *core.BootNotificationConfirmation
 	o.logger.log(lm, res.(*core.BootNotificationConfirmation), assets.Info)
 
 	o.bootSeq.BootStatus = res.(*core.BootNotificationConfirmation).Status
-
-	// TODO: this might be changed to the connection logic
-	o.st = time.Now()
 
 	return res.(*core.BootNotificationConfirmation), nil
 }
