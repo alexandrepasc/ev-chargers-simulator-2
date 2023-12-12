@@ -769,11 +769,11 @@ func (o *Ocpp201) sendSecurityEventNotification(t securityEventType, i string) {
 }
 
 /*
-Handles the reset request logic handlig the requirements of the functionality, and triggering
-the needed behaviours that the request type mandates. Will return the reset status
+Handles the reset request logic handling the requirements of the functionality, and triggering
+the needed behaviors that the request type mandates. Will return the reset status
 (provisioning.ResetStatus), the additional information in case it is needed (*types.StatusInfo)
 
-id	-	The EVSE indentifier sent by the cs (*int)
+id	-	The EVSE identifier sent by the cs (*int)
 
 ty	-	The reset type (provisioning.ResetType)
 */

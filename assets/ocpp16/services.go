@@ -472,6 +472,10 @@ func (o *Ocpp16) processResetRequest(r *core.ResetRequest) *core.ResetConfirmati
 	if r.Type == core.ResetType(assets.Soft) {
 		// if there is no active connectors
 		if canEnable(o.Asset.Evses[0].Connectors) {
+			o.disconnectSeq = true
+
+			o.connectSeq = true
+
 			o.bootSeq.BootInterval = 0
 			o.bootSeq.IsToTrigger = true
 
@@ -509,6 +513,10 @@ func (o *Ocpp16) processResetRequest(r *core.ResetRequest) *core.ResetConfirmati
 	o.localAuth.version = 0
 	o.localAuth.list = nil
 	o.chargeProfile = nil
+
+	o.disconnectSeq = true
+
+	o.connectSeq = true
 
 	o.bootSeq.IsToTrigger = true
 	o.bootSeq.BootInterval = 0
@@ -1304,6 +1312,10 @@ func (o *Ocpp16) updateData() {
 
 							// if the reset request was used activate the boot sequence and disable the reset trigger
 							if o.resetSeq.IsToTrigger {
+								o.disconnectSeq = true
+
+								o.connectSeq = true
+
 								o.bootSeq.BootInterval = 0
 								o.bootSeq.IsToTrigger = true
 
@@ -1907,6 +1919,10 @@ func (o *Ocpp16) notAutoChargePoint(c *simulator.Connector, x, y int) {
 
 					// if the reset request was used, activate the boot sequence and disable the reset trigger
 					if o.resetSeq.IsToTrigger {
+						o.disconnectSeq = true
+
+						o.connectSeq = true
+
 						o.bootSeq.BootInterval = 0
 						o.bootSeq.IsToTrigger = true
 
