@@ -9,6 +9,7 @@ import (
 	"github.com/alexandrepasc/ev-chargers-simulator-2/simulator"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/simulator/model"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/translation"
+	"github.com/alexandrepasc/ev-chargers-simulator-2/translation/text"
 	"github.com/google/uuid"
 	ocpp16 "github.com/lorenzodonini/ocpp-go/ocpp1.6"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
@@ -50,6 +51,12 @@ func (o *Ocpp16) Start(c chan common.Channel, q chan bool) {
 		file:   common.DefGSPath,
 	}
 
+	var lm = map[string]string{
+		"protocol":  string(o.Asset.Protocol),
+		"function":  "Start",
+		"simulator": o.Asset.Name,
+	}
+
 	o.setStartUpConfigurations()
 
 	o.s = setupServer(o.Asset.CPId, o.Timeout, o, o.L)
@@ -57,11 +64,11 @@ func (o *Ocpp16) Start(c chan common.Channel, q chan bool) {
 	sErr := o.s.Start(assets.GetConnProtocol(o.Asset.TLS) + o.CSAddr + ":" + o.CSPort)
 
 	if sErr != nil {
-		o.logger.log(map[string]string{"protocol": "ocpp1.6", "function": "Start"}, sErr.Error(), assets.Error)
+		o.logger.log(lm, sErr, assets.Error)
 		return
 	}
 
-	o.logger.log(map[string]string{"protocol": "ocpp1.6", "function": "Start", "simulator": o.Asset.Name}, "Ocpp 1.6 server started", assets.Info)
+	o.logger.log(lm, o.L.Get(text.Ocpp16ServerStarted), assets.Info)
 
 	for {
 		if o.bootSeq.IsToTrigger {
@@ -85,7 +92,7 @@ func (o *Ocpp16) Start(c chan common.Channel, q chan bool) {
 
 		select {
 		case <-q:
-			o.logger.log(map[string]string{"protocol": "ocpp1.6", "function": "Start", "simulator": o.Asset.Name}, "Ocpp 1.6 server stop", assets.Info)
+			o.logger.log(lm, o.L.Get(text.Ocpp16ServerStopped), assets.Info)
 
 			o.s.Stop()
 
