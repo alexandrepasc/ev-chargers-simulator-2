@@ -1395,6 +1395,10 @@ Execute the status notification request with the current charging state of the c
 c	-	Connector structure with all it's data (*simulator.Connector)
 */
 func (o *Ocpp16) sendStatusNotification(c *simulator.Connector) {
+	if o.bootSeq.BootStatus.(core.RegistrationStatus) != core.RegistrationStatusAccepted {
+		return
+	}
+
 	var lm = map[string]string{
 		"protocol":  string(o.Asset.Protocol),
 		"function":  "statusNotification",
