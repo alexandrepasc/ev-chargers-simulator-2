@@ -9,7 +9,6 @@ import (
 	"github.com/alexandrepasc/ev-chargers-simulator-2/assets"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/simulator"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/translation/text"
-	"github.com/lorenzodonini/ocpp-go/ocpp"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/localauth"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
@@ -1415,28 +1414,19 @@ func (o *Ocpp16) sendStatusNotification(c *simulator.Connector) {
 
 	o.logger.log(lm, req, assets.Info)
 
-	cb := func(res ocpp.Response, err error) {
-		var lm2 = map[string]string{
-			"protocol":  string(o.Asset.Protocol),
-			"function":  "statusNotification",
-			"feature":   res.GetFeatureName(),
-			"simulator": o.Asset.Name,
-			"sender":    assets.CS,
-			"type":      assets.Response,
-		}
-
-		o.logger.log(lm2, res, assets.Info)
-	}
-
-	err := o.s.SendRequestAsync(req, cb)
+	var resp, err = o.s.SendRequest(req)
 
 	o.heartbeatC = 0
 
+	lm["sender"] = assets.CS
 	lm["type"] = assets.Response
 
 	if err != nil {
 		o.logger.log(lm, err, assets.Error)
+		return
 	}
+
+	o.logger.log(lm, resp, assets.Info)
 }
 
 /*
