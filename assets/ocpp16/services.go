@@ -1405,7 +1405,11 @@ func (o *Ocpp16) updateData() {
 /*
 Execute the status notification request with the current charging state of the connector.
 
-c	-	Connector structure with all it's data (*simulator.Connector)
+c			-	Connector structure with all it's data (*simulator.Connector)
+
+info		-	Additional information that could be sent in the status notification, is optional (*string)
+
+vendCode	-	A vendor specific error code, not an OCPP error and is optional (*string)
 */
 func (o *Ocpp16) sendStatusNotification(c *simulator.Connector, info, vendCode *string) {
 	if o.bootSeq.BootStatus.(core.RegistrationStatus) != core.RegistrationStatusAccepted {
