@@ -9,7 +9,6 @@ import (
 	"github.com/alexandrepasc/ev-chargers-simulator-2/assets"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/simulator"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/translation/text"
-	"github.com/lorenzodonini/ocpp-go/ocpp"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/localauth"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
@@ -335,7 +334,9 @@ func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionReq
 
 					o.startTransaction(r.IdTag, &o.Asset.Evses[0].Connectors[i])
 
-					o.statusNotification(&o.Asset.Evses[0].Connectors[i])
+					var info string = core.RemoteStartTransactionFeatureName
+
+					o.sendStatusNotification(&o.Asset.Evses[0].Connectors[i], &info, nil)
 
 					return
 				}
@@ -377,7 +378,9 @@ func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionReq
 
 	o.Asset.Evses[0].Connectors[i].DP.Position = 1
 
-	o.statusNotification(&o.Asset.Evses[0].Connectors[i])
+	var info string = core.RemoteStartTransactionFeatureName
+
+	o.sendStatusNotification(&o.Asset.Evses[0].Connectors[i], &info, nil)
 
 	var na = true
 
@@ -394,7 +397,9 @@ func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionReq
 			if !o.authorize(r.IdTag) {
 				o.Asset.Evses[0].Connectors[i].DP.Position = 0
 
-				o.statusNotification(&o.Asset.Evses[0].Connectors[i])
+				var info string = core.RemoteStartTransactionFeatureName
+
+				o.sendStatusNotification(&o.Asset.Evses[0].Connectors[i], &info, nil)
 
 				return
 			}
@@ -425,7 +430,10 @@ func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionReq
 		o.Asset.Evses[0].Connectors[i].Enabled = false
 		o.txnAlignedData = []types.MeterValue{}
 		o.txnSampledData = []types.MeterValue{}
-		o.statusNotification(&o.Asset.Evses[0].Connectors[i])
+
+		var info string = core.RemoteStartTransactionFeatureName
+
+		o.sendStatusNotification(&o.Asset.Evses[0].Connectors[i], &info, nil)
 	}
 }
 
@@ -449,7 +457,8 @@ func (o *Ocpp16) processRemoteStopTransaction(r *core.RemoteStopTransactionReque
 			o.Asset.Evses[0].Connectors[i].DP.Position = int64(len(c.Data) - 1)
 			o.Asset.Evses[0].Connectors[i].DP.Ticker = 0
 
-			go o.statusNotification(&o.Asset.Evses[0].Connectors[i])
+			var info string = core.RemoteStopTransactionFeatureName
+			go o.sendStatusNotification(&o.Asset.Evses[0].Connectors[i], &info, nil)
 
 			go o.stopTransaction(o.Asset.Evses[0].CIDTag, &o.Asset.Evses[0].Connectors[i])
 
@@ -564,7 +573,8 @@ func (o *Ocpp16) processChangeAvailability(r *core.ChangeAvailabilityRequest) *c
 			aux.Data[aux.DP.Position].ChargingState = int64(assets.Available)
 		}
 
-		go o.statusNotification(&aux)
+		var info string = core.ChangeAvailabilityFeatureName
+		go o.sendStatusNotification(&aux, &info, nil)
 
 		return &core.ChangeAvailabilityConfirmation{Status: core.AvailabilityStatusAccepted}
 	}
@@ -1302,7 +1312,9 @@ func (o *Ocpp16) updateData() {
 
 					// if the charging state has changed in the update
 					if cs != c.Data[o.Asset.Evses[x].Connectors[y].DP.Position].ChargingState {
-						o.statusNotification(&o.Asset.Evses[x].Connectors[y])
+						var info = "Change status"
+
+						o.sendStatusNotification(&o.Asset.Evses[x].Connectors[y], &info, nil)
 
 						// if the connector goes to the finish state
 						if c.Data[o.Asset.Evses[x].Connectors[y].DP.Position].ChargingState == int64(assets.Finishing) {
@@ -1393,9 +1405,17 @@ func (o *Ocpp16) updateData() {
 /*
 Execute the status notification request with the current charging state of the connector.
 
-c	-	Connector structure with all it's data (*simulator.Connector)
+c			-	Connector structure with all it's data (*simulator.Connector)
+
+info		-	Additional information that could be sent in the status notification, is optional (*string)
+
+vendCode	-	A vendor specific error code, not an OCPP error and is optional (*string)
 */
-func (o *Ocpp16) statusNotification(c *simulator.Connector) {
+func (o *Ocpp16) sendStatusNotification(c *simulator.Connector, info, vendCode *string) {
+	if o.bootSeq.BootStatus.(core.RegistrationStatus) != core.RegistrationStatusAccepted {
+		return
+	}
+
 	var lm = map[string]string{
 		"protocol":  string(o.Asset.Protocol),
 		"function":  "statusNotification",
@@ -1409,34 +1429,35 @@ func (o *Ocpp16) statusNotification(c *simulator.Connector) {
 		ConnectorId: int(c.ID),
 		ErrorCode:   core.ChargePointErrorCode(assets.ErrorCode[c.Data[c.DP.Position].ErrorCode]),
 		Status:      core.ChargePointStatus(assets.Status[c.Data[c.DP.Position].ChargingState]),
+		Timestamp:   types.NewDateTime(time.Now()),
+		VendorId:    o.Mod.Ocpp.VendorID,
+	}
+
+	if info != nil {
+		req.Info = *info
+	}
+
+	if vendCode != nil {
+		req.VendorErrorCode = *vendCode
 	}
 
 	lm["feature"] = req.GetFeatureName()
 
 	o.logger.log(lm, req, assets.Info)
 
-	cb := func(res ocpp.Response, err error) {
-		var lm2 = map[string]string{
-			"protocol":  string(o.Asset.Protocol),
-			"function":  "statusNotification",
-			"feature":   res.GetFeatureName(),
-			"simulator": o.Asset.Name,
-			"sender":    assets.CS,
-			"type":      assets.Response,
-		}
-
-		o.logger.log(lm2, res, assets.Info)
-	}
-
-	err := o.s.SendRequestAsync(req, cb)
+	var resp, err = o.s.SendRequest(req)
 
 	o.heartbeatC = 0
 
+	lm["sender"] = assets.CS
 	lm["type"] = assets.Response
 
 	if err != nil {
 		o.logger.log(lm, err, assets.Error)
+		return
 	}
+
+	o.logger.log(lm, resp, assets.Info)
 }
 
 /*
@@ -1873,7 +1894,8 @@ func (o *Ocpp16) notAutoChargePoint(c *simulator.Connector, x, y int) {
 					aux.Data[aux.DP.Position].ChargingState = int64(assets.Available)
 				}
 
-				go o.statusNotification(&aux)
+				var info = "Change status"
+				go o.sendStatusNotification(&aux, &info, nil)
 
 				return
 			}
@@ -1912,7 +1934,8 @@ func (o *Ocpp16) notAutoChargePoint(c *simulator.Connector, x, y int) {
 			}
 
 			if cs != c.Data[o.Asset.Evses[x].Connectors[y].DP.Position].ChargingState {
-				o.statusNotification(&o.Asset.Evses[x].Connectors[y])
+				var info = "Change status"
+				o.sendStatusNotification(&o.Asset.Evses[x].Connectors[y], &info, nil)
 
 				if c.Data[o.Asset.Evses[x].Connectors[y].DP.Position].ChargingState == int64(assets.Finishing) {
 					o.stopTransaction(o.Asset.Evses[x].CIDTag, &o.Asset.Evses[x].Connectors[y])

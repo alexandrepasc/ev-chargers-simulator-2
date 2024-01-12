@@ -532,7 +532,11 @@ func (o *Ocpp16) OnTriggerMessage(req *remotetrigger.TriggerMessageRequest) (res
 
 		// the ocpp 1.6 only supports 1 evse so this is coded to only use the 0 index
 		for i := range o.Asset.Evses[0].Connectors {
-			go o.statusNotification(&o.Asset.Evses[0].Connectors[i])
+			var info = req.GetFeatureName()
+
+			var ec = "0"
+
+			go o.sendStatusNotification(&o.Asset.Evses[0].Connectors[i], &info, &ec)
 		}
 
 		res = &remotetrigger.TriggerMessageConfirmation{Status: remotetrigger.TriggerMessageStatusAccepted}
