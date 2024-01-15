@@ -15,6 +15,7 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/localauth"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
+	"github.com/sirupsen/logrus"
 )
 
 type Ocpp16 struct {
@@ -51,7 +52,17 @@ func (o *Ocpp16) Start(c chan common.Channel, q chan bool) {
 	o.logger = logging{
 		toFile: false,
 		file:   common.DefGSPath,
+		logger: logrus.New(),
+		l:      o.L,
 	}
+
+	if o.Asset.LogLevel != nil {
+		o.logger.level = assets.TranslateLogLevels(*o.Asset.LogLevel)
+	} else {
+		o.logger.level = logrus.ErrorLevel
+	}
+
+	o.logger.logger.SetFormatter(&logrus.TextFormatter{FullTimestamp: true})
 
 	var lm = map[string]string{
 		"protocol":  string(o.Asset.Protocol),
@@ -114,6 +125,8 @@ func (o *Ocpp16) Start(c chan common.Channel, q chan bool) {
 
 			close(q)
 			close(c)
+
+			o.lock.Unlock()
 
 			return
 		default:
