@@ -21,6 +21,7 @@ const (
 	defSCFolder string = "/simConf"
 	jsonEx      string = ".json"
 	sim0        string = "/sim0.json"
+	sim1        string = "/sim1"
 )
 
 func TestGetSimulatorData(t *testing.T) {
@@ -63,7 +64,7 @@ func TestGetSimulatorInvalidData(t *testing.T) {
 		"protocol": "ocpp16"
 	}`
 
-	p := tmp + defSCFolder + "/sim1" + jsonEx
+	p := tmp + defSCFolder + sim1 + jsonEx
 
 	f, _ := os.Create(p)
 	f.Close()
@@ -88,6 +89,59 @@ func TestGetSimulatorInvalidData(t *testing.T) {
 	assert.Equal(t, 0, len(al))
 }
 
+func TestGetSimulatorInvalidLogLevel(t *testing.T) {
+	tmp := t.TempDir()
+
+	createFolders(tmp)
+
+	s := before(tmp)
+
+	a := `{
+		"simId": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1",
+		"name": "sim1",
+		"logLevel": "nothing",
+		"type": "evc",
+		"protocol": "ocpp16"
+	}`
+
+	p := tmp + defSCFolder + sim1 + jsonEx
+
+	f, _ := os.Create(p)
+	f.Close()
+
+	os.WriteFile(p, []byte(a), fs.FileMode(common.FilePermissions))
+
+	al := s.GetSimulators()
+
+	assert.Equal(t, 0, len(al))
+}
+
+func TestGetSimulatorEmptyLogLevel(t *testing.T) {
+	tmp := t.TempDir()
+
+	createFolders(tmp)
+
+	s := before(tmp)
+
+	a := `{
+		"simId": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1",
+		"name": "sim1",
+		"type": "evc",
+		"protocol": "ocpp16"
+	}`
+
+	p := tmp + defSCFolder + sim1 + jsonEx
+
+	f, _ := os.Create(p)
+	f.Close()
+
+	os.WriteFile(p, []byte(a), fs.FileMode(common.FilePermissions))
+
+	al := s.GetSimulators()
+
+	assert.Equal(t, 1, len(al))
+}
+
 func TestCreateSimulator(t *testing.T) {
 	tmp := t.TempDir()
 
@@ -96,9 +150,11 @@ func TestCreateSimulator(t *testing.T) {
 	s := before(tmp)
 
 	mID, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0")
+	lvl := "info"
 
 	sim := simulator.Asset{
 		Name:            "sim1",
+		LogLevel:        &lvl,
 		Type:            simulator.Evc,
 		Protocol:        simulator.Ocpp201,
 		Model:           mID,
@@ -142,6 +198,8 @@ func TestCreateSimulator(t *testing.T) {
 	assert.Equal(t, sim.Name, a.Name)
 
 	assert.Equal(t, sim.Type, a.Type)
+
+	assert.Equal(t, sim.LogLevel, a.LogLevel)
 
 	assert.Equal(t, sim, a)
 }
@@ -577,6 +635,120 @@ func TestCreateSimulatorAuthModelRequired(t *testing.T) {
 	assert.True(t, ok)
 }
 
+func TestCreateSimulatorEmptyLogLevel(t *testing.T) {
+	tmp := t.TempDir()
+
+	createFolders(tmp)
+
+	s := before(tmp)
+
+	mID, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0")
+
+	sim := simulator.Asset{
+		Name:            "sim1",
+		Type:            simulator.Evc,
+		Protocol:        simulator.Ocpp201,
+		Model:           mID,
+		CPId:            "12344",
+		StartCharging:   true,
+		Phases:          simulator.One,
+		PhaseRotation:   simulator.NotApplicable,
+		CurrentType:     simulator.Ac,
+		AuthorizeRemote: true,
+		AuthList:        true,
+		Evses: []simulator.Evse{
+			{
+				ID: 1,
+				Connectors: []simulator.Connector{
+					{
+						ID: 1,
+						Data: []simulator.Data{
+							{
+								Duration:      20,
+								ChargingState: 2,
+								ErrorCode:     0,
+								PowerFactor:   900,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	s.CreateSimConf(&sim)
+
+	nf := tmp + defSCFolder + "/" + sim.Name + jsonEx
+
+	assert.FileExists(t, nf)
+
+	a := readFile(nf)
+
+	assert.NotEmpty(t, a.SimID)
+
+	assert.Equal(t, sim.Name, a.Name)
+
+	assert.Equal(t, sim.Type, a.Type)
+
+	assert.Equal(t, sim.LogLevel, a.LogLevel)
+
+	assert.Equal(t, sim, a)
+}
+
+func TestCreateSimulatorInvalidLogLevel(t *testing.T) {
+	tmp := t.TempDir()
+
+	createFolders(tmp)
+
+	s := before(tmp)
+
+	mID, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0")
+	lvl := "invalid"
+
+	sim := simulator.Asset{
+		Name:            "sim1",
+		LogLevel:        &lvl,
+		Type:            simulator.Evc,
+		Protocol:        simulator.Ocpp201,
+		Model:           mID,
+		CPId:            "12344",
+		StartCharging:   true,
+		Phases:          simulator.One,
+		PhaseRotation:   simulator.NotApplicable,
+		CurrentType:     simulator.Ac,
+		AuthorizeRemote: true,
+		AuthList:        true,
+		Evses: []simulator.Evse{
+			{
+				ID: 1,
+				Connectors: []simulator.Connector{
+					{
+						ID: 1,
+						Data: []simulator.Data{
+							{
+								Duration:      20,
+								ChargingState: 2,
+								ErrorCode:     0,
+								PowerFactor:   900,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	aOk, aMsg, _ := s.CreateSimConf(&sim)
+
+	nf := tmp + defSCFolder + "/" + sim.Name + jsonEx
+
+	assert.False(t, aOk)
+
+	assert.Equal(t, "Key: 'Asset.LogLevel' Error:Field validation for 'LogLevel' failed on the 'oneof' tag", aMsg)
+
+	assert.NoFileExists(t, nf)
+}
+
 func TestUpdateSimulator(t *testing.T) {
 	tmp := t.TempDir()
 
@@ -587,8 +759,10 @@ func TestUpdateSimulator(t *testing.T) {
 	generateAssetConfFiles(1, tmp)
 
 	id, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0")
+	lvl := "warn"
 
 	a := simulator.Asset{
+		LogLevel:        &lvl,
 		Type:            simulator.Pm,
 		Protocol:        simulator.Ocpp16,
 		CPId:            "12344",
@@ -610,6 +784,8 @@ func TestUpdateSimulator(t *testing.T) {
 
 	assert.Equal(t, "sim0", aa.Name)
 
+	assert.Equal(t, lvl, *aa.LogLevel)
+
 	assert.Equal(t, simulator.Pm, aa.Type)
 
 	assert.Equal(t, simulator.Ocpp16, aa.Protocol)
@@ -625,6 +801,8 @@ func TestUpdateSimulator(t *testing.T) {
 	assert.Equal(t, id, af.SimID)
 
 	assert.Equal(t, "sim0", af.Name)
+
+	assert.Equal(t, lvl, *af.LogLevel)
 
 	assert.Equal(t, simulator.Pm, af.Type)
 
@@ -1097,6 +1275,118 @@ func TestUpdateSimulatorAuthModelRequired(t *testing.T) {
 	assert.Equal(t, simulator.RST, af.PhaseRotation)
 }
 
+func TestUpdateSimulatorNoLogLevel(t *testing.T) {
+	tmp := t.TempDir()
+
+	createFolders(tmp)
+
+	s := before(tmp)
+
+	generateAssetConfFiles(1, tmp)
+
+	id, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0")
+
+	a := simulator.Asset{
+		Type:            simulator.Pm,
+		Protocol:        simulator.Ocpp16,
+		CPId:            "12344",
+		Phases:          simulator.Three,
+		PhaseRotation:   simulator.RST,
+		CurrentType:     simulator.Dc,
+		AuthorizeRemote: true,
+		AuthList:        true,
+		Evses:           []simulator.Evse{},
+	}
+
+	ab, _, c, aa := s.UpdateSimConf(id, &a)
+
+	assert.True(t, ab)
+
+	assert.Equal(t, http.StatusOK, c)
+
+	assert.Equal(t, id, aa.SimID)
+
+	assert.Equal(t, "sim0", aa.Name)
+
+	assert.Nil(t, aa.LogLevel)
+
+	assert.Equal(t, simulator.Pm, aa.Type)
+
+	assert.Equal(t, simulator.Ocpp16, aa.Protocol)
+
+	assert.Equal(t, simulator.Three, aa.Phases)
+
+	assert.Equal(t, simulator.RST, aa.PhaseRotation)
+
+	p := tmp + defSCFolder + sim0
+
+	af := readFile(p)
+
+	assert.Equal(t, id, af.SimID)
+
+	assert.Equal(t, "sim0", af.Name)
+
+	assert.Nil(t, af.LogLevel)
+
+	assert.Equal(t, simulator.Pm, af.Type)
+
+	assert.Equal(t, simulator.Ocpp16, af.Protocol)
+
+	assert.Equal(t, simulator.Three, af.Phases)
+
+	assert.Equal(t, simulator.RST, af.PhaseRotation)
+}
+
+func TestUpdateSimulatorInvalidLogLevel(t *testing.T) {
+	tmp := t.TempDir()
+
+	createFolders(tmp)
+
+	s := before(tmp)
+
+	generateAssetConfFiles(1, tmp)
+
+	id, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0")
+	lvl := "invalid"
+
+	a := simulator.Asset{
+		LogLevel:        &lvl,
+		Type:            simulator.Pm,
+		Protocol:        simulator.Ocpp16,
+		CPId:            "12344",
+		Phases:          simulator.Three,
+		PhaseRotation:   simulator.RST,
+		CurrentType:     simulator.Dc,
+		AuthorizeRemote: true,
+		AuthList:        true,
+		Evses:           []simulator.Evse{},
+	}
+
+	ab, _, c, _ := s.UpdateSimConf(id, &a)
+
+	assert.False(t, ab)
+
+	assert.Equal(t, http.StatusBadRequest, c)
+
+	p := tmp + defSCFolder + sim0
+
+	af := readFile(p)
+
+	assert.Equal(t, id, af.SimID)
+
+	assert.Equal(t, "sim0", af.Name)
+
+	assert.Equal(t, "info", *af.LogLevel)
+
+	assert.Equal(t, simulator.Evc, af.Type)
+
+	assert.Equal(t, simulator.Ocpp201, af.Protocol)
+
+	assert.Equal(t, simulator.One, af.Phases)
+
+	assert.Empty(t, af.PhaseRotation)
+}
+
 func TestDeleteSimulator(t *testing.T) {
 	tmp := t.TempDir()
 
@@ -1173,10 +1463,12 @@ func createFolders(tmp string) {
 func generateAssetConfFiles(n int64, tmp string) { //nolint:unparam,nolintlint // because is a test
 	for i := int64(0); i < n; i++ {
 		id, _ := uuid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa" + strconv.FormatInt(i, 10))
+		lvl := "info"
 
 		a := simulator.Asset{
 			SimID:    id,
 			Name:     "sim" + strconv.FormatInt(i, 10),
+			LogLevel: &lvl,
 			Type:     simulator.Evc,
 			Protocol: simulator.Ocpp201,
 			Phases:   simulator.One,
