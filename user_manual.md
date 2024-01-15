@@ -2,7 +2,7 @@
 
 |         |    Version   |
 | ------- | ------------ |
-| Product | **v0.19.12** |
+| Product | **v0.22.13** |
 | Manual  | **Rev1**     |
 
 <div class="page"/>
@@ -35,12 +35,13 @@
 		- [Health Check](#health-check)
 	- [Appendix](#appendix)
 		- [Flags](#flags)
-		- [Asset Type <type>](#asset-type-type)
-		- [Protocols <protocol>](#protocols-protocol)
-		- [Phase Rotation <phaseRotation>](#phase-rotation-phaserotation)
-		- [Current Type <currentType>](#current-type-currenttype)
-		- [Charging States <chargingState>](#charging-states-chargingstate)
-		- [Error Code <errorCode>](#error-code-errorcode)
+		- [Log Level [logLevel]](#log-level-loglevel)
+		- [Asset Type [type]](#asset-type-type)
+		- [Protocols [protocol]](#protocols-protocol)
+		- [Phase Rotation [phaseRotation]](#phase-rotation-phaserotation)
+		- [Current Type [currentType]](#current-type-currenttype)
+		- [Charging States [chargingState]](#charging-states-chargingstate)
+		- [Error Code [errorCode]](#error-code-errorcode)
 		- [Modbus Keys](#modbus-keys)
 
 <!-- /TOC -->
@@ -48,10 +49,10 @@
 <div class="page"/>
 
 ## Introduction
-The Application Manual contains all the essencial information for the user to make full use of the system. This document contains the description of the application functions and capabilities, installation, modes of operation, and how to use it. The manual format and steps may be altered during the development of the application.
+The Application Manual contains all the essential information for the user to make full use of the system. This document contains the description of the application functions and capabilities, installation, modes of operation, and how to use it. The manual format and steps may be altered during the development of the application.
 
 ## Installation
-There are no installation file the application will do the necessery acions in the first execution to setup. There are a some files and folders that need to be in place to execute the application, for them to be created the user that executes the application need to have write permissions to the folder where the application file is located, and to the folder(s) where we want to locate the other files.
+There are no installation file the application will do the necessary actions in the first execution to setup. There are a some files and folders that need to be in place to execute the application, for them to be created the user that executes the application need to have write permissions to the folder where the application file is located, and to the folder(s) where we want to locate the other files.
 
 The app doesn't have any GUI but in the other hand has a **Restful API** that enables the user to control the application, and have some arguments that can be set during the execution of the app.
 
@@ -80,7 +81,7 @@ After the user start the first time the application it will have the same behavi
 <div class="page"/>
 
 ## Use the Application
-There are a couple of informations that we need to know to be able to be able to use this application to it's full potential, as how to change the configurations, create/edit/remove models and simulators, what is a model, etc... In this section we will dive into explaining how to use it, and the interfaces that are available to the user.
+There are a couple of information's that we need to know to be able to be able to use this application to it's full potential, as how to change the configurations, create/edit/remove models and simulators, what is a model, etc... In this section we will dive into explaining how to use it, and the interfaces that are available to the user.
 
 ### Change Configurations
 There are multiple configurations some of them are not changeable but others are, and the user has two ways to change them.
@@ -106,10 +107,10 @@ Executing the application it will start an *HTTP* service that will enable chang
 
 ##### /configs/general
 With this endpoint we can get the current configuration as change them. The list of all the configurations that can be changed are listed down.
-- `hostIp`: The IP address of the conputer that is running the application
+- `hostIp`: The IP address of the computer that is running the application
 - `connTimeout`: Connection timeout for all the simulators
 - `cSAddr`: OCPP central system IP address
-- `cSPort`: OCPP central system port that is leastning for the charge points
+- `cSPort`: OCPP central system port that is listening for the charge points
 - `lang`: Language
 - `apiAddr`: IP address that the *HTTP* service will run on
 - `apiPort`: IP port that the *HTTP* service will be listening on
@@ -153,10 +154,10 @@ PUT http://{apiAddr}:{apiPort}/configs/simulators
 ```
 
 ### Setup Simulators
-In this section it is described how to setup and use the simulators. In oposition to the previous section the only way to do this is interfacing with the *Restful API*.
+In this section it is described how to setup and use the simulators. In opposition to the previous section the only way to do this is interfacing with the *Restful API*.
 
 #### Manage Models
-The **Models** are used to add configurations to the simulators, for example the *OCPP Chargers* have information that are retreived by the central system that is related with the equipement. For the *OCPP Chargers* in the boot request the charger sends the brand, model, etc... and this type of information is configured in the **Model**. The properties are listed bellow:
+The **Models** are used to add configurations to the simulators, for example the *OCPP Chargers* have information that are retrieved by the central system that is related with the equipment. For the *OCPP Chargers* in the boot request the charger sends the brand, model, etc... and this type of information is configured in the **Model**. The properties are listed bellow:
 
 - `id`: Model identifier
 - `name`: Model name
@@ -272,9 +273,10 @@ DELETE http://{apiAddr}:{apiPort}/simulators/models/{model-identifier-here}
 ```
 
 #### Manage Simulator
-Now looking into the core of this application, the **Simulators**. There is on endpoint that is used to manage the **Simulator** assets and their configurations. In here will explaine how to add, edit, delete, and configure the assets. All the configurable properties are listed bellow:
+Now looking into the core of this application, the **Simulators**. There is on endpoint that is used to manage the **Simulator** assets and their configurations. In here will explain how to add, edit, delete, and configure the assets. All the configurable properties are listed bellow:
 
 - `name`: Simulator name
+- `logLevel`: Log level of the simulator, the list of accepted values are info, error, warn, panic, fatal, debug
 - `type`: Type of the asset that the configuration will be used to (evc, pm)
 - `protocol`: Protocol used by the asset
 - `tls`: Set if the asset will connect using TLS or not, the default is false (if true the model is required)
@@ -286,7 +288,7 @@ Now looking into the core of this application, the **Simulators**. There is on e
 - `phases`: Phases number
 - `phaseRotation`: The asset phase rotation, if the asset is DC the value should be NotApplicable
 - `currentType`: Type of current of the asset (ac or dc)
-- `authorizeRemote`: Configurataion AuthorizeRemoteTxRequests
+- `authorizeRemote`: Configuration AuthorizeRemoteTxRequests
 - `authList`: Enable or disable authorization local list
 - `evses`: List of evses that the asset has
   - `id`: Evse identifier number
@@ -303,7 +305,7 @@ Now looking into the core of this application, the **Simulators**. There is on e
         - `startSoC`: Start ev charge state in percentage
         - `endSoC`: End ev charge state in percentage
 
-The *OCPP v1.6* protocol doesn't support multiple EVSEs in the same charge point. This rule was set in place for the creation and update of the assets with the type `evc` that have the `ocpp16` protocol, when both of this propeties match the asset can only have **one** item in the `evses` list. Trying to create or update an asset with more than **one** EVSE, with the type and protocol matching what was described before, the api will return an error message.
+The *OCPP v1.6* protocol doesn't support multiple EVSEs in the same charge point. This rule was set in place for the creation and update of the assets with the type `evc` that have the `ocpp16` protocol, when both of this properties match the asset can only have **one** item in the `evses` list. Trying to create or update an asset with more than **one** EVSE, with the type and protocol matching what was described before, the api will return an error message.
 
 ##### /simulators
 This endpoint can be used to create and list all the *simulators*.
@@ -484,13 +486,13 @@ POST http://{apiAddr}:{apiPort}/simulators/stop
 ```
 
 #### /simulators/status
-During the application execution there is a way to retreive some information about the status of all of the running EV Chargers. With the following endpoint the assets are returned in the response body with the state of each.
+During the application execution there is a way to retrieve some information about the status of all of the running EV Chargers. With the following endpoint the assets are returned in the response body with the state of each.
 
 - `total`: Total number of assets
 - `assets`: List of assets
 	- `id`: Asset identifier
 	- `name`: Asset name
-	- `state`: State of the asset (acive, inactive)
+	- `state`: State of the asset (active, inactive)
 	- `power`: Current asset power
 	- `energy`: Energy consumption of the execution
 
@@ -498,7 +500,7 @@ During the application execution there is a way to retreive some information abo
 GET http://{apiAddr}:{apiPort}/simulators/status
 ```
 
-Bellow is an example of the response body that will be reeturned:
+Bellow is an example of the response body that will be returned:
 
 ```
 {
@@ -565,16 +567,24 @@ If the application is running will return the following body, in case it is not 
   -v	Return the current application version
 ```
 
-### Asset Type <type>
+### Log Level [logLevel]
+- `info`: Only logs information messages
+- `error`: Only logs error messages
+- `warn`: Only logs warnings messages
+- `panic`: Only logs panic messages
+- `fatal`: Only logs fatal messages
+- `debug`: Logs every message type
+
+### Asset Type [type]
 - `evc`: Type electric vehicle charger
 - `pm`: Type power meter (only supported for modbus)
 
-### Protocols <protocol>
+### Protocols [protocol]
 - `ocpp16`: Ocpp version 1.6
 - `ocpp201`: Ocpp version 2.0.1 (limited)
 - `modbus`: Modbus protocol (only supported for pm)
 
-### Phase Rotation <phaseRotation>
+### Phase Rotation [phaseRotation]
 - `NotApplicable`: Not applicable for dc chargers
 - `Unknown`: Not able to retrieve the rotation
 - `RST`: L1 L2 L3
@@ -584,11 +594,11 @@ If the application is running will return the following body, in case it is not 
 - `TRS`: L3 L1 L2
 - `TSR`: L3 L2 L1
 
-### Current Type <currentType>
+### Current Type [currentType]
 - `ac`: Alternating current
 - `dc`: Direct current
 
-### Charging States <chargingState>
+### Charging States [chargingState]
 - `1`: Available
 - `2`: Preparing
 - `3`: Charging
@@ -599,7 +609,7 @@ If the application is running will return the following body, in case it is not 
 - `8`: Unavailable
 - `9`: Faulted
 
-### Error Code <errorCode>
+### Error Code [errorCode]
 - `0`: NoError
 - `1`: ConnectorLockFailure
 - `2`: EVCommunicationError
