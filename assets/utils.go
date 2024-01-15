@@ -13,6 +13,7 @@ import (
 	"github.com/alexandrepasc/ev-chargers-simulator-2/translation"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/translation/text"
 	"github.com/lorenzodonini/ocpp-go/ws"
+	"github.com/sirupsen/logrus"
 )
 
 /*
@@ -502,4 +503,29 @@ func GetBoolFromString(v string) bool {
 	}
 
 	return b
+}
+
+/*
+Receives a string with from the asset configuration and returns the matching logging level
+(logrus.Level). If the string does not match any of the cases it will return the error level.
+
+l	-	Configuration log level information (string)
+*/
+func TranslateLogLevels(l string) logrus.Level {
+	switch l {
+	case "info":
+		return logrus.InfoLevel
+	case "error":
+		return logrus.ErrorLevel
+	case "warn":
+		return logrus.WarnLevel
+	case "panic":
+		return logrus.PanicLevel
+	case "fatal":
+		return logrus.FatalLevel
+	case "debug":
+		return logrus.DebugLevel
+	default:
+		return logrus.ErrorLevel
+	}
 }

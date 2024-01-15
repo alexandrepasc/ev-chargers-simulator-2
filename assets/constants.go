@@ -9,6 +9,7 @@ const (
 	Warn  Severity = "warn"
 	Panic Severity = "panic"
 	Fatal Severity = "fatal"
+	Debug Severity = "debug"
 
 	Request  string = "request"
 	Response string = "response"
