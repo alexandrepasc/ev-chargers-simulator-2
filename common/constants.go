@@ -11,6 +11,7 @@ const (
 	defGSFolder       string = "/settings"         // Default general settings folder
 	defSCFolder       string = "/simConf"          // Default simulators configurations folder
 	DefMCFolder       string = "/models"           // Default simulators model configurations folder
+	DefLogsFolder     string = "/logs"             // Default logs folder
 	FolderPermissions int    = 0o777               // Folder permissions used to the settings folders in octal
 	FilePermissions   int    = 0o600               // File permissions used to the configuration files in octal
 	DefLanguage       string = "en-GB"             // Default language definition
@@ -19,8 +20,9 @@ const (
 )
 
 var (
-	DefGSPath = GetThePath(defGSFolder) // Default general settings path
-	DefSCPath = GetThePath(defSCFolder) // Default simulators configurations path
+	DefGSPath   = GetThePath(defGSFolder)   // Default general settings path
+	DefSCPath   = GetThePath(defSCFolder)   // Default simulators configurations path
+	DefLogsPath = GetThePath(DefLogsFolder) // Default logs path
 )
 
 type Channel struct {
