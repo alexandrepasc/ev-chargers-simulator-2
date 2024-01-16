@@ -19,6 +19,7 @@ type Modbus struct {
 	lock    sync.RWMutex            // Lock goroutine
 	logger  assets.Logging          // Logging
 	L       translation.Translation // translation
+	Log     string                  // Path to store the log files
 	HostIP  string                  // Application host ip address
 	Timeout int64                   // Connection timeout
 	Asset   *simulator.Asset        // Asset data for the simulator
@@ -39,8 +40,8 @@ func (m *Modbus) Start(c []chan common.Channel, q chan bool) {
 	m.lock.Lock()
 
 	m.logger = assets.Logging{
-		ToFile: false,
-		File:   common.DefGSPath,
+		ToFile: *m.Asset.LogToFile,
+		File:   m.Log + "/" + time.Now().Format("02_01_2006T15_04_05") + "_" + m.Asset.Name,
 		Logger: logrus.New(),
 		L:      m.L,
 	}

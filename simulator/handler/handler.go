@@ -71,6 +71,7 @@ func (h *Handler) Start() []chan bool {
 		case simulator.Ocpp201:
 			var s = ocpp201.Ocpp201{
 				L:       h.L,
+				Log:     h.Log,
 				Timeout: h.Tout,
 				CSAddr:  h.Addr,
 				CSPort:  h.Port,
@@ -91,6 +92,7 @@ func (h *Handler) Start() []chan bool {
 
 		var s = modbus.Modbus{
 			L:       h.L,
+			Log:     h.Log,
 			HostIP:  h.HostIP,
 			Timeout: h.Tout,
 			Asset:   h.Al[*i],
