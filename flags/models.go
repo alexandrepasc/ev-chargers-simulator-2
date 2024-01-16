@@ -27,6 +27,7 @@ type Flags struct {
 	CSPort      string // Central system port the that simulators will communicate to.
 	GCFolder    string // Folder where the application general configuration files are located.
 	SCFolder    string // Folder where the simulators configuration files are located.
+	LogFolder   string // Folder where the logs will be stored.
 	Language    string // The language used by the application.
 	APIAddr     string // The ip address/hostname to serve the http server
 	APIPort     string // The port to serve the http server
