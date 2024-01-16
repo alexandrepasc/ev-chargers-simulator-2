@@ -21,7 +21,7 @@ func (m *Modbus) HandleCoils(req *modbus.CoilsRequest) (res []bool, err error) {
 		"type":      assets.Request,
 	}
 
-	m.logger.log(lm, req, assets.Info)
+	m.logger.Log(lm, req, assets.Info)
 
 	return nil, modbus.ErrIllegalFunction
 }
@@ -39,7 +39,7 @@ func (m *Modbus) HandleDiscreteInputs(req *modbus.DiscreteInputsRequest) (res []
 		"type":      assets.Request,
 	}
 
-	m.logger.log(lm, req, assets.Info)
+	m.logger.Log(lm, req, assets.Info)
 
 	// this is the equivalent of saying
 	// "discrete inputs are not supported by this device"
@@ -63,7 +63,7 @@ func (m *Modbus) HandleHoldingRegisters(req *modbus.HoldingRegistersRequest) (re
 		"type":      assets.Request,
 	}
 
-	m.logger.log(lm, req, assets.Info)
+	m.logger.Log(lm, req, assets.Info)
 
 	for i := 0; i < int(req.Quantity); i++ {
 		var reqAddr = req.Addr + uint16(i)
@@ -74,7 +74,7 @@ func (m *Modbus) HandleHoldingRegisters(req *modbus.HoldingRegistersRequest) (re
 	lm["sender"] = assets.CP
 	lm["type"] = assets.Response
 
-	m.logger.log(lm, res, assets.Info)
+	m.logger.Log(lm, res, assets.Info)
 
 	return res, nil
 }
@@ -93,7 +93,7 @@ func (m *Modbus) HandleInputRegisters(req *modbus.InputRegistersRequest) (res []
 		"type":      assets.Request,
 	}
 
-	m.logger.log(lm, req, assets.Info)
+	m.logger.Log(lm, req, assets.Info)
 
 	return nil, modbus.ErrIllegalFunction
 }

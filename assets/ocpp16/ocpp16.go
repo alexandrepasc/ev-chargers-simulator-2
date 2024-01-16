@@ -15,12 +15,14 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/localauth"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
+	"github.com/sirupsen/logrus"
 )
 
 type Ocpp16 struct {
 	lock          sync.RWMutex                     // Lock goroutine
-	logger        logging                          // Logging
+	logger        assets.Logging                   // Logging
 	L             translation.Translation          // translation
+	Log           string                           // Path to store the log files
 	Timeout       int64                            // Connection timeout
 	CSAddr        string                           // Central system ip address
 	CSPort        string                           // Central system port
@@ -48,10 +50,20 @@ type Ocpp16 struct {
 func (o *Ocpp16) Start(c chan common.Channel, q chan bool) {
 	o.lock.Lock()
 
-	o.logger = logging{
-		toFile: false,
-		file:   common.DefGSPath,
+	o.logger = assets.Logging{
+		ToFile: *o.Asset.LogToFile,
+		File:   o.Log + "/" + time.Now().Format("02_01_2006T15_04_05") + "_" + o.Asset.Name,
+		Logger: logrus.New(),
+		L:      o.L,
 	}
+
+	if o.Asset.LogLevel != nil {
+		o.logger.Level = assets.TranslateLogLevels(*o.Asset.LogLevel)
+	} else {
+		o.logger.Level = logrus.ErrorLevel
+	}
+
+	o.logger.Logger.SetFormatter(&logrus.TextFormatter{FullTimestamp: true})
 
 	var lm = map[string]string{
 		"protocol":  string(o.Asset.Protocol),
@@ -63,7 +75,7 @@ func (o *Ocpp16) Start(c chan common.Channel, q chan bool) {
 
 	for {
 		if o.disconnectSeq {
-			o.logger.log(lm, o.L.Get(text.Ocpp16ServerStopped), assets.Info)
+			o.logger.Log(lm, o.L.Get(text.Ocpp16ServerStopped), assets.Info)
 
 			o.s.Stop()
 
@@ -76,13 +88,13 @@ func (o *Ocpp16) Start(c chan common.Channel, q chan bool) {
 			sErr := o.s.Start(assets.GetConnProtocol(o.Asset.TLS) + o.CSAddr + ":" + o.CSPort)
 
 			if sErr != nil {
-				o.logger.log(lm, sErr, assets.Error)
+				o.logger.Log(lm, sErr, assets.Error)
 				return
 			}
 
 			o.connectSeq = false
 
-			o.logger.log(lm, o.L.Get(text.Ocpp16ServerStarted), assets.Info)
+			o.logger.Log(lm, o.L.Get(text.Ocpp16ServerStarted), assets.Info)
 
 			o.st = time.Now()
 		}
@@ -108,12 +120,14 @@ func (o *Ocpp16) Start(c chan common.Channel, q chan bool) {
 
 		select {
 		case <-q:
-			o.logger.log(lm, o.L.Get(text.Ocpp16ServerStopped), assets.Info)
+			o.logger.Log(lm, o.L.Get(text.Ocpp16ServerStopped), assets.Info)
 
 			o.s.Stop()
 
 			close(q)
 			close(c)
+
+			o.lock.Unlock()
 
 			return
 		default:

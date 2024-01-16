@@ -2,7 +2,7 @@
 
 |         |    Version   |
 | ------- | ------------ |
-| Product | **v0.19.12** |
+| Product | **v0.22.13** |
 | Manual  | **Rev1**     |
 
 <div class="page"/>
@@ -20,7 +20,7 @@
 			- [By Flags](#by-flags)
 			- [By Restful API](#by-restful-api)
 				- [/configs/general](#configsgeneral)
-				- [/configs/simulators](#configssimulators)
+				- [/configs](#configs)
 		- [Setup Simulators](#setup-simulators)
 			- [Manage Models](#manage-models)
 				- [/simulators/models](#simulatorsmodels)
@@ -35,12 +35,13 @@
 		- [Health Check](#health-check)
 	- [Appendix](#appendix)
 		- [Flags](#flags)
-		- [Asset Type <type>](#asset-type-type)
-		- [Protocols <protocol>](#protocols-protocol)
-		- [Phase Rotation <phaseRotation>](#phase-rotation-phaserotation)
-		- [Current Type <currentType>](#current-type-currenttype)
-		- [Charging States <chargingState>](#charging-states-chargingstate)
-		- [Error Code <errorCode>](#error-code-errorcode)
+		- [Log Level [logLevel]](#log-level-loglevel)
+		- [Asset Type [type]](#asset-type-type)
+		- [Protocols [protocol]](#protocols-protocol)
+		- [Phase Rotation [phaseRotation]](#phase-rotation-phaserotation)
+		- [Current Type [currentType]](#current-type-currenttype)
+		- [Charging States [chargingState]](#charging-states-chargingstate)
+		- [Error Code [errorCode]](#error-code-errorcode)
 		- [Modbus Keys](#modbus-keys)
 
 <!-- /TOC -->
@@ -48,12 +49,14 @@
 <div class="page"/>
 
 ## Introduction
-The Application Manual contains all the essencial information for the user to make full use of the system. This document contains the description of the application functions and capabilities, installation, modes of operation, and how to use it. The manual format and steps may be altered during the development of the application.
+The Application Manual contains all the essential information for the user to make full use of the system. This document contains the description of the application functions and capabilities, installation, modes of operation, and how to use it. The manual format and steps may be altered during the development of the application.
 
 ## Installation
-There are no installation file the application will do the necessery acions in the first execution to setup. There are a some files and folders that need to be in place to execute the application, for them to be created the user that executes the application need to have write permissions to the folder where the application file is located, and to the folder(s) where we want to locate the other files.
+There are no installation file the application will do the necessary actions in the first execution to setup. There are a some files and folders that need to be in place to execute the application, for them to be created the user that executes the application need to have write permissions to the folder where the application file is located, and to the folder(s) where we want to locate the other files.
 
 The app doesn't have any GUI but in the other hand has a **Restful API** that enables the user to control the application, and have some arguments that can be set during the execution of the app.
+
+**NOTE**: The folder that is set to store the log files, will only store the logs from the simulators execution. At the moment the base application is not storing any logs to file and there is not any way to do it.
 
 ### First Run Default Configurations
 The first time the application is executed, and without any arguments, it will generate the `configs.json` file, the `settings` folder and in it the `general.json` file, the `simConf` folder, and the `/simConf/models` folder. The previous files and folders are essential for the application to run and can't be moved or deleted. Some of this configurations are set using the default values defined in the application and can be changed on the first execution or during the usage of the application.
@@ -80,7 +83,7 @@ After the user start the first time the application it will have the same behavi
 <div class="page"/>
 
 ## Use the Application
-There are a couple of informations that we need to know to be able to be able to use this application to it's full potential, as how to change the configurations, create/edit/remove models and simulators, what is a model, etc... In this section we will dive into explaining how to use it, and the interfaces that are available to the user.
+There are a couple of information's that we need to know to be able to be able to use this application to it's full potential, as how to change the configurations, create/edit/remove models and simulators, what is a model, etc... In this section we will dive into explaining how to use it, and the interfaces that are available to the user.
 
 ### Change Configurations
 There are multiple configurations some of them are not changeable but others are, and the user has two ways to change them.
@@ -90,7 +93,7 @@ As described in the [Installation](#installation) there are some *command line* 
 
 After the *installation* process we can still use the *flags* to change the configurations, but to do it we need to use an extra one `-i`. This is the argument that triggers the application to save the new information.
 
-With this we can run the application and at the same time change the configurations and save them for the next execution. The next examples are the same the were written previously but with the `-i` *flag*, so the configurations are changed and saved.
+With this we can run the application and at the same time change the configurations and save them for the next execution. The next examples are the same that were written previously but with the `-i` *flag*, so the configurations are changed and saved.
 
 Change the **General configurations folder**:
 - `./ev-chargers-simulator-linux-amd64 -i -gs /full/path/to/the/location`
@@ -106,10 +109,10 @@ Executing the application it will start an *HTTP* service that will enable chang
 
 ##### /configs/general
 With this endpoint we can get the current configuration as change them. The list of all the configurations that can be changed are listed down.
-- `hostIp`: The IP address of the conputer that is running the application
+- `hostIp`: The IP address of the computer that is running the application
 - `connTimeout`: Connection timeout for all the simulators
 - `cSAddr`: OCPP central system IP address
-- `cSPort`: OCPP central system port that is leastning for the charge points
+- `cSPort`: OCPP central system port that is listening for the charge points
 - `lang`: Language
 - `apiAddr`: IP address that the *HTTP* service will run on
 - `apiPort`: IP port that the *HTTP* service will be listening on
@@ -134,29 +137,30 @@ PUT http://{apiAddr}:{apiPort}/configs/general
     "apiPort": "8001"
 }
 ```
-**WARNING:** The update of any of the configurations and the update of the other endpoints needs to have the full body, could not be a partial udate. If only one field needs to be changed the full body needs to be sent.
+**WARNING:** The update of any of the configurations and the update of the other endpoints needs to have the full body, could not be a partial update. If only one field needs to be changed the full body needs to be sent.
 
-##### /configs/simulators
-In this endpoint we can change the path were the configuration files of the simulators will be located.
+##### /configs
+In this endpoint we can change the path were the configuration files of the simulators and the location to store the log files will be located.
 
-To get the current path we can use the:
+To get the current paths we can use the:
 ```
-GET http://{apiAddr}:{apiPort}/configs/simulators
+GET http://{apiAddr}:{apiPort}/configs
 ```
 
 To update as in the previous endpoint we can use the *JSON* response structure.
 ```
-PUT http://{apiAddr}:{apiPort}/configs/simulators
+PUT http://{apiAddr}:{apiPort}/configs
 {
     "simFolder": "/full/path/to/folder/"
+	"logFolder": "/full/path/to/log/folder/
 }
 ```
 
 ### Setup Simulators
-In this section it is described how to setup and use the simulators. In oposition to the previous section the only way to do this is interfacing with the *Restful API*.
+In this section it is described how to setup and use the simulators. In opposition to the previous section the only way to do this is interfacing with the *Restful API*.
 
 #### Manage Models
-The **Models** are used to add configurations to the simulators, for example the *OCPP Chargers* have information that are retreived by the central system that is related with the equipement. For the *OCPP Chargers* in the boot request the charger sends the brand, model, etc... and this type of information is configured in the **Model**. The properties are listed bellow:
+The **Models** are used to add configurations to the simulators, for example the *OCPP Chargers* have information that are retrieved by the central system that is related with the equipment. For the *OCPP Chargers* in the boot request the charger sends the brand, model, etc... and this type of information is configured in the **Model**. The properties are listed bellow:
 
 - `id`: Model identifier
 - `name`: Model name
@@ -179,7 +183,7 @@ The **Models** are used to add configurations to the simulators, for example the
     - `imsi`: International Mobile Subscriber Identity
 - `modbus`: Modbus structure
   - `coils`: Coils mapping
-  - `discrete`: Descrete inputs mapping
+  - `discrete`: Discrete inputs mapping
   - `holdingRegisters`: Holding registers mapping
   - `inputRegisters`: Input registers mapping
     - `addresses`: List of modbus addresses mapping
@@ -272,9 +276,11 @@ DELETE http://{apiAddr}:{apiPort}/simulators/models/{model-identifier-here}
 ```
 
 #### Manage Simulator
-Now looking into the core of this application, the **Simulators**. There is on endpoint that is used to manage the **Simulator** assets and their configurations. In here will explaine how to add, edit, delete, and configure the assets. All the configurable properties are listed bellow:
+Now looking into the core of this application, the **Simulators**. There is on endpoint that is used to manage the **Simulator** assets and their configurations. In here will explain how to add, edit, delete, and configure the assets. All the configurable properties are listed bellow:
 
 - `name`: Simulator name
+- `logLevel`: Log level of the simulator, the list of accepted values are info, error, warn, panic, fatal, debug
+- `logToFile`: If the simulator logs are stored into a file, if no value is set it will default to false
 - `type`: Type of the asset that the configuration will be used to (evc, pm)
 - `protocol`: Protocol used by the asset
 - `tls`: Set if the asset will connect using TLS or not, the default is false (if true the model is required)
@@ -286,7 +292,7 @@ Now looking into the core of this application, the **Simulators**. There is on e
 - `phases`: Phases number
 - `phaseRotation`: The asset phase rotation, if the asset is DC the value should be NotApplicable
 - `currentType`: Type of current of the asset (ac or dc)
-- `authorizeRemote`: Configurataion AuthorizeRemoteTxRequests
+- `authorizeRemote`: Configuration AuthorizeRemoteTxRequests
 - `authList`: Enable or disable authorization local list
 - `evses`: List of evses that the asset has
   - `id`: Evse identifier number
@@ -303,7 +309,7 @@ Now looking into the core of this application, the **Simulators**. There is on e
         - `startSoC`: Start ev charge state in percentage
         - `endSoC`: End ev charge state in percentage
 
-The *OCPP v1.6* protocol doesn't support multiple EVSEs in the same charge point. This rule was set in place for the creation and update of the assets with the type `evc` that have the `ocpp16` protocol, when both of this propeties match the asset can only have **one** item in the `evses` list. Trying to create or update an asset with more than **one** EVSE, with the type and protocol matching what was described before, the api will return an error message.
+The *OCPP v1.6* protocol doesn't support multiple EVSEs in the same charge point. This rule was set in place for the creation and update of the assets with the type `evc` that have the `ocpp16` protocol, when both of this properties match the asset can only have **one** item in the `evses` list. Trying to create or update an asset with more than **one** EVSE, with the type and protocol matching what was described before, the api will return an error message.
 
 ##### /simulators
 This endpoint can be used to create and list all the *simulators*.
@@ -321,6 +327,8 @@ It will return the total number of number of existing *simulators* and their lis
         {
             "simId": "585e8e82-b296-49f7-aea7-f3478a0c3a51",
             "name": "sim1",
+			"logLevel": "error",
+			"logToFile": true,
             "type": "evc",
             "protocol": "ocpp16",
             "model": "00000000-0000-0000-0000-000000000000",
@@ -369,6 +377,8 @@ To create a new *simulator* use the same endpoint but with a new method and send
 POST http://{apiAddr}:{apiPort}/simulators
 {
     "name": "sim1",
+	"logLevel": "error",
+	"logToFile": true,
     "type": "evc",
     "protocol": "ocpp16",
     "model": "00000000-0000-0000-0000-000000000000",
@@ -420,6 +430,8 @@ To update a simulator use the following example, to update any of the properties
 PUT http://{apiAddr}:{apiPort}/simulators/{simulator-identifier-here}
 {
     "name": "sim1",
+	"logLevel": "error",
+	"logToFile": true,
     "type": "evc",
     "protocol": "ocpp16",
     "model": "00000000-0000-0000-0000-000000000000",
@@ -484,13 +496,13 @@ POST http://{apiAddr}:{apiPort}/simulators/stop
 ```
 
 #### /simulators/status
-During the application execution there is a way to retreive some information about the status of all of the running EV Chargers. With the following endpoint the assets are returned in the response body with the state of each.
+During the application execution there is a way to retrieve some information about the status of all of the running EV Chargers. With the following endpoint the assets are returned in the response body with the state of each.
 
 - `total`: Total number of assets
 - `assets`: List of assets
 	- `id`: Asset identifier
 	- `name`: Asset name
-	- `state`: State of the asset (acive, inactive)
+	- `state`: State of the asset (active, inactive)
 	- `power`: Current asset power
 	- `energy`: Energy consumption of the execution
 
@@ -498,7 +510,7 @@ During the application execution there is a way to retreive some information abo
 GET http://{apiAddr}:{apiPort}/simulators/status
 ```
 
-Bellow is an example of the response body that will be reeturned:
+Bellow is an example of the response body that will be returned:
 
 ```
 {
@@ -552,29 +564,39 @@ If the application is running will return the following body, in case it is not 
   -csp string
     	Central system port (default "49443")
   -gs string
-    	General configuration folder, store the application general configurations (default "/home/alex/Downloads/ev-chargers-simulator-linux-amd64/build/settings")
+    	General configuration folder, store the application general configurations (default "/full/path/to/execution/folder/settings")
   -i	Force the update of the configurations with the values in the flags
   -l string
     	Language used by the application [en-GB, pt-PT] (default "en-GB")
+  -ls string
+        Folder to store the log files (default "/full/path/to/execution/folder/logs")
   -s string
     	Simulator host ip address (default "84.5.7.64")
   -ss string
-    	Simulators configuration folder, store the simulators configurations (default "/home/alex/Downloads/ev-chargers-simulator-linux-amd64/build/simConf")
+    	Simulators configuration folder, store the simulators configurations (default "/full/path/to/execution/folder/simConf")
   -t int
     	Connection timeout (seconds) (default 70)
   -v	Return the current application version
 ```
 
-### Asset Type <type>
+### Log Level [logLevel]
+- `info`: Only logs information messages
+- `error`: Only logs error messages
+- `warn`: Only logs warnings messages
+- `panic`: Only logs panic messages
+- `fatal`: Only logs fatal messages
+- `debug`: Logs every message type
+
+### Asset Type [type]
 - `evc`: Type electric vehicle charger
 - `pm`: Type power meter (only supported for modbus)
 
-### Protocols <protocol>
+### Protocols [protocol]
 - `ocpp16`: Ocpp version 1.6
 - `ocpp201`: Ocpp version 2.0.1 (limited)
 - `modbus`: Modbus protocol (only supported for pm)
 
-### Phase Rotation <phaseRotation>
+### Phase Rotation [phaseRotation]
 - `NotApplicable`: Not applicable for dc chargers
 - `Unknown`: Not able to retrieve the rotation
 - `RST`: L1 L2 L3
@@ -584,11 +606,11 @@ If the application is running will return the following body, in case it is not 
 - `TRS`: L3 L1 L2
 - `TSR`: L3 L2 L1
 
-### Current Type <currentType>
+### Current Type [currentType]
 - `ac`: Alternating current
 - `dc`: Direct current
 
-### Charging States <chargingState>
+### Charging States [chargingState]
 - `1`: Available
 - `2`: Preparing
 - `3`: Charging
@@ -599,7 +621,7 @@ If the application is running will return the following body, in case it is not 
 - `8`: Unavailable
 - `9`: Faulted
 
-### Error Code <errorCode>
+### Error Code [errorCode]
 - `0`: NoError
 - `1`: ConnectorLockFailure
 - `2`: EVCommunicationError

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/alexandrepasc/ev-chargers-simulator-2/assets"
@@ -14,10 +15,14 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 )
 
+var lock sync.RWMutex
+
 /*
 Set the starting configurations for the asset.
 */
 func (o *Ocpp16) setStartUpConfigurations() {
+	lock.Lock()
+
 	o.Conf = config
 
 	o.connectSeq = true
@@ -38,7 +43,7 @@ func (o *Ocpp16) setStartUpConfigurations() {
 
 	o.heartbeatC = 0
 
-	o.logger.log(map[string]string{"protocol": string(o.Asset.Protocol), "function": "setStartUpConfigurations", "simulator": o.Asset.Name},
+	o.logger.Log(map[string]string{"protocol": string(o.Asset.Protocol), "function": "setStartUpConfigurations", "simulator": o.Asset.Name},
 		o.L.Get(text.StartUpConfigurations), assets.Info)
 
 	// This will load only the password since there is no information in the documentation regarding how to set the user in the cp
@@ -187,6 +192,8 @@ func (o *Ocpp16) setStartUpConfigurations() {
 	if !o.Asset.AuthList {
 		o.localAuth.version = -1
 	}
+
+	lock.Unlock()
 }
 
 /*
@@ -212,7 +219,7 @@ func (o *Ocpp16) sendBootNotification() (resp *core.BootNotificationConfirmation
 		Imsi:                    o.Mod.Ocpp.Modem.Imsi,
 	}
 
-	o.logger.log(lm, req, assets.Info)
+	o.logger.Log(lm, req, assets.Info)
 
 	var res, e = o.s.SendRequest(req)
 
@@ -222,12 +229,12 @@ func (o *Ocpp16) sendBootNotification() (resp *core.BootNotificationConfirmation
 	lm["type"] = assets.Response
 
 	if e != nil {
-		o.logger.log(lm, e, assets.Error)
+		o.logger.Log(lm, e, assets.Error)
 
 		return nil, e
 	}
 
-	o.logger.log(lm, res.(*core.BootNotificationConfirmation), assets.Info)
+	o.logger.Log(lm, res.(*core.BootNotificationConfirmation), assets.Info)
 
 	o.bootSeq.BootStatus = res.(*core.BootNotificationConfirmation).Status
 
@@ -297,7 +304,7 @@ func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionReq
 			"simulator": o.Asset.Name,
 		}
 
-		o.logger.log(lm2, err, assets.Fatal)
+		o.logger.Log(lm2, err, assets.Fatal)
 	}
 
 	if !auth {
@@ -417,7 +424,7 @@ func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionReq
 	var stoii, errB = strconv.ParseBool(*o.Conf["StopTransactionOnInvalidId"].Value)
 
 	if errB != nil {
-		o.logger.log(lm, errB, assets.Error)
+		o.logger.Log(lm, errB, assets.Error)
 		return
 	}
 
@@ -639,7 +646,7 @@ func (o *Ocpp16) processSampledData() {
 			"simulator": o.Asset.Name,
 		}
 
-		o.logger.log(lm2, errI, assets.Fatal)
+		o.logger.Log(lm2, errI, assets.Fatal)
 
 		return
 	}
@@ -812,7 +819,7 @@ func (o *Ocpp16) meterValuesSampledData(ie, ic int, confL []string) []types.Mete
 			case assets.EnergyActiveExportInterval:
 				var t, err = strconv.ParseInt(*o.Conf["MeterValueSampleInterval"].Value, 10, 64)
 				if err != nil {
-					o.logger.log(lm, err, assets.Fatal)
+					o.logger.Log(lm, err, assets.Fatal)
 
 					return nil
 				}
@@ -828,7 +835,7 @@ func (o *Ocpp16) meterValuesSampledData(ie, ic int, confL []string) []types.Mete
 			case assets.EnergyActiveImportInterval:
 				var t, err = strconv.ParseInt(*o.Conf["MeterValueSampleInterval"].Value, 10, 64)
 				if err != nil {
-					o.logger.log(lm, err, assets.Fatal)
+					o.logger.Log(lm, err, assets.Fatal)
 
 					return nil
 				}
@@ -988,7 +995,7 @@ func (o *Ocpp16) processAlignedData() {
 			"simulator": o.Asset.Name,
 		}
 
-		o.logger.log(lm2, errV, assets.Fatal)
+		o.logger.Log(lm2, errV, assets.Fatal)
 
 		return
 	}
@@ -1116,7 +1123,7 @@ func (o *Ocpp16) meterValuesAlignedData(confL []string) []types.MeterValue {
 		case assets.EnergyActiveExportInterval:
 			var t, err = strconv.ParseInt(*o.Conf["ClockAlignedDataInterval"].Value, 10, 64)
 			if err != nil {
-				o.logger.log(lm, err, assets.Fatal)
+				o.logger.Log(lm, err, assets.Fatal)
 
 				return nil
 			}
@@ -1126,7 +1133,7 @@ func (o *Ocpp16) meterValuesAlignedData(confL []string) []types.MeterValue {
 		case assets.EnergyActiveImportInterval:
 			var t, err = strconv.ParseInt(*o.Conf["ClockAlignedDataInterval"].Value, 10, 64)
 			if err != nil {
-				o.logger.log(lm, err, assets.Fatal)
+				o.logger.Log(lm, err, assets.Fatal)
 
 				return nil
 			}
@@ -1352,13 +1359,13 @@ func (o *Ocpp16) updateData() {
 							var stoii, errB = strconv.ParseBool(*o.Conf["StopTransactionOnInvalidId"].Value)
 
 							if errB != nil {
-								o.logger.log(lm, errB, assets.Error)
+								o.logger.Log(lm, errB, assets.Error)
 								return
 							}
 
 							if stoii {
 								if resp.IdTagInfo.Status != types.AuthorizationStatusAccepted {
-									o.logger.log(lm, resp, assets.Info)
+									o.logger.Log(lm, resp, assets.Info)
 
 									for i := c.DP.Position; i < int64(len(c.Data)); i++ {
 										if c.Data[i].ChargingState == int64(assets.Finishing) {
@@ -1443,7 +1450,7 @@ func (o *Ocpp16) sendStatusNotification(c *simulator.Connector, info, vendCode *
 
 	lm["feature"] = req.GetFeatureName()
 
-	o.logger.log(lm, req, assets.Info)
+	o.logger.Log(lm, req, assets.Info)
 
 	var resp, err = o.s.SendRequest(req)
 
@@ -1453,11 +1460,11 @@ func (o *Ocpp16) sendStatusNotification(c *simulator.Connector, info, vendCode *
 	lm["type"] = assets.Response
 
 	if err != nil {
-		o.logger.log(lm, err, assets.Error)
+		o.logger.Log(lm, err, assets.Error)
 		return
 	}
 
-	o.logger.log(lm, resp, assets.Info)
+	o.logger.Log(lm, resp, assets.Info)
 }
 
 /*
@@ -1482,7 +1489,7 @@ func (o *Ocpp16) startTransaction(id string, c *simulator.Connector) *core.Start
 		Timestamp:   types.NewDateTime(time.Now()),
 	}
 
-	o.logger.log(lm, req, assets.Info)
+	o.logger.Log(lm, req, assets.Info)
 
 	var res, err = o.s.SendRequest(req)
 
@@ -1493,18 +1500,18 @@ func (o *Ocpp16) startTransaction(id string, c *simulator.Connector) *core.Start
 
 	// TODO: the transaction message attempts was not tested some investigation needs to be done
 	if err != nil {
-		o.logger.log(lm, err, assets.Error)
+		o.logger.Log(lm, err, assets.Error)
 
 		var tma, errTma = strconv.ParseInt(*o.Conf["TransactionMessageAttempts"].Value, 10, 64)
 
 		if errTma != nil {
-			o.logger.log(lm, errTma, assets.Fatal)
+			o.logger.Log(lm, errTma, assets.Fatal)
 		}
 
 		var tmai, errTmai = strconv.ParseInt(*o.Conf["TransactionMessageRetryInterval"].Value, 10, 64)
 
 		if errTmai != nil {
-			o.logger.log(lm, errTmai, assets.Fatal)
+			o.logger.Log(lm, errTmai, assets.Fatal)
 		}
 
 		for i := 0; i < int(tma); i++ {
@@ -1518,7 +1525,7 @@ func (o *Ocpp16) startTransaction(id string, c *simulator.Connector) *core.Start
 		}
 	}
 
-	o.logger.log(lm, res.(*core.StartTransactionConfirmation), assets.Info)
+	o.logger.Log(lm, res.(*core.StartTransactionConfirmation), assets.Info)
 
 	return res.(*core.StartTransactionConfirmation)
 }
@@ -1554,7 +1561,7 @@ func (o *Ocpp16) stopTransaction(id string, c *simulator.Connector) {
 
 	lm["feature"] = req.GetFeatureName()
 
-	o.logger.log(lm, req, assets.Info)
+	o.logger.Log(lm, req, assets.Info)
 
 	var _, err = o.s.SendRequest(req)
 
@@ -1564,18 +1571,18 @@ func (o *Ocpp16) stopTransaction(id string, c *simulator.Connector) {
 	lm["type"] = assets.Response
 
 	if err != nil {
-		o.logger.log(lm, err, assets.Error)
+		o.logger.Log(lm, err, assets.Error)
 
 		var tma, errTma = strconv.ParseInt(*o.Conf["TransactionMessageAttempts"].Value, 10, 64)
 
 		if errTma != nil {
-			o.logger.log(lm, errTma, assets.Fatal)
+			o.logger.Log(lm, errTma, assets.Fatal)
 		}
 
 		var tmai, errTmai = strconv.ParseInt(*o.Conf["TransactionMessageRetryInterval"].Value, 10, 64)
 
 		if errTmai != nil {
-			o.logger.log(lm, errTmai, assets.Fatal)
+			o.logger.Log(lm, errTmai, assets.Fatal)
 		}
 
 		for i := 0; i < int(tma); i++ {
@@ -1610,7 +1617,7 @@ func (o *Ocpp16) authorize(id string) bool {
 		IdTag: id,
 	}
 
-	o.logger.log(lm, req, assets.Info)
+	o.logger.Log(lm, req, assets.Info)
 
 	res, err := o.s.SendRequest(req)
 
@@ -1620,11 +1627,11 @@ func (o *Ocpp16) authorize(id string) bool {
 	lm["type"] = assets.Response
 
 	if err != nil {
-		o.logger.log(lm, err, assets.Error)
+		o.logger.Log(lm, err, assets.Error)
 		return false
 	}
 
-	o.logger.log(lm, res.(*core.AuthorizeConfirmation), assets.Info)
+	o.logger.Log(lm, res.(*core.AuthorizeConfirmation), assets.Info)
 
 	return res.(*core.AuthorizeConfirmation).IdTagInfo.Status == types.AuthorizationStatusAccepted
 }
@@ -1649,7 +1656,7 @@ func (o *Ocpp16) processHeartbeat() {
 
 	var hb, hbE = strconv.ParseInt(*o.Conf["HeartbeatInterval"].Value, 10, 64)
 	if hbE != nil {
-		o.logger.log(lm, hbE, assets.Error)
+		o.logger.Log(lm, hbE, assets.Error)
 		return
 	}
 
@@ -1676,7 +1683,7 @@ func (o *Ocpp16) heartbeat() {
 
 	var req = core.HeartbeatRequest{}
 
-	o.logger.log(lm, req, assets.Info)
+	o.logger.Log(lm, req, assets.Info)
 
 	res, err := o.s.SendRequest(req)
 
@@ -1684,12 +1691,12 @@ func (o *Ocpp16) heartbeat() {
 	lm["type"] = assets.Response
 
 	if err != nil {
-		o.logger.log(lm, err, assets.Error)
+		o.logger.Log(lm, err, assets.Error)
 	}
 
 	// TODO: it is missing the synchronization of the internal clock logic
 
-	o.logger.log(lm, res.(*core.HeartbeatConfirmation), assets.Info)
+	o.logger.Log(lm, res.(*core.HeartbeatConfirmation), assets.Info)
 }
 
 /*
@@ -1714,7 +1721,7 @@ func (o *Ocpp16) meterValues(id int64, mvl []types.MeterValue) {
 
 	lm["feature"] = req.GetFeatureName()
 
-	o.logger.log(lm, req, assets.Info)
+	o.logger.Log(lm, req, assets.Info)
 
 	var res, err = o.s.SendRequest(req)
 
@@ -1725,18 +1732,18 @@ func (o *Ocpp16) meterValues(id int64, mvl []types.MeterValue) {
 
 	// TODO: the transaction message attempts was not tested some investigation needs to be done
 	if err != nil {
-		o.logger.log(lm, err, assets.Error)
+		o.logger.Log(lm, err, assets.Error)
 
 		var tma, errTma = strconv.ParseInt(*o.Conf["TransactionMessageAttempts"].Value, 10, 64)
 
 		if errTma != nil {
-			o.logger.log(lm, errTma, assets.Fatal)
+			o.logger.Log(lm, errTma, assets.Fatal)
 		}
 
 		var tmai, errTmai = strconv.ParseInt(*o.Conf["TransactionMessageRetryInterval"].Value, 10, 64)
 
 		if errTmai != nil {
-			o.logger.log(lm, errTmai, assets.Fatal)
+			o.logger.Log(lm, errTmai, assets.Fatal)
 		}
 
 		for i := 0; i < int(tma); i++ {
@@ -1750,7 +1757,7 @@ func (o *Ocpp16) meterValues(id int64, mvl []types.MeterValue) {
 		}
 	}
 
-	o.logger.log(lm, res, assets.Info)
+	o.logger.Log(lm, res, assets.Info)
 }
 
 /*
@@ -1782,7 +1789,7 @@ func (o *Ocpp16) getConfigurationKeys(k []string) (c []core.ConfigurationKey, u 
 			"simulator": o.Asset.Name,
 		}
 
-		o.logger.log(lm2, err, assets.Fatal)
+		o.logger.Log(lm2, err, assets.Fatal)
 
 		return nil, nil
 	}

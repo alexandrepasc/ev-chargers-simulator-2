@@ -22,7 +22,7 @@ defined by the user in the asset and module configuration files.
 func (o *Ocpp201) setStartUpConfigurations() {
 	o.components = components
 
-	o.logger.log(map[string]string{"protocol": string(o.Asset.Protocol), "function": "setStartUpConfigurations", "simulator": o.Asset.Name},
+	o.logger.Log(map[string]string{"protocol": string(o.Asset.Protocol), "function": "setStartUpConfigurations", "simulator": o.Asset.Name},
 		o.L.Get(text.StartUpConfigurations), assets.Info)
 
 	o.connectSeq = true
@@ -184,7 +184,7 @@ func (o *Ocpp201) sendBootNotification(r provisioning.BootReason) (res *provisio
 		},
 	}
 
-	o.logger.log(lm, req, assets.Info)
+	o.logger.Log(lm, req, assets.Info)
 
 	var resp, e = o.s.SendRequest(req)
 
@@ -195,11 +195,11 @@ func (o *Ocpp201) sendBootNotification(r provisioning.BootReason) (res *provisio
 	lm["type"] = assets.Response
 
 	if e != nil {
-		o.logger.log(lm, e, assets.Error)
+		o.logger.Log(lm, e, assets.Error)
 		return nil, e
 	}
 
-	o.logger.log(lm, resp.(*provisioning.BootNotificationResponse), assets.Info)
+	o.logger.Log(lm, resp.(*provisioning.BootNotificationResponse), assets.Info)
 
 	o.bootSeq.bootStatus = resp.(*provisioning.BootNotificationResponse).Status
 
@@ -281,7 +281,7 @@ func (o *Ocpp201) processHeartbeat() {
 
 	var hb, errH = strconv.ParseInt(o.components[string(oCPPCommCtrlr)].variables[string(heartbeatInterval)].item[0].AttributeValue, 10, 64)
 	if errH != nil {
-		o.logger.log(lm, errH, assets.Error)
+		o.logger.Log(lm, errH, assets.Error)
 		return
 	}
 
@@ -307,7 +307,7 @@ func (o *Ocpp201) sendHeartbeat() {
 
 	var req = availability.HeartbeatRequest{}
 
-	o.logger.log(lm, req, assets.Info)
+	o.logger.Log(lm, req, assets.Info)
 
 	var resp, e = o.s.SendRequest(req)
 
@@ -315,14 +315,14 @@ func (o *Ocpp201) sendHeartbeat() {
 	lm["type"] = assets.Response
 
 	if e != nil {
-		o.logger.log(lm, e, assets.Error)
+		o.logger.Log(lm, e, assets.Error)
 		return
 	}
 
 	// G02.FR.06 sync the internal clock
 	// G02.FR.07 if heartbeat is never sent send it once every 24 hours
 
-	o.logger.log(lm, resp.(*availability.HeartbeatResponse), assets.Info)
+	o.logger.Log(lm, resp.(*availability.HeartbeatResponse), assets.Info)
 }
 
 /*
@@ -353,7 +353,7 @@ func (o *Ocpp201) sendStatusNotification(eID, cID, cS int64) {
 		ConnectorStatus: availability.ConnectorStatus(assets.Status[cS]),
 	}
 
-	o.logger.log(lm, req, assets.Info)
+	o.logger.Log(lm, req, assets.Info)
 
 	var res, err = o.s.SendRequest(req)
 
@@ -364,11 +364,11 @@ func (o *Ocpp201) sendStatusNotification(eID, cID, cS int64) {
 	lm["type"] = assets.Response
 
 	if err != nil {
-		o.logger.log(lm, err, assets.Error)
+		o.logger.Log(lm, err, assets.Error)
 		return
 	}
 
-	o.logger.log(lm, res.(*availability.StatusNotificationResponse), assets.Info)
+	o.logger.Log(lm, res.(*availability.StatusNotificationResponse), assets.Info)
 }
 
 /*
@@ -388,7 +388,7 @@ func (o *Ocpp201) processGetVariables(k []provisioning.GetVariableData) (r []pro
 
 	var m, errm = strconv.ParseInt(o.components[string(deviceDataCtrlr)].variables[string(itemsPerMessage)].item[0].AttributeValue, 10, 64)
 	if errm != nil {
-		o.logger.log(lm, errm, assets.Fatal)
+		o.logger.Log(lm, errm, assets.Fatal)
 
 		return nil, errm
 	}
@@ -582,7 +582,7 @@ func (o *Ocpp201) processSetVariables(k []provisioning.SetVariableData) (r []pro
 
 	var m, errm = strconv.ParseInt(o.components[string(deviceDataCtrlr)].variables[string(itemsPerMessage)].item[1].AttributeValue, 10, 64)
 	if errm != nil {
-		o.logger.log(lm, errm, assets.Fatal)
+		o.logger.Log(lm, errm, assets.Fatal)
 
 		return nil, errm
 	}
@@ -748,7 +748,7 @@ func (o *Ocpp201) sendSecurityEventNotification(t securityEventType, i string) {
 		TechInfo: i,
 	}
 
-	o.logger.log(lm, req, assets.Info)
+	o.logger.Log(lm, req, assets.Info)
 
 	var res, err = o.s.SendRequest(req)
 
@@ -759,11 +759,11 @@ func (o *Ocpp201) sendSecurityEventNotification(t securityEventType, i string) {
 	lm["type"] = assets.Response
 
 	if err != nil {
-		o.logger.log(lm, err, assets.Error)
+		o.logger.Log(lm, err, assets.Error)
 		return
 	}
 
-	o.logger.log(lm, res.(*security.SecurityEventNotificationResponse), assets.Info)
+	o.logger.Log(lm, res.(*security.SecurityEventNotificationResponse), assets.Info)
 
 	o.secEventSeq.isToTrigger = false
 }
@@ -989,7 +989,7 @@ lm	-	The logging fields (map[string]string)
 */
 func (o *Ocpp201) isBootRejected(lm map[string]string) error {
 	if o.bootSeq.bootStatus == provisioning.RegistrationStatusRejected {
-		o.logger.log(lm, ocppj.SecurityError, assets.Error)
+		o.logger.Log(lm, ocppj.SecurityError, assets.Error)
 
 		return ocpp.NewError(ocppj.SecurityError, "", "")
 	}

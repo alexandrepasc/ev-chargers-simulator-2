@@ -23,7 +23,7 @@ func (o *Ocpp201) OnGetVariables(req *provisioning.GetVariablesRequest) (res *pr
 		"type":      assets.Request,
 	}
 
-	o.logger.log(lm, req, assets.Info)
+	o.logger.Log(lm, req, assets.Info)
 
 	lm["sender"] = assets.CP
 	lm["type"] = assets.Response
@@ -36,7 +36,7 @@ func (o *Ocpp201) OnGetVariables(req *provisioning.GetVariablesRequest) (res *pr
 
 	var r, e = o.processGetVariables(req.GetVariableData)
 	if e != nil {
-		o.logger.log(lm, e, assets.Error)
+		o.logger.Log(lm, e, assets.Error)
 
 		return nil, e
 	}
@@ -45,7 +45,7 @@ func (o *Ocpp201) OnGetVariables(req *provisioning.GetVariablesRequest) (res *pr
 		GetVariableResult: r,
 	}
 
-	o.logger.log(lm, res, assets.Info)
+	o.logger.Log(lm, res, assets.Info)
 
 	return res, nil
 }
@@ -64,7 +64,7 @@ func (o *Ocpp201) OnSetVariables(req *provisioning.SetVariablesRequest) (res *pr
 		"type":      assets.Request,
 	}
 
-	o.logger.log(lm, req, assets.Info)
+	o.logger.Log(lm, req, assets.Info)
 
 	lm["sender"] = assets.CP
 	lm["type"] = assets.Response
@@ -77,7 +77,7 @@ func (o *Ocpp201) OnSetVariables(req *provisioning.SetVariablesRequest) (res *pr
 
 	var r, e = o.processSetVariables(req.SetVariableData)
 	if e != nil {
-		o.logger.log(lm, e, assets.Error)
+		o.logger.Log(lm, e, assets.Error)
 
 		return nil, e
 	}
@@ -86,7 +86,7 @@ func (o *Ocpp201) OnSetVariables(req *provisioning.SetVariablesRequest) (res *pr
 		SetVariableResult: r,
 	}
 
-	o.logger.log(lm, res, assets.Info)
+	o.logger.Log(lm, res, assets.Info)
 
 	return res, nil
 }
@@ -105,7 +105,7 @@ func (o *Ocpp201) OnTriggerMessage(req *remotecontrol.TriggerMessageRequest) (re
 		"type":      assets.Request,
 	}
 
-	o.logger.log(lm, req, assets.Info)
+	o.logger.Log(lm, req, assets.Info)
 	// B02.FR.02
 	// B02.FR.09 Boot pending returns the boot response
 	// B03.FR.08 Boot rejected and not trigger message BootNotification
@@ -135,7 +135,7 @@ func (o *Ocpp201) OnReset(req *provisioning.ResetRequest) (res *provisioning.Res
 		"type":      assets.Request,
 	}
 
-	o.logger.log(lm, req, assets.Info)
+	o.logger.Log(lm, req, assets.Info)
 
 	lm["sender"] = assets.CP
 	lm["type"] = assets.Response
@@ -153,7 +153,7 @@ func (o *Ocpp201) OnReset(req *provisioning.ResetRequest) (res *provisioning.Res
 		StatusInfo: inf,
 	}
 
-	o.logger.log(lm, res, assets.Info)
+	o.logger.Log(lm, res, assets.Info)
 
 	return res, nil
 }

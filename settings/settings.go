@@ -47,6 +47,10 @@ func checkConfigs(confs configs.Model) {
 	if !isFolder(confs.SimulatorsConfigFolder + common.DefMCFolder) {
 		createFolder(confs.SimulatorsConfigFolder + common.DefMCFolder)
 	}
+
+	if !isFolder(confs.LogsConfigFolder) {
+		createFolder(confs.LogsConfigFolder)
+	}
 }
 
 /*

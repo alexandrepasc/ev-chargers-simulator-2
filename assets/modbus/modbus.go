@@ -12,12 +12,14 @@ import (
 	"github.com/alexandrepasc/ev-chargers-simulator-2/translation"
 	"github.com/alexandrepasc/ev-chargers-simulator-2/translation/text"
 	"github.com/simonvetter/modbus"
+	"github.com/sirupsen/logrus"
 )
 
 type Modbus struct {
 	lock    sync.RWMutex            // Lock goroutine
-	logger  logging                 // Logging
+	logger  assets.Logging          // Logging
 	L       translation.Translation // translation
+	Log     string                  // Path to store the log files
 	HostIP  string                  // Application host ip address
 	Timeout int64                   // Connection timeout
 	Asset   *simulator.Asset        // Asset data for the simulator
@@ -37,9 +39,17 @@ q	-	Quit channel to be able to stop the routine from the main application (chan 
 func (m *Modbus) Start(c []chan common.Channel, q chan bool) {
 	m.lock.Lock()
 
-	m.logger = logging{
-		toFile: false,
-		file:   common.DefGSPath,
+	m.logger = assets.Logging{
+		ToFile: *m.Asset.LogToFile,
+		File:   m.Log + "/" + time.Now().Format("02_01_2006T15_04_05") + "_" + m.Asset.Name,
+		Logger: logrus.New(),
+		L:      m.L,
+	}
+
+	if m.Asset.LogLevel != nil {
+		m.logger.Level = assets.TranslateLogLevels(*m.Asset.LogLevel)
+	} else {
+		m.logger.Level = logrus.ErrorLevel
 	}
 
 	var lm = map[string]string{
@@ -52,11 +62,11 @@ func (m *Modbus) Start(c []chan common.Channel, q chan bool) {
 
 	var err = m.s.Start()
 	if err != nil {
-		m.logger.log(lm, err, assets.Error)
+		m.logger.Log(lm, err, assets.Error)
 		return
 	}
 
-	m.logger.log(lm, m.L.Get(text.ModbusServerStarted), assets.Info)
+	m.logger.Log(lm, m.L.Get(text.ModbusServerStarted), assets.Info)
 
 	for {
 		select {
@@ -64,10 +74,10 @@ func (m *Modbus) Start(c []chan common.Channel, q chan bool) {
 			var errS = m.s.Stop()
 
 			if errS != nil {
-				m.logger.log(lm, errS, assets.Fatal)
+				m.logger.Log(lm, errS, assets.Fatal)
 			}
 
-			m.logger.log(lm, m.L.Get(text.ModbusServerStopped), assets.Info)
+			m.logger.Log(lm, m.L.Get(text.ModbusServerStopped), assets.Info)
 
 			close(q)
 
@@ -140,7 +150,7 @@ func setupServer(m *Modbus) *modbus.ModbusServer {
 			"simulator": m.Asset.Name,
 		}
 
-		m.logger.log(lm, err, assets.Fatal)
+		m.logger.Log(lm, err, assets.Fatal)
 	}
 
 	return serv

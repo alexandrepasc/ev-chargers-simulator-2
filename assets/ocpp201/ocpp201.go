@@ -12,13 +12,15 @@ import (
 	"github.com/alexandrepasc/ev-chargers-simulator-2/translation/text"
 	"github.com/google/uuid"
 	ocpp201 "github.com/lorenzodonini/ocpp-go/ocpp2.0.1"
+	"github.com/sirupsen/logrus"
 )
 
 // TODO: move bootSeq to the assets structure
 type Ocpp201 struct {
 	lock          sync.RWMutex            // Lock goroutine
-	logger        logging                 // Logging
+	logger        assets.Logging          // Logging
 	L             translation.Translation // Translation module
+	Log           string                  // Path to store the log files
 	Timeout       int64                   // Connection timeout
 	CSAddr        string                  // Central system ip address
 	CSPort        string                  // Central system port
@@ -47,9 +49,11 @@ q	-	Quit channel used to stop the logic and routine(s) (chan bool)
 func (o *Ocpp201) Start(c chan common.Channel, q chan bool) {
 	o.lock.Lock()
 
-	o.logger = logging{
-		toFile: false,
-		file:   common.DefGSPath,
+	o.logger = assets.Logging{
+		ToFile: *o.Asset.LogToFile,
+		File:   o.Log + "/" + time.Now().Format("02_01_2006T15_04_05") + "_" + o.Asset.Name,
+		Logger: logrus.New(),
+		L:      o.L,
 	}
 
 	var lm = map[string]string{
@@ -68,7 +72,7 @@ func (o *Ocpp201) Start(c chan common.Channel, q chan bool) {
 		if o.disconnectSeq {
 			o.s.Stop()
 
-			o.logger.log(lm, o.L.Get(text.Ocpp201ServerStopped), assets.Info)
+			o.logger.Log(lm, o.L.Get(text.Ocpp201ServerStopped), assets.Info)
 
 			o.disconnectSeq = false
 		}
@@ -80,13 +84,13 @@ func (o *Ocpp201) Start(c chan common.Channel, q chan bool) {
 
 			if sErr != nil {
 				// TODO: investigate what to do when the asset fails to connect
-				o.logger.log(lm, sErr, assets.Error)
+				o.logger.Log(lm, sErr, assets.Error)
 				return
 			}
 
 			o.connectSeq = false
 
-			o.logger.log(lm, o.L.Get(text.Ocpp201ServerStarted), assets.Info)
+			o.logger.Log(lm, o.L.Get(text.Ocpp201ServerStarted), assets.Info)
 
 			o.st = time.Now()
 		}
@@ -112,7 +116,7 @@ func (o *Ocpp201) Start(c chan common.Channel, q chan bool) {
 		case <-q:
 			o.s.Stop()
 
-			o.logger.log(lm, o.L.Get(text.Ocpp201ServerStopped), assets.Info)
+			o.logger.Log(lm, o.L.Get(text.Ocpp201ServerStopped), assets.Info)
 
 			close(q)
 			close(c)

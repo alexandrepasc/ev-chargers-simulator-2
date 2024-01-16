@@ -30,6 +30,8 @@ func SetFlags() Flags {
 
 	var ss = common.DefSCPath
 
+	var ls = common.DefLogsPath
+
 	var l = common.DefLanguage
 
 	var ai = common.DefAPIAddr
@@ -51,6 +53,8 @@ func SetFlags() Flags {
 	flag.StringVar(&gs, "gs", common.DefGSPath, "General configuration folder, store the application general configurations")
 
 	flag.StringVar(&ss, "ss", common.DefSCPath, "Simulators configuration folder, store the simulators configurations")
+
+	flag.StringVar(&ls, "ls", common.DefLogsPath, "Folder to store the log files")
 
 	flag.StringVar(&l, "l", common.DefLanguage, "Language used by the application ["+strings.Join(translation.Translation{}.List(), ", ")+"]")
 
@@ -101,6 +105,14 @@ func SetFlags() Flags {
 		}
 
 		f.SCFolder = ss
+	}
+
+	if isFlagPassed("ls") {
+		if string(ls[len(ls)-1]) == "/" {
+			ls = ls[0 : len(ls)-1]
+		}
+
+		f.LogFolder = ls
 	}
 
 	if isFlagPassed("l") {
