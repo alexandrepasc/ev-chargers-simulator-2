@@ -84,6 +84,11 @@ func (s *Simulator) CreateSimConf(a *Asset) (ok bool, msg string, na *Asset) {
 		return false, s.L.Get(text.MissingModelError), &Asset{}
 	}
 
+	if a.LogToFile == nil {
+		var ltf = false
+		a.LogToFile = &ltf
+	}
+
 	var al = s.GetSimulators()
 
 	var nm = true
@@ -168,6 +173,11 @@ func (s *Simulator) UpdateSimConf(id uuid.UUID, a *Asset) (ok bool, msg string, 
 
 		if (a.TLS || a.BasicAuth) && a.Model.String() == "00000000-0000-0000-0000-000000000000" {
 			return false, s.L.Get(text.MissingModelError), http.StatusBadRequest, &Asset{}
+		}
+
+		if a.LogToFile == nil {
+			var ltf = false
+			a.LogToFile = &ltf
 		}
 
 		common.Log("UpdateSimConf").Info(s.L.Get(text.UpdateSimConfFile))

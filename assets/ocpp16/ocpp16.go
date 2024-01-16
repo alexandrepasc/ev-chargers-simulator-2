@@ -51,7 +51,7 @@ func (o *Ocpp16) Start(c chan common.Channel, q chan bool) {
 	o.lock.Lock()
 
 	o.logger = assets.Logging{
-		ToFile: true,
+		ToFile: *o.Asset.LogToFile,
 		File:   o.Log + "/" + time.Now().Format("02_01_2006T15_04_05") + "_" + o.Asset.Name,
 		Logger: logrus.New(),
 		L:      o.L,

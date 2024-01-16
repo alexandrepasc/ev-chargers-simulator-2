@@ -6,6 +6,7 @@ type Asset struct {
 	SimID           uuid.UUID     `json:"simId" validate:"required"`                                                                        // Simulator identifier
 	Name            string        `json:"name" validate:"required"`                                                                         // Simulator name
 	LogLevel        *string       `json:"logLevel,omitempty" validate:"omitempty,oneof=info error warn panic fatal debug"`                  // Log level of the simulator, the list of accepted values are info, error, warn, panic, fatal, debug
+	LogToFile       *bool         `json:"logToFile,omitempty" validate:"omitempty,boolean"`                                                 // If the simulator logs are stored into a file, if no value is set it will default to false
 	Type            AssetType     `json:"type" validate:"required,oneof=evc pm"`                                                            // Type of the asset that the configuration will be used to (evc, pm)
 	Protocol        Protocol      `json:"protocol" validate:"required,oneof=ocpp201 ocpp16 modbus"`                                         // Protocol used by the asset
 	TLS             bool          `json:"tls"`                                                                                              // Set if the asset will connect using TLS or not, the default is false (if yes model is required)

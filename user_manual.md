@@ -280,6 +280,7 @@ Now looking into the core of this application, the **Simulators**. There is on e
 
 - `name`: Simulator name
 - `logLevel`: Log level of the simulator, the list of accepted values are info, error, warn, panic, fatal, debug
+- `logToFile`: If the simulator logs are stored into a file, if no value is set it will default to false
 - `type`: Type of the asset that the configuration will be used to (evc, pm)
 - `protocol`: Protocol used by the asset
 - `tls`: Set if the asset will connect using TLS or not, the default is false (if true the model is required)
@@ -326,6 +327,8 @@ It will return the total number of number of existing *simulators* and their lis
         {
             "simId": "585e8e82-b296-49f7-aea7-f3478a0c3a51",
             "name": "sim1",
+			"logLevel": "error",
+			"logToFile": true,
             "type": "evc",
             "protocol": "ocpp16",
             "model": "00000000-0000-0000-0000-000000000000",
@@ -374,6 +377,8 @@ To create a new *simulator* use the same endpoint but with a new method and send
 POST http://{apiAddr}:{apiPort}/simulators
 {
     "name": "sim1",
+	"logLevel": "error",
+	"logToFile": true,
     "type": "evc",
     "protocol": "ocpp16",
     "model": "00000000-0000-0000-0000-000000000000",
@@ -425,6 +430,8 @@ To update a simulator use the following example, to update any of the properties
 PUT http://{apiAddr}:{apiPort}/simulators/{simulator-identifier-here}
 {
     "name": "sim1",
+	"logLevel": "error",
+	"logToFile": true,
     "type": "evc",
     "protocol": "ocpp16",
     "model": "00000000-0000-0000-0000-000000000000",
