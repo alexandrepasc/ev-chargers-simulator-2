@@ -30,7 +30,7 @@ func (o *Ocpp16) OnChangeAvailability(req *core.ChangeAvailabilityRequest) (res 
 		"type":      assets.Request,
 	}
 
-	o.logger.log(lm, req, assets.Info)
+	o.logger.Log(lm, req, assets.Info)
 
 	lm["sender"] = assets.CP
 	lm["type"] = assets.Response
@@ -38,7 +38,7 @@ func (o *Ocpp16) OnChangeAvailability(req *core.ChangeAvailabilityRequest) (res 
 	if o.bootSeq.BootStatus.(core.RegistrationStatus) != core.RegistrationStatusAccepted {
 		res = &core.ChangeAvailabilityConfirmation{Status: core.AvailabilityStatusRejected}
 
-		o.logger.log(lm, res, assets.Info)
+		o.logger.Log(lm, res, assets.Info)
 
 		// TODO: not sure if this is the correct response
 		return res, nil
@@ -46,7 +46,7 @@ func (o *Ocpp16) OnChangeAvailability(req *core.ChangeAvailabilityRequest) (res 
 
 	res = o.processChangeAvailability(req)
 
-	o.logger.log(lm, res, assets.Info)
+	o.logger.Log(lm, res, assets.Info)
 
 	return res, nil
 }
@@ -67,7 +67,7 @@ func (o *Ocpp16) OnGetConfiguration(req *core.GetConfigurationRequest) (res *cor
 		"type":      assets.Request,
 	}
 
-	o.logger.log(lm, req, assets.Info)
+	o.logger.Log(lm, req, assets.Info)
 
 	lm["sender"] = assets.CP
 	lm["type"] = assets.Response
@@ -75,7 +75,7 @@ func (o *Ocpp16) OnGetConfiguration(req *core.GetConfigurationRequest) (res *cor
 	if o.bootSeq.BootStatus.(core.RegistrationStatus) == core.RegistrationStatusRejected {
 		err = ocpp.NewError(ocppj.SecurityError, "", "")
 
-		o.logger.log(lm, err, assets.Error)
+		o.logger.Log(lm, err, assets.Error)
 
 		// TODO: not sure if this is the correct response
 		return nil, err
@@ -87,7 +87,7 @@ func (o *Ocpp16) OnGetConfiguration(req *core.GetConfigurationRequest) (res *cor
 
 	res.UnknownKey = u
 
-	o.logger.log(lm, res, assets.Info)
+	o.logger.Log(lm, res, assets.Info)
 
 	return res, nil
 }
@@ -106,7 +106,7 @@ func (o *Ocpp16) OnChangeConfiguration(req *core.ChangeConfigurationRequest) (re
 		"type":      assets.Request,
 	}
 
-	o.logger.log(lm, req, assets.Info)
+	o.logger.Log(lm, req, assets.Info)
 
 	lm["sender"] = assets.CP
 	lm["type"] = assets.Response
@@ -114,7 +114,7 @@ func (o *Ocpp16) OnChangeConfiguration(req *core.ChangeConfigurationRequest) (re
 	if o.bootSeq.BootStatus.(core.RegistrationStatus) == core.RegistrationStatusRejected {
 		err = ocpp.NewError(ocppj.SecurityError, "", "")
 
-		o.logger.log(lm, err, assets.Error)
+		o.logger.Log(lm, err, assets.Error)
 
 		// TODO: not sure if this is the correct response
 		return nil, err
@@ -122,7 +122,7 @@ func (o *Ocpp16) OnChangeConfiguration(req *core.ChangeConfigurationRequest) (re
 
 	res = &core.ChangeConfigurationConfirmation{Status: o.setConfiguration(req)}
 
-	o.logger.log(lm, res, assets.Info)
+	o.logger.Log(lm, res, assets.Info)
 
 	return res, nil
 }
@@ -141,7 +141,7 @@ func (o *Ocpp16) OnClearCache(req *core.ClearCacheRequest) (res *core.ClearCache
 		"type":      assets.Request,
 	}
 
-	o.logger.log(lm, req, assets.Info)
+	o.logger.Log(lm, req, assets.Info)
 
 	lm["sender"] = assets.CP
 	lm["type"] = assets.Response
@@ -149,7 +149,7 @@ func (o *Ocpp16) OnClearCache(req *core.ClearCacheRequest) (res *core.ClearCache
 	if o.bootSeq.BootStatus.(core.RegistrationStatus) != core.RegistrationStatusAccepted {
 		res = &core.ClearCacheConfirmation{Status: core.ClearCacheStatusRejected}
 
-		o.logger.log(lm, res, assets.Info)
+		o.logger.Log(lm, res, assets.Info)
 
 		// TODO: not sure if this is the correct response
 		return res, nil
@@ -160,7 +160,7 @@ func (o *Ocpp16) OnClearCache(req *core.ClearCacheRequest) (res *core.ClearCache
 
 	res = &core.ClearCacheConfirmation{Status: core.ClearCacheStatusAccepted}
 
-	o.logger.log(lm, res, assets.Info)
+	o.logger.Log(lm, res, assets.Info)
 
 	return res, nil
 }
@@ -178,7 +178,7 @@ func (o *Ocpp16) OnDataTransfer(req *core.DataTransferRequest) (res *core.DataTr
 		"type":      assets.Request,
 	}
 
-	o.logger.log(lm, req, assets.Info)
+	o.logger.Log(lm, req, assets.Info)
 
 	lm["sender"] = assets.CP
 	lm["type"] = assets.Response
@@ -186,7 +186,7 @@ func (o *Ocpp16) OnDataTransfer(req *core.DataTransferRequest) (res *core.DataTr
 	if o.bootSeq.BootStatus.(core.RegistrationStatus) != core.RegistrationStatusAccepted {
 		res = &core.DataTransferConfirmation{Status: core.DataTransferStatusRejected}
 
-		o.logger.log(lm, res, assets.Info)
+		o.logger.Log(lm, res, assets.Info)
 
 		// TODO: not sure if this is the correct response
 		return res, nil
@@ -198,7 +198,7 @@ func (o *Ocpp16) OnDataTransfer(req *core.DataTransferRequest) (res *core.DataTr
 		res = &core.DataTransferConfirmation{Status: core.DataTransferStatusUnknownVendorId}
 	}
 
-	o.logger.log(lm, res, assets.Info)
+	o.logger.Log(lm, res, assets.Info)
 
 	return res, nil
 }
@@ -217,7 +217,7 @@ func (o *Ocpp16) OnRemoteStartTransaction(req *core.RemoteStartTransactionReques
 		"type":      assets.Request,
 	}
 
-	o.logger.log(lm, req, assets.Info)
+	o.logger.Log(lm, req, assets.Info)
 
 	lm["sender"] = assets.CP
 	lm["type"] = assets.Response
@@ -225,7 +225,7 @@ func (o *Ocpp16) OnRemoteStartTransaction(req *core.RemoteStartTransactionReques
 	if o.bootSeq.BootStatus.(core.RegistrationStatus) != core.RegistrationStatusAccepted {
 		res = &core.RemoteStartTransactionConfirmation{Status: types.RemoteStartStopStatusRejected}
 
-		o.logger.log(lm, res, assets.Info)
+		o.logger.Log(lm, res, assets.Info)
 
 		// TODO: not sure if this is the correct response
 		return res, nil
@@ -239,7 +239,7 @@ func (o *Ocpp16) OnRemoteStartTransaction(req *core.RemoteStartTransactionReques
 		go o.processRemoteStartTransaction(req)
 	}
 
-	o.logger.log(lm, res, assets.Info)
+	o.logger.Log(lm, res, assets.Info)
 
 	return res, nil
 }
@@ -258,7 +258,7 @@ func (o *Ocpp16) OnRemoteStopTransaction(req *core.RemoteStopTransactionRequest)
 		"type":      assets.Request,
 	}
 
-	o.logger.log(lm, req, assets.Info)
+	o.logger.Log(lm, req, assets.Info)
 
 	lm["sender"] = assets.CP
 	lm["type"] = assets.Response
@@ -266,7 +266,7 @@ func (o *Ocpp16) OnRemoteStopTransaction(req *core.RemoteStopTransactionRequest)
 	if o.bootSeq.BootStatus.(core.RegistrationStatus) != core.RegistrationStatusAccepted {
 		res = &core.RemoteStopTransactionConfirmation{Status: types.RemoteStartStopStatusRejected}
 
-		o.logger.log(lm, res, assets.Info)
+		o.logger.Log(lm, res, assets.Info)
 
 		// TODO: not sure if this is the correct response
 		return res, nil
@@ -274,7 +274,7 @@ func (o *Ocpp16) OnRemoteStopTransaction(req *core.RemoteStopTransactionRequest)
 
 	res = o.processRemoteStopTransaction(req)
 
-	o.logger.log(lm, res, assets.Info)
+	o.logger.Log(lm, res, assets.Info)
 
 	return res, nil
 }
@@ -293,7 +293,7 @@ func (o *Ocpp16) OnReset(req *core.ResetRequest) (res *core.ResetConfirmation, e
 		"type":      assets.Request,
 	}
 
-	o.logger.log(lm, req, assets.Info)
+	o.logger.Log(lm, req, assets.Info)
 
 	lm["sender"] = assets.CP
 	lm["type"] = assets.Response
@@ -302,7 +302,7 @@ func (o *Ocpp16) OnReset(req *core.ResetRequest) (res *core.ResetConfirmation, e
 	if o.bootSeq.BootStatus.(core.RegistrationStatus) != core.RegistrationStatusAccepted {
 		res = &core.ResetConfirmation{Status: core.ResetStatusRejected}
 
-		o.logger.log(lm, res, assets.Info)
+		o.logger.Log(lm, res, assets.Info)
 
 		// TODO: not sure if this is the correct response
 		return res, nil
@@ -310,7 +310,7 @@ func (o *Ocpp16) OnReset(req *core.ResetRequest) (res *core.ResetConfirmation, e
 
 	res = o.processResetRequest(req)
 
-	o.logger.log(lm, res, assets.Info)
+	o.logger.Log(lm, res, assets.Info)
 
 	return res, nil
 }
@@ -330,7 +330,7 @@ func (o *Ocpp16) OnUnlockConnector(req *core.UnlockConnectorRequest) (res *core.
 		"type":      assets.Request,
 	}
 
-	o.logger.log(lm, req, assets.Info)
+	o.logger.Log(lm, req, assets.Info)
 
 	lm["sender"] = assets.CP
 	lm["type"] = assets.Response
@@ -338,7 +338,7 @@ func (o *Ocpp16) OnUnlockConnector(req *core.UnlockConnectorRequest) (res *core.
 	if o.bootSeq.BootStatus.(core.RegistrationStatus) != core.RegistrationStatusAccepted {
 		err = ocpp.NewError(ocppj.SecurityError, "", "")
 
-		o.logger.log(lm, err, assets.Error)
+		o.logger.Log(lm, err, assets.Error)
 
 		// TODO: not sure if this is the correct response
 		return nil, err
@@ -355,7 +355,7 @@ func (o *Ocpp16) OnUnlockConnector(req *core.UnlockConnectorRequest) (res *core.
 		res = &core.UnlockConnectorConfirmation{Status: core.UnlockStatusUnlocked}
 	}
 
-	o.logger.log(lm, res, assets.Info)
+	o.logger.Log(lm, res, assets.Info)
 
 	return res, nil
 }
@@ -373,7 +373,7 @@ func (o *Ocpp16) OnGetLocalListVersion(req *localauth.GetLocalListVersionRequest
 		"type":      assets.Request,
 	}
 
-	o.logger.log(lm, req, assets.Info)
+	o.logger.Log(lm, req, assets.Info)
 
 	lm["sender"] = assets.CP
 	lm["type"] = assets.Response
@@ -381,7 +381,7 @@ func (o *Ocpp16) OnGetLocalListVersion(req *localauth.GetLocalListVersionRequest
 	if o.bootSeq.BootStatus.(core.RegistrationStatus) != core.RegistrationStatusAccepted {
 		err = ocpp.NewError(ocppj.SecurityError, "", "")
 
-		o.logger.log(lm, err, assets.Error)
+		o.logger.Log(lm, err, assets.Error)
 
 		// TODO: not sure if this is the correct response
 		return nil, err
@@ -389,7 +389,7 @@ func (o *Ocpp16) OnGetLocalListVersion(req *localauth.GetLocalListVersionRequest
 
 	res = &localauth.GetLocalListVersionConfirmation{ListVersion: int(o.localAuth.version)}
 
-	o.logger.log(lm, res, assets.Info)
+	o.logger.Log(lm, res, assets.Info)
 
 	return res, nil
 }
@@ -408,7 +408,7 @@ func (o *Ocpp16) OnSendLocalList(req *localauth.SendLocalListRequest) (res *loca
 		"type":      assets.Request,
 	}
 
-	o.logger.log(lm, req, assets.Info)
+	o.logger.Log(lm, req, assets.Info)
 
 	lm["sender"] = assets.CP
 	lm["type"] = assets.Response
@@ -416,7 +416,7 @@ func (o *Ocpp16) OnSendLocalList(req *localauth.SendLocalListRequest) (res *loca
 	if o.bootSeq.BootStatus.(core.RegistrationStatus) != core.RegistrationStatusAccepted {
 		res = &localauth.SendLocalListConfirmation{Status: localauth.UpdateStatusFailed}
 
-		o.logger.log(lm, res, assets.Info)
+		o.logger.Log(lm, res, assets.Info)
 
 		// TODO: not sure if this is the correct response
 		return res, nil
@@ -428,7 +428,7 @@ func (o *Ocpp16) OnSendLocalList(req *localauth.SendLocalListRequest) (res *loca
 		res = &localauth.SendLocalListConfirmation{Status: localauth.UpdateStatusNotSupported}
 	}
 
-	o.logger.log(lm, res, assets.Info)
+	o.logger.Log(lm, res, assets.Info)
 
 	return res, nil
 }
@@ -449,7 +449,7 @@ func (o *Ocpp16) OnTriggerMessage(req *remotetrigger.TriggerMessageRequest) (res
 		"type":      assets.Request,
 	}
 
-	o.logger.log(lm, req, assets.Info)
+	o.logger.Log(lm, req, assets.Info)
 
 	lm["sender"] = assets.CP
 	lm["type"] = assets.Response
@@ -465,7 +465,7 @@ func (o *Ocpp16) OnTriggerMessage(req *remotetrigger.TriggerMessageRequest) (res
 		if o.bootSeq.BootStatus.(core.RegistrationStatus) == core.RegistrationStatusRejected {
 			res = &remotetrigger.TriggerMessageConfirmation{Status: remotetrigger.TriggerMessageStatusRejected}
 
-			o.logger.log(lm, res, assets.Info)
+			o.logger.Log(lm, res, assets.Info)
 
 			// TODO: not sure if this is the correct response
 			return res, nil
@@ -477,7 +477,7 @@ func (o *Ocpp16) OnTriggerMessage(req *remotetrigger.TriggerMessageRequest) (res
 		if o.bootSeq.BootStatus.(core.RegistrationStatus) == core.RegistrationStatusRejected {
 			res = &remotetrigger.TriggerMessageConfirmation{Status: remotetrigger.TriggerMessageStatusRejected}
 
-			o.logger.log(lm, res, assets.Info)
+			o.logger.Log(lm, res, assets.Info)
 
 			// TODO: not sure if this is the correct response
 			return res, nil
@@ -489,7 +489,7 @@ func (o *Ocpp16) OnTriggerMessage(req *remotetrigger.TriggerMessageRequest) (res
 		if o.bootSeq.BootStatus.(core.RegistrationStatus) == core.RegistrationStatusRejected {
 			res = &remotetrigger.TriggerMessageConfirmation{Status: remotetrigger.TriggerMessageStatusRejected}
 
-			o.logger.log(lm, res, assets.Info)
+			o.logger.Log(lm, res, assets.Info)
 
 			// TODO: not sure if this is the correct response
 			return res, nil
@@ -503,7 +503,7 @@ func (o *Ocpp16) OnTriggerMessage(req *remotetrigger.TriggerMessageRequest) (res
 		if o.bootSeq.BootStatus.(core.RegistrationStatus) == core.RegistrationStatusRejected {
 			res = &remotetrigger.TriggerMessageConfirmation{Status: remotetrigger.TriggerMessageStatusRejected}
 
-			o.logger.log(lm, res, assets.Info)
+			o.logger.Log(lm, res, assets.Info)
 
 			// TODO: not sure if this is the correct response
 			return res, nil
@@ -524,7 +524,7 @@ func (o *Ocpp16) OnTriggerMessage(req *remotetrigger.TriggerMessageRequest) (res
 		if o.bootSeq.BootStatus.(core.RegistrationStatus) == core.RegistrationStatusRejected {
 			res = &remotetrigger.TriggerMessageConfirmation{Status: remotetrigger.TriggerMessageStatusRejected}
 
-			o.logger.log(lm, res, assets.Info)
+			o.logger.Log(lm, res, assets.Info)
 
 			// TODO: not sure if this is the correct response
 			return res, nil
@@ -545,7 +545,7 @@ func (o *Ocpp16) OnTriggerMessage(req *remotetrigger.TriggerMessageRequest) (res
 		res = &remotetrigger.TriggerMessageConfirmation{Status: remotetrigger.TriggerMessageStatusRejected}
 	}
 
-	o.logger.log(lm, res, assets.Info)
+	o.logger.Log(lm, res, assets.Info)
 
 	return res, nil
 }

@@ -20,7 +20,7 @@ import (
 
 type Ocpp16 struct {
 	lock          sync.RWMutex                     // Lock goroutine
-	logger        logging                          // Logging
+	logger        assets.Logging                   // Logging
 	L             translation.Translation          // translation
 	Timeout       int64                            // Connection timeout
 	CSAddr        string                           // Central system ip address
@@ -49,20 +49,20 @@ type Ocpp16 struct {
 func (o *Ocpp16) Start(c chan common.Channel, q chan bool) {
 	o.lock.Lock()
 
-	o.logger = logging{
-		toFile: false,
-		file:   common.DefGSPath,
-		logger: logrus.New(),
-		l:      o.L,
+	o.logger = assets.Logging{
+		ToFile: false,
+		File:   common.DefGSPath,
+		Logger: logrus.New(),
+		L:      o.L,
 	}
 
 	if o.Asset.LogLevel != nil {
-		o.logger.level = assets.TranslateLogLevels(*o.Asset.LogLevel)
+		o.logger.Level = assets.TranslateLogLevels(*o.Asset.LogLevel)
 	} else {
-		o.logger.level = logrus.ErrorLevel
+		o.logger.Level = logrus.ErrorLevel
 	}
 
-	o.logger.logger.SetFormatter(&logrus.TextFormatter{FullTimestamp: true})
+	o.logger.Logger.SetFormatter(&logrus.TextFormatter{FullTimestamp: true})
 
 	var lm = map[string]string{
 		"protocol":  string(o.Asset.Protocol),
@@ -74,7 +74,7 @@ func (o *Ocpp16) Start(c chan common.Channel, q chan bool) {
 
 	for {
 		if o.disconnectSeq {
-			o.logger.log(lm, o.L.Get(text.Ocpp16ServerStopped), assets.Info)
+			o.logger.Log(lm, o.L.Get(text.Ocpp16ServerStopped), assets.Info)
 
 			o.s.Stop()
 
@@ -87,13 +87,13 @@ func (o *Ocpp16) Start(c chan common.Channel, q chan bool) {
 			sErr := o.s.Start(assets.GetConnProtocol(o.Asset.TLS) + o.CSAddr + ":" + o.CSPort)
 
 			if sErr != nil {
-				o.logger.log(lm, sErr, assets.Error)
+				o.logger.Log(lm, sErr, assets.Error)
 				return
 			}
 
 			o.connectSeq = false
 
-			o.logger.log(lm, o.L.Get(text.Ocpp16ServerStarted), assets.Info)
+			o.logger.Log(lm, o.L.Get(text.Ocpp16ServerStarted), assets.Info)
 
 			o.st = time.Now()
 		}
@@ -119,7 +119,7 @@ func (o *Ocpp16) Start(c chan common.Channel, q chan bool) {
 
 		select {
 		case <-q:
-			o.logger.log(lm, o.L.Get(text.Ocpp16ServerStopped), assets.Info)
+			o.logger.Log(lm, o.L.Get(text.Ocpp16ServerStopped), assets.Info)
 
 			o.s.Stop()
 
