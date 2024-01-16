@@ -39,20 +39,20 @@ func Configs(fl *flags.Flags) Model {
 }
 
 /*
-Read the configs file, get the simulators configuration path and set that to the SimPathModel. The
-model will be returned to the api. This will handle the errors and return them to the api module.
-It returns false (boolean) in case something fails, the message (string) with the error message,
-the http status code (int), and the response model.
+Read the configs file, get the simulators configuration and logs path and set that to the
+PathsModel. The model will be returned to the api. This will handle the errors and return them to
+the api module. It returns false (boolean) in case something fails, the message (string) with the
+error message, the http status code (int), and the response model.
 
 t	-	The translation structure with the language defined (translation.Translation)
 */
-func GetConfigsSimPath(t translation.Translation) (ok bool, msg string, code int, s *SimPathModel) {
+func GetConfigPaths(t translation.Translation) (ok bool, msg string, code int, s *PathsModel) {
 	var p = common.GetThePath(configFile)
 
 	var b, rErr = os.ReadFile(p)
 
 	if rErr != nil {
-		common.Log("GetConfigsSimPath").Error(rErr)
+		common.Log("GetConfigPaths").Error(rErr)
 		return false, t.Get(text.ConfigsErrorRead), http.StatusInternalServerError, nil
 	}
 
@@ -61,35 +61,36 @@ func GetConfigsSimPath(t translation.Translation) (ok bool, msg string, code int
 	var mErr = json.Unmarshal(b, &m)
 
 	if mErr != nil {
-		common.Log("GetConfigsSimPath").Error(mErr)
+		common.Log("GetConfigPaths").Error(mErr)
 		return false, t.Get(text.ConfigsErrorRead), http.StatusInternalServerError, nil
 	}
 
-	s = &SimPathModel{
+	s = &PathsModel{
 		SimulatorsConfigFolder: m.SimulatorsConfigFolder,
+		LoggingConfigFolder:    m.LogsConfigFolder,
 	}
 
 	return true, "", http.StatusOK, s
 }
 
 /*
-Update the configuration file with the new simulators path, reads the existing configs file
+Update the configuration file with the new simulators and logs path, reads the existing configs file
 update the model with the new value, write the file with the updated information, and returns
-the status code and the model in case no error was detected. In case ocurres an error it will
+the status code and the model in case no error was detected. In case occurred an error it will
 return false (boolean), the error message (string), the status code for the error (int), and
-the model as nil (*SimPathModel).
+the model as nil (*PathsModel).
 
-ns	-	The information sent by the user using the api (*SimPathModel)
+ns	-	The information sent by the user using the api (*PathsModel)
 
 t	-	The translation structure with the language defined (translation.Translation)
 */
-func UpdateConfigsSimPath(ns *SimPathModel, t translation.Translation) (ok bool, msg string, code int, s *SimPathModel) {
+func UpdateConfigPaths(ns *PathsModel, t translation.Translation) (ok bool, msg string, code int, s *PathsModel) {
 	var p = common.GetThePath(configFile)
 
 	var vErr = validator.New().Struct(ns)
 
 	if vErr != nil {
-		common.Log("UpdateConfigsSimPath").Error(vErr)
+		common.Log("UpdateConfigPaths").Error(vErr)
 		return false, vErr.Error(), http.StatusBadRequest, nil
 	}
 
@@ -97,7 +98,7 @@ func UpdateConfigsSimPath(ns *SimPathModel, t translation.Translation) (ok bool,
 	var rb, rErr = os.ReadFile(p)
 
 	if rErr != nil {
-		common.Log("UpdateConfigsSimPath").Error(rErr)
+		common.Log("UpdateConfigPaths").Error(rErr)
 		return false, t.Get(text.ConfigsErrorRead), http.StatusInternalServerError, nil
 	}
 
@@ -106,7 +107,7 @@ func UpdateConfigsSimPath(ns *SimPathModel, t translation.Translation) (ok bool,
 	var mErr = json.Unmarshal(rb, &m)
 
 	if mErr != nil {
-		common.Log("UpdateConfigsSimPath").Error(mErr)
+		common.Log("UpdateConfigPaths").Error(mErr)
 		return false, t.Get(text.ConfigsErrorRead), http.StatusInternalServerError, nil
 	}
 
@@ -114,12 +115,17 @@ func UpdateConfigsSimPath(ns *SimPathModel, t translation.Translation) (ok bool,
 		ns.SimulatorsConfigFolder = ns.SimulatorsConfigFolder[0 : len(ns.SimulatorsConfigFolder)-1]
 	}
 
+	if string(ns.LoggingConfigFolder[len(ns.LoggingConfigFolder)-1]) == "/" {
+		ns.LoggingConfigFolder = ns.LoggingConfigFolder[0 : len(ns.LoggingConfigFolder)-1]
+	}
+
 	m.SimulatorsConfigFolder = ns.SimulatorsConfigFolder
+	m.LogsConfigFolder = ns.LoggingConfigFolder
 
 	var wb, miErr = json.MarshalIndent(m, "", " ")
 
 	if miErr != nil {
-		common.Log("UpdateConfigsSimPath").Error(miErr)
+		common.Log("UpdateConfigPaths").Error(miErr)
 		return false, t.Get(text.ConfigsErrorUpdate), http.StatusInternalServerError, nil
 	}
 
@@ -127,12 +133,13 @@ func UpdateConfigsSimPath(ns *SimPathModel, t translation.Translation) (ok bool,
 	var wErr = os.WriteFile(p, wb, fs.FileMode(common.FilePermissions))
 
 	if wErr != nil {
-		common.Log("UpdateConfigsSimPath").Error(wErr)
+		common.Log("UpdateConfigPaths").Error(wErr)
 		return false, t.Get(text.ConfigsErrorUpdate), http.StatusInternalServerError, nil
 	}
 
-	s = &SimPathModel{
+	s = &PathsModel{
 		SimulatorsConfigFolder: m.SimulatorsConfigFolder,
+		LoggingConfigFolder:    m.LogsConfigFolder,
 	}
 
 	return true, "", http.StatusOK, s
@@ -227,6 +234,7 @@ func updateNewConfigsFile(fl *flags.Flags, f string) Model {
 	var configs = Model{
 		GeneralConfigFolder:    common.DefGSPath,
 		SimulatorsConfigFolder: common.DefSCPath,
+		LogsConfigFolder:       common.DefLogsPath,
 	}
 
 	if fl.GCFolder != "" {
@@ -235,6 +243,10 @@ func updateNewConfigsFile(fl *flags.Flags, f string) Model {
 
 	if fl.SCFolder != "" {
 		configs.SimulatorsConfigFolder = fl.SCFolder
+	}
+
+	if fl.LogFolder != "" {
+		configs.LogsConfigFolder = fl.LogFolder
 	}
 
 	var b = marshalIndent(configs)
@@ -274,6 +286,12 @@ func updateConfigsFile(fl *flags.Flags, c Model, fp string) Model {
 		nc.SimulatorsConfigFolder = fl.SCFolder
 	} else {
 		nc.SimulatorsConfigFolder = c.SimulatorsConfigFolder
+	}
+
+	if fl.LogFolder != "" {
+		nc.LogsConfigFolder = fl.LogFolder
+	} else {
+		nc.LogsConfigFolder = c.LogsConfigFolder
 	}
 
 	var b = marshalIndent(nc)

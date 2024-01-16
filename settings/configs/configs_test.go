@@ -17,6 +17,7 @@ const (
 	file            string = "/configs.json"
 	generalFolder   string = "/general"
 	simulatorFolder string = "/simulator"
+	logsFolder      string = "/logs"
 )
 
 func TestConfigs(t *testing.T) {
@@ -33,6 +34,7 @@ func TestConfigs(t *testing.T) {
 	e := configs.Model{
 		GeneralConfigFolder:    common.DefGSPath,
 		SimulatorsConfigFolder: common.DefSCPath,
+		LogsConfigFolder:       common.DefLogsPath,
 	}
 
 	a := configs.Configs(&fl)
@@ -89,11 +91,13 @@ func configsNoFileWithFlags(t *testing.T) {
 		CSPort:      "",
 		GCFolder:    generalFolder,
 		SCFolder:    simulatorFolder,
+		LogFolder:   logsFolder,
 	}
 
 	e := configs.Model{
 		GeneralConfigFolder:    generalFolder,
 		SimulatorsConfigFolder: simulatorFolder,
+		LogsConfigFolder:       logsFolder,
 	}
 
 	a := configs.Configs(&fl)
@@ -118,11 +122,13 @@ func updateConfigsNoForce(t *testing.T) {
 		CSPort:      "",
 		GCFolder:    "",
 		SCFolder:    "",
+		LogFolder:   "",
 	}
 
 	e := configs.Model{
 		GeneralConfigFolder:    common.DefGSPath,
 		SimulatorsConfigFolder: common.DefSCPath,
+		LogsConfigFolder:       common.DefLogsPath,
 	}
 
 	configs.Configs(&fl)
@@ -151,12 +157,14 @@ func updateConfigsForce(t *testing.T) {
 	e := configs.Model{
 		GeneralConfigFolder:    generalFolder,
 		SimulatorsConfigFolder: simulatorFolder,
+		LogsConfigFolder:       logsFolder,
 	}
 
 	configs.Configs(&fl)
 
 	fl.GCFolder = generalFolder
 	fl.SCFolder = simulatorFolder
+	fl.LogFolder = logsFolder
 	fl.ForceUpdate = true
 
 	a := configs.Configs(&fl)
@@ -179,11 +187,11 @@ func getConfigsSimPath(t *testing.T) {
 
 	configs.Configs(&fl)
 
-	var e = configs.SimPathModel{
+	var e = configs.PathsModel{
 		SimulatorsConfigFolder: simulatorFolder,
 	}
 
-	var ok, msg, code, a = configs.GetConfigsSimPath(translation.Translation{L: translation.PtPt})
+	var ok, msg, code, a = configs.GetConfigPaths(translation.Translation{L: translation.PtPt})
 
 	assert.True(t, ok)
 
@@ -197,7 +205,7 @@ func getConfigsSimPath(t *testing.T) {
 func getConfigsSimPathFailRead(t *testing.T) {
 	t.Helper()
 
-	var ok, msg, code, a = configs.GetConfigsSimPath(translation.Translation{L: translation.PtPt})
+	var ok, msg, code, a = configs.GetConfigPaths(translation.Translation{L: translation.PtPt})
 
 	assert.False(t, ok)
 
@@ -223,11 +231,12 @@ func updateConfigsSimPath(t *testing.T) {
 
 	configs.Configs(&fl)
 
-	var e = configs.SimPathModel{
+	var e = configs.PathsModel{
 		SimulatorsConfigFolder: "/test",
+		LoggingConfigFolder:    "/logTest",
 	}
 
-	var ok, msg, code, a = configs.UpdateConfigsSimPath(&e, translation.Translation{L: translation.PtPt})
+	var ok, msg, code, a = configs.UpdateConfigPaths(&e, translation.Translation{L: translation.PtPt})
 
 	assert.True(t, ok)
 
@@ -237,7 +246,9 @@ func updateConfigsSimPath(t *testing.T) {
 
 	assert.Equal(t, e.SimulatorsConfigFolder, a.SimulatorsConfigFolder)
 
-	ok, msg, code, a = configs.GetConfigsSimPath(translation.Translation{L: translation.PtPt})
+	assert.Equal(t, e.LoggingConfigFolder, a.LoggingConfigFolder)
+
+	ok, msg, code, a = configs.GetConfigPaths(translation.Translation{L: translation.PtPt})
 
 	assert.True(t, ok)
 
@@ -263,23 +274,16 @@ func updateConfigsSimPathWithEndSlash(t *testing.T) {
 
 	configs.Configs(&fl)
 
-	var rb = configs.SimPathModel{
+	var rb = configs.PathsModel{
 		SimulatorsConfigFolder: "/test/",
+		LoggingConfigFolder:    "/log/",
 	}
 
-	const e = "/test"
+	const esc = "/test"
 
-	var ok, msg, code, a = configs.UpdateConfigsSimPath(&rb, translation.Translation{L: translation.PtPt})
+	const elp = "/log"
 
-	assert.True(t, ok)
-
-	assert.Empty(t, msg)
-
-	assert.Equal(t, 200, code)
-
-	assert.Equal(t, e, a.SimulatorsConfigFolder)
-
-	ok, msg, code, a = configs.GetConfigsSimPath(translation.Translation{L: translation.PtPt})
+	var ok, msg, code, a = configs.UpdateConfigPaths(&rb, translation.Translation{L: translation.PtPt})
 
 	assert.True(t, ok)
 
@@ -287,17 +291,32 @@ func updateConfigsSimPathWithEndSlash(t *testing.T) {
 
 	assert.Equal(t, 200, code)
 
-	assert.Equal(t, e, a.SimulatorsConfigFolder)
+	assert.Equal(t, esc, a.SimulatorsConfigFolder)
+
+	assert.Equal(t, elp, a.LoggingConfigFolder)
+
+	ok, msg, code, a = configs.GetConfigPaths(translation.Translation{L: translation.PtPt})
+
+	assert.True(t, ok)
+
+	assert.Empty(t, msg)
+
+	assert.Equal(t, 200, code)
+
+	assert.Equal(t, esc, a.SimulatorsConfigFolder)
+
+	assert.Equal(t, elp, a.LoggingConfigFolder)
 }
 
 func updateConfigsSimPathFailRead(t *testing.T) {
 	t.Helper()
 
-	var e = configs.SimPathModel{
+	var e = configs.PathsModel{
 		SimulatorsConfigFolder: "/test",
+		LoggingConfigFolder:    "/log",
 	}
 
-	var ok, msg, code, a = configs.UpdateConfigsSimPath(&e, translation.Translation{L: translation.PtPt})
+	var ok, msg, code, a = configs.UpdateConfigPaths(&e, translation.Translation{L: translation.PtPt})
 
 	assert.False(t, ok)
 
