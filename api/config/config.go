@@ -26,8 +26,8 @@ func (cfg *Configs) Configs(r *gin.Engine) {
 	r.GET(generalEp, cfg.getGeneral)
 	r.PUT(generalEp, cfg.putGeneral)
 
-	r.GET(simulatorsEp, cfg.getSimulators)
-	r.PUT(simulatorsEp, cfg.putSimulators)
+	r.GET(configsEp, cfg.getSimulators)
+	r.PUT(configsEp, cfg.putSimulators)
 }
 
 /*
@@ -104,7 +104,7 @@ Sets the get simulators endpoint controller
 c	-	request  context (*gin.context)
 */
 func (cfg *Configs) getSimulators(c *gin.Context) {
-	var ok, msg, code, r = configs.GetConfigsSimPath(cfg.Lang)
+	var ok, msg, code, r = configs.GetConfigPaths(cfg.Lang)
 
 	if !ok {
 		common.Log("getSimulators").Error(msg)
@@ -129,7 +129,7 @@ Set the  put simulators endpoint controller.
 c	-	request  context (*gin.context)
 */
 func (cfg *Configs) putSimulators(c *gin.Context) {
-	var req = configs.SimPathModel{}
+	var req = configs.PathsModel{}
 
 	var err = c.BindJSON(&req)
 
@@ -147,7 +147,7 @@ func (cfg *Configs) putSimulators(c *gin.Context) {
 		return
 	}
 
-	var ok, msg, code, r = configs.UpdateConfigsSimPath(&req, cfg.Lang)
+	var ok, msg, code, r = configs.UpdateConfigPaths(&req, cfg.Lang)
 
 	if !ok {
 		common.Log("putSimulators").Error(msg)

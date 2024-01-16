@@ -20,7 +20,7 @@
 			- [By Flags](#by-flags)
 			- [By Restful API](#by-restful-api)
 				- [/configs/general](#configsgeneral)
-				- [/configs/simulators](#configssimulators)
+				- [/configs](#configs)
 		- [Setup Simulators](#setup-simulators)
 			- [Manage Models](#manage-models)
 				- [/simulators/models](#simulatorsmodels)
@@ -137,21 +137,22 @@ PUT http://{apiAddr}:{apiPort}/configs/general
     "apiPort": "8001"
 }
 ```
-**WARNING:** The update of any of the configurations and the update of the other endpoints needs to have the full body, could not be a partial udate. If only one field needs to be changed the full body needs to be sent.
+**WARNING:** The update of any of the configurations and the update of the other endpoints needs to have the full body, could not be a partial update. If only one field needs to be changed the full body needs to be sent.
 
-##### /configs/simulators
-In this endpoint we can change the path were the configuration files of the simulators will be located.
+##### /configs
+In this endpoint we can change the path were the configuration files of the simulators and the location to store the log files will be located.
 
-To get the current path we can use the:
+To get the current paths we can use the:
 ```
-GET http://{apiAddr}:{apiPort}/configs/simulators
+GET http://{apiAddr}:{apiPort}/configs
 ```
 
 To update as in the previous endpoint we can use the *JSON* response structure.
 ```
-PUT http://{apiAddr}:{apiPort}/configs/simulators
+PUT http://{apiAddr}:{apiPort}/configs
 {
     "simFolder": "/full/path/to/folder/"
+	"logFolder": "/full/path/to/log/folder/
 }
 ```
 
@@ -182,7 +183,7 @@ The **Models** are used to add configurations to the simulators, for example the
     - `imsi`: International Mobile Subscriber Identity
 - `modbus`: Modbus structure
   - `coils`: Coils mapping
-  - `discrete`: Descrete inputs mapping
+  - `discrete`: Discrete inputs mapping
   - `holdingRegisters`: Holding registers mapping
   - `inputRegisters`: Input registers mapping
     - `addresses`: List of modbus addresses mapping

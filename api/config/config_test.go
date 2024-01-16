@@ -26,7 +26,7 @@ type method string
 const (
 	defGSFolder string = "/settings"
 	ep          string = "/configs/general"
-	epS         string = "/configs/simulators"
+	epS         string = "/configs"
 	mGet        method = "GET"
 	mPut        method = "PUT"
 )
@@ -325,8 +325,9 @@ func TestGetSimulators(t *testing.T) {
 
 	configs.Configs(&fl)
 
-	var e = configs.SimPathModel{
+	var e = configs.PathsModel{
 		SimulatorsConfigFolder: common.DefSCPath,
+		LoggingConfigFolder:    common.DefLogsPath,
 	}
 
 	c.Configs(r)
@@ -337,7 +338,7 @@ func TestGetSimulators(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	a := configs.SimPathModel{}
+	a := configs.PathsModel{}
 	json.Unmarshal(w.Body.Bytes(), &a) //nolint:errcheck // because test
 
 	assert.Equal(t, e.SimulatorsConfigFolder, a.SimulatorsConfigFolder)
@@ -384,8 +385,9 @@ func TestPutSimulators(t *testing.T) {
 
 	configs.Configs(&fl)
 
-	var e = configs.SimPathModel{
+	var e = configs.PathsModel{
 		SimulatorsConfigFolder: "/test",
+		LoggingConfigFolder:    "/log",
 	}
 
 	j, _ := json.Marshal(e)
@@ -399,10 +401,12 @@ func TestPutSimulators(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	a := configs.SimPathModel{}
+	a := configs.PathsModel{}
 	json.Unmarshal(w.Body.Bytes(), &a) //nolint:errcheck // because test
 
 	assert.Equal(t, e.SimulatorsConfigFolder, a.SimulatorsConfigFolder)
+
+	assert.Equal(t, e.LoggingConfigFolder, a.LoggingConfigFolder)
 
 	r2, w2, c2 := before(t)
 
@@ -412,10 +416,12 @@ func TestPutSimulators(t *testing.T) {
 
 	r2.ServeHTTP(w2, req2)
 
-	a2 := configs.SimPathModel{}
+	a2 := configs.PathsModel{}
 	json.Unmarshal(w.Body.Bytes(), &a2) //nolint:errcheck // because test
 
 	assert.Equal(t, e.SimulatorsConfigFolder, a2.SimulatorsConfigFolder)
+
+	assert.Equal(t, e.LoggingConfigFolder, a2.LoggingConfigFolder)
 
 	os.Remove(common.GetThePath("configs.json"))
 }
@@ -423,8 +429,9 @@ func TestPutSimulators(t *testing.T) {
 func TestPutSimulatorsNoFile(t *testing.T) {
 	r, w, c := before(t)
 
-	var reqB = configs.SimPathModel{
+	var reqB = configs.PathsModel{
 		SimulatorsConfigFolder: "/test",
+		LoggingConfigFolder:    "/log",
 	}
 
 	e := errors.ErroMsg{
@@ -467,7 +474,7 @@ func TestPutSimulatorsBadRequest(t *testing.T) {
 	configs.Configs(&fl)
 
 	e := errors.ErroMsg{
-		Message: "Key: 'SimPathModel.SimulatorsConfigFolder' Error:Field validation for 'SimulatorsConfigFolder' failed on the 'required' tag",
+		Message: "Key: 'PathsModel.SimulatorsConfigFolder' Error:Field validation for 'SimulatorsConfigFolder' failed on the 'required' tag\nKey: 'PathsModel.LoggingConfigFolder' Error:Field validation for 'LoggingConfigFolder' failed on the 'required' tag",
 	}
 
 	j, _ := json.Marshal(e)
