@@ -56,6 +56,8 @@ There are no installation file the application will do the necessary actions in 
 
 The app doesn't have any GUI but in the other hand has a **Restful API** that enables the user to control the application, and have some arguments that can be set during the execution of the app.
 
+**NOTE**: The folder that is set to store the log files, will only store the logs from the simulators execution. At the moment the base application is not storing any logs to file and there is not any way to do it.
+
 ### First Run Default Configurations
 The first time the application is executed, and without any arguments, it will generate the `configs.json` file, the `settings` folder and in it the `general.json` file, the `simConf` folder, and the `/simConf/models` folder. The previous files and folders are essential for the application to run and can't be moved or deleted. Some of this configurations are set using the default values defined in the application and can be changed on the first execution or during the usage of the application.
 
@@ -91,7 +93,7 @@ As described in the [Installation](#installation) there are some *command line* 
 
 After the *installation* process we can still use the *flags* to change the configurations, but to do it we need to use an extra one `-i`. This is the argument that triggers the application to save the new information.
 
-With this we can run the application and at the same time change the configurations and save them for the next execution. The next examples are the same the were written previously but with the `-i` *flag*, so the configurations are changed and saved.
+With this we can run the application and at the same time change the configurations and save them for the next execution. The next examples are the same that were written previously but with the `-i` *flag*, so the configurations are changed and saved.
 
 Change the **General configurations folder**:
 - `./ev-chargers-simulator-linux-amd64 -i -gs /full/path/to/the/location`
@@ -554,14 +556,16 @@ If the application is running will return the following body, in case it is not 
   -csp string
     	Central system port (default "49443")
   -gs string
-    	General configuration folder, store the application general configurations (default "/home/alex/Downloads/ev-chargers-simulator-linux-amd64/build/settings")
+    	General configuration folder, store the application general configurations (default "/full/path/to/execution/folder/settings")
   -i	Force the update of the configurations with the values in the flags
   -l string
     	Language used by the application [en-GB, pt-PT] (default "en-GB")
+  -ls string
+        Folder to store the log files (default "/full/path/to/execution/folder/logs")
   -s string
     	Simulator host ip address (default "84.5.7.64")
   -ss string
-    	Simulators configuration folder, store the simulators configurations (default "/home/alex/Downloads/ev-chargers-simulator-linux-amd64/build/simConf")
+    	Simulators configuration folder, store the simulators configurations (default "/full/path/to/execution/folder/simConf")
   -t int
     	Connection timeout (seconds) (default 70)
   -v	Return the current application version
