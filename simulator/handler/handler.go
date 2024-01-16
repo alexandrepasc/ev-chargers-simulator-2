@@ -20,8 +20,9 @@ import (
 
 type Handler struct {
 	L       translation.Translation // Translation language settings
+	Log     string                  // Path to store the log files
 	Al      []*simulator.Asset      // Assets list
-	Ml      []*model.Struct         // Ocpp models list
+	Ml      []*model.Struct         // Models list
 	Addr    string                  // Central system ip address
 	Port    string                  // Central system port
 	HostIP  string                  // Application host ip address
@@ -52,6 +53,7 @@ func (h *Handler) Start() []chan bool {
 		case simulator.Ocpp16:
 			var s = ocpp16.Ocpp16{
 				L:       h.L,
+				Log:     h.Log,
 				Timeout: h.Tout,
 				CSAddr:  h.Addr,
 				CSPort:  h.Port,

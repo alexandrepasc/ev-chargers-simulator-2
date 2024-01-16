@@ -22,6 +22,7 @@ type Ocpp16 struct {
 	lock          sync.RWMutex                     // Lock goroutine
 	logger        assets.Logging                   // Logging
 	L             translation.Translation          // translation
+	Log           string                           // Path to store the log files
 	Timeout       int64                            // Connection timeout
 	CSAddr        string                           // Central system ip address
 	CSPort        string                           // Central system port
@@ -50,8 +51,8 @@ func (o *Ocpp16) Start(c chan common.Channel, q chan bool) {
 	o.lock.Lock()
 
 	o.logger = assets.Logging{
-		ToFile: false,
-		File:   common.DefGSPath,
+		ToFile: true,
+		File:   o.Log + "/" + time.Now().Format("02_01_2006T15_04_05") + "_" + o.Asset.Name,
 		Logger: logrus.New(),
 		L:      o.L,
 	}

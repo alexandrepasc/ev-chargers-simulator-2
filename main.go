@@ -34,6 +34,7 @@ func main() {
 
 	h := handler.Handler{
 		L:      t,
+		Log:    c.LogsConfigFolder,
 		Al:     s.GetSimulators(),
 		Ml:     m.GetModels(),
 		Addr:   g.CSAddr,
