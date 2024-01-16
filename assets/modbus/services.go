@@ -22,7 +22,7 @@ func (m *Modbus) powerImportW() int {
 	var id, err = uuid.Parse("00000000-0000-0000-0000-000000000000")
 
 	if err != nil {
-		m.logger.log(lm, err, assets.Fatal)
+		m.logger.Log(lm, err, assets.Fatal)
 	}
 
 	for _, i := range *m.Info {
@@ -51,7 +51,7 @@ func (m *Modbus) powerImportKw() int {
 	var id, err = uuid.Parse("00000000-0000-0000-0000-000000000000")
 
 	if err != nil {
-		m.logger.log(lm, err, assets.Fatal)
+		m.logger.Log(lm, err, assets.Fatal)
 	}
 
 	for _, i := range *m.Info {
@@ -82,7 +82,7 @@ func (m *Modbus) importVa() int {
 	var id, err = uuid.Parse("00000000-0000-0000-0000-000000000000")
 
 	if err != nil {
-		m.logger.log(lm, err, assets.Fatal)
+		m.logger.Log(lm, err, assets.Fatal)
 	}
 
 	for _, i := range *m.Info {
@@ -111,7 +111,7 @@ func (m *Modbus) importKvA() int {
 	var id, err = uuid.Parse("00000000-0000-0000-0000-000000000000")
 
 	if err != nil {
-		m.logger.log(lm, err, assets.Fatal)
+		m.logger.Log(lm, err, assets.Fatal)
 	}
 
 	for _, i := range *m.Info {
@@ -156,7 +156,7 @@ func (m *Modbus) getHoldingRegistersAddressValue(reqAddr uint16) uint16 {
 		var av, errC = strconv.ParseInt(m.Mod.Modbus.HoldingRegisters.Addresses[int(reqAddr)], 10, 64)
 
 		if errC != nil {
-			m.logger.log(lm, errC, assets.Error)
+			m.logger.Log(lm, errC, assets.Error)
 
 			return 0
 		}
