@@ -124,7 +124,7 @@ func (o *Ocpp201) Start(c chan common.Channel, q chan bool) {
 			return
 
 		default:
-			channelComm(c, o.Asset.Evses, o.st, o.Asset.Name, o.Asset.SimID)
+			channelComm(c, o.Asset.Evses, o.Asset.Name, o.Asset.SimID)
 		}
 
 		time.Sleep(1 * time.Second)
@@ -184,9 +184,7 @@ n	-	The simulator name (string)
 
 i	-	Simulator identifier (uuid.UUID)
 */
-func channelComm(c chan common.Channel, e []simulator.Evse, st time.Time, n string, i uuid.UUID) {
-	var tp = assets.CalculateCPPower(e)
-
+func channelComm(c chan common.Channel, e []simulator.Evse, n string, i uuid.UUID) {
 	// TODO: the way to find the power factor is not done correctly
 	var pf int64
 
@@ -200,11 +198,19 @@ func channelComm(c chan common.Channel, e []simulator.Evse, st time.Time, n stri
 		}
 	}
 
+	var te float64
+
+	for evi, ev := range e {
+		for ci := range ev.Connectors {
+			te += e[evi].Connectors[ci].Energy
+		}
+	}
+
 	c <- common.Channel{
 		Name:        n,
 		UUID:        i,
 		Power:       assets.CalculateInstantCPPower(e),
 		PowerFactor: pf,
-		Energy:      assets.CalculateCPEnergy(tp, st),
+		Energy:      te,
 	}
 }
