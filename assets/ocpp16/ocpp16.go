@@ -187,8 +187,6 @@ c	-	Communication channel (chan common.Channel)
 
 e	-	Simulator evses list ([]simulator.Evse)
 
-st	-	The start simulator timestamp (time.Time)
-
 n	-	The simulator name (string)
 
 i	-	Simulator identifier (uuid.UUID)
