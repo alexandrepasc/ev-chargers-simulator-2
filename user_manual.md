@@ -2,7 +2,7 @@
 
 |         |    Version   |
 | ------- | ------------ |
-| Product | **v0.22.13** |
+| Product | **v0.22.14** |
 | Manual  | **Rev1**     |
 
 <div class="page"/>
@@ -641,6 +641,10 @@ If the application is running will return the following body, in case it is not 
 
 ### Modbus Keys
 - `powerImportW`: Calculate the power import and return it in W
-- `powerImportK`: Calculate the power import and return it in kW
+- `powerImportKw`: Calculate the power import and return it in kW
 - `importVa`: Calculate the voltage ampere import and return it in VA
 - `importKvA`: Calculate the voltage ampere import and return it in kVA
+- `totalCurrentA`: Calculate the total current from the simulators and returns it in A
+- `totalCurrentKa`: Calculate the total current from the simulators and returns it in kA
+- `currentPerPhaseA`: Calculate the current per phase from the total current and return it in A
+- `currentPerPhaseKa`: Calculate the current per phase from the total current and return it in kA

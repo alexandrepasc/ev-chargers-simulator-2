@@ -103,6 +103,7 @@ PM type and will have all the logic for this asset type.
 
 c	-	List of channels from the other assets ([]chan common.Channel)
 */
+// TODO: there are some cases when the stop ep is called and the cycle tries to access some information of a closed channel and it is crashing the application
 func (m *Modbus) pmCycle(c []chan common.Channel) {
 	for i := range c {
 		select {
@@ -116,6 +117,7 @@ func (m *Modbus) pmCycle(c []chan common.Channel) {
 				Power:       msg.Power,
 				PowerFactor: msg.PowerFactor,
 				Energy:      msg.Energy,
+				Current:     msg.Current,
 			}
 
 			(*m.Info)[i] = aux

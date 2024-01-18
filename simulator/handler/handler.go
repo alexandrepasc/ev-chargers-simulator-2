@@ -195,6 +195,7 @@ func (h *Handler) receiver(cl []chan common.Channel, s chan bool) {
 					Power:       msg.Power,
 					PowerFactor: msg.PowerFactor,
 					Energy:      msg.Energy,
+					Current:     msg.Current,
 				}
 
 				fmt.Println(msg)

@@ -9,4 +9,5 @@ type DataInfo struct {
 	Power       float64     // Charge point consumption power
 	PowerFactor int64       // Power factor
 	Energy      float64     // Charge point energy
+	Current     float64     // Charge point current
 }

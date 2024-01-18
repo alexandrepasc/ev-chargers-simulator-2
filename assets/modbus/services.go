@@ -1,6 +1,7 @@
 package modbus
 
 import (
+	"math"
 	"strconv"
 
 	"github.com/alexandrepasc/ev-chargers-simulator-2/assets"
@@ -121,6 +122,130 @@ func (m *Modbus) importKvA() int {
 
 		t += (i.Power / conversion) / (float64(i.PowerFactor) / conversion)
 	}
+
+	return int(t)
+}
+
+/*
+Calculate the total current from the simulators and returns it in A (int)
+*/
+func (m *Modbus) totalCurrentA() int {
+	var lm = map[string]string{
+		"protocol":  string(m.Asset.Protocol),
+		"function":  "totalCurrentA",
+		"simulator": m.Asset.Name,
+	}
+
+	var t float64
+
+	var id, err = uuid.Parse("00000000-0000-0000-0000-000000000000")
+
+	if err != nil {
+		m.logger.Log(lm, err, assets.Fatal)
+	}
+
+	for _, i := range *m.Info {
+		if i.UUID == id {
+			continue
+		}
+
+		t += i.Current
+	}
+
+	return int(t)
+}
+
+/*
+Calculate the total current from the simulators and returns it in kA (int)
+*/
+func (m *Modbus) totalCurrentKa() int {
+	var lm = map[string]string{
+		"protocol":  string(m.Asset.Protocol),
+		"function":  "totalCurrentKa",
+		"simulator": m.Asset.Name,
+	}
+
+	var t float64
+
+	var id, err = uuid.Parse("00000000-0000-0000-0000-000000000000")
+
+	if err != nil {
+		m.logger.Log(lm, err, assets.Fatal)
+	}
+
+	for _, i := range *m.Info {
+		if i.UUID == id {
+			continue
+		}
+
+		t += i.Current
+	}
+
+	t /= conversion
+
+	return int(t)
+}
+
+/*
+Calculate the current per phase from the total current and return it in A (int)
+*/
+func (m *Modbus) currentPerPhaseA() int {
+	var lm = map[string]string{
+		"protocol":  string(m.Asset.Protocol),
+		"function":  "currentPerPhaseA",
+		"simulator": m.Asset.Name,
+	}
+
+	var t, tt float64
+
+	var id, err = uuid.Parse("00000000-0000-0000-0000-000000000000")
+
+	if err != nil {
+		m.logger.Log(lm, err, assets.Fatal)
+	}
+
+	for _, i := range *m.Info {
+		if i.UUID == id {
+			continue
+		}
+
+		tt += i.Current
+	}
+
+	t = tt / math.Sqrt(sqrt)
+
+	return int(t)
+}
+
+/*
+Calculate the current per phase from the total current and return it in kA (int)
+*/
+func (m *Modbus) currentPerPhaseKa() int {
+	var lm = map[string]string{
+		"protocol":  string(m.Asset.Protocol),
+		"function":  "currentPerPhaseKa",
+		"simulator": m.Asset.Name,
+	}
+
+	var t, tt float64
+
+	var id, err = uuid.Parse("00000000-0000-0000-0000-000000000000")
+
+	if err != nil {
+		m.logger.Log(lm, err, assets.Fatal)
+	}
+
+	for _, i := range *m.Info {
+		if i.UUID == id {
+			continue
+		}
+
+		tt += i.Current
+	}
+
+	t = tt / math.Sqrt(sqrt)
+
+	t /= conversion
 
 	return int(t)
 }
