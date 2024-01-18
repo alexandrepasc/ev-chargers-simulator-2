@@ -49,6 +49,35 @@ func CalculateCurrent(p, pf, v, ph int64) float64 {
 }
 
 /*
+Call the calculate current function for all the evses and all the connectors, sums the values, and
+returns that value (float64).
+*/
+func CalculateCPTotalCurrent(evses []simulator.Evse, phn int64) (t float64) {
+	for ei, e := range evses {
+		for ci := range e.Connectors {
+			var v int64
+
+			for _, vi := range evses[ei].Connectors[ci].Data[evses[ei].Connectors[ci].DP.Position].Voltage {
+				if vi == 0 {
+					continue
+				}
+
+				v = vi
+			}
+
+			t += CalculateCurrent(
+				evses[ei].Connectors[ci].Data[evses[ei].Connectors[ci].DP.Position].Power,
+				evses[ei].Connectors[ci].Data[evses[ei].Connectors[ci].DP.Position].PowerFactor,
+				v,
+				phn,
+			)
+		}
+	}
+
+	return t
+}
+
+/*
 pp	-	Previous power stored in the connector (float64)
 
 cp	-	Current connector power (float64)

@@ -116,6 +116,7 @@ func (m *Modbus) pmCycle(c []chan common.Channel) {
 				Power:       msg.Power,
 				PowerFactor: msg.PowerFactor,
 				Energy:      msg.Energy,
+				Current:     msg.Current,
 			}
 
 			(*m.Info)[i] = aux
