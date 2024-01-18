@@ -126,6 +126,66 @@ func (m *Modbus) importKvA() int {
 }
 
 /*
+Calculate the total current from the simulators and returns it in A (int)
+*/
+func (m *Modbus) totalCurrentA() int {
+	var lm = map[string]string{
+		"protocol":  string(m.Asset.Protocol),
+		"function":  "totalCurrent",
+		"simulator": m.Asset.Name,
+	}
+
+	var t float64
+
+	var id, err = uuid.Parse("00000000-0000-0000-0000-000000000000")
+
+	if err != nil {
+		m.logger.Log(lm, err, assets.Fatal)
+	}
+
+	for _, i := range *m.Info {
+		if i.UUID == id {
+			continue
+		}
+
+		t += i.Current
+	}
+
+	return int(t)
+}
+
+/*
+Calculate the total current from the simulators and returns it in kA (int)
+*/
+func (m *Modbus) totalCurrentKa() int {
+	var lm = map[string]string{
+		"protocol":  string(m.Asset.Protocol),
+		"function":  "totalCurrent",
+		"simulator": m.Asset.Name,
+	}
+
+	var t float64
+
+	var id, err = uuid.Parse("00000000-0000-0000-0000-000000000000")
+
+	if err != nil {
+		m.logger.Log(lm, err, assets.Fatal)
+	}
+
+	for _, i := range *m.Info {
+		if i.UUID == id {
+			continue
+		}
+
+		t += i.Current
+	}
+
+	t /= conversion
+
+	return int(t)
+}
+
+/*
 Execute the logic to retrieve the value of the specified holding registers address. Will try to
 match the string in the models structure with the keys and if it match execute the function. In
 case there is no matching key will convert the string to integer. In each case will return the
