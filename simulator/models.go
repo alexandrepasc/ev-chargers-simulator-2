@@ -18,8 +18,9 @@ type Asset struct {
 	Phases          Phases        `json:"phases,omitempty" validate:"omitempty,oneof=1 3"`                                                  // Phases number
 	PhaseRotation   PhaseRotation `json:"phaseRotation,omitempty" validate:"omitempty,oneof=NotApplicable Unknown RST RTS SRT STR TRS TSR"` // The asset phase rotation, if the asset is DC the value should be NotApplicable
 	CurrentType     CurrentType   `json:"currentType,omitempty" validate:"omitempty,oneof=ac dc"`                                           // Type of current of the asset (AC or DC)
-	AuthorizeRemote bool          `json:"authorizeRemote" validate:"boolean"`                                                               // Configurataion AuthorizeRemoteTxRequests
+	AuthorizeRemote bool          `json:"authorizeRemote" validate:"boolean"`                                                               // Configuration AuthorizeRemoteTxRequests
 	AuthList        bool          `json:"authList" validate:"boolean"`                                                                      // Enable or disable authorization local list
+	LocalAuth       bool          `json:"localAuth" validate:"boolean"`                                                                     // Enable or disable LocalPreAuthorize configuration
 	Evses           []Evse        `json:"evses,omitempty" validate:"omitempty,required"`                                                    // List of evses that the asset has
 }
 

@@ -173,7 +173,7 @@ func (o *Ocpp16) setStartUpConfigurations() {
 	o.Conf["LocalPreAuthorize"] = core.ConfigurationKey{
 		Key:      o.Conf["LocalPreAuthorize"].Key,
 		Readonly: o.Conf["LocalPreAuthorize"].Readonly,
-		Value:    assets.GetStringPointer(strconv.FormatBool(assets.DefLocalPreAuthorize)),
+		Value:    assets.GetStringPointer(strconv.FormatBool(o.Asset.LocalAuth)),
 	}
 
 	o.tick = 0
@@ -391,7 +391,7 @@ func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionReq
 
 	var na = true
 
-	if assets.GetBoolFromString(*o.Conf["LocalPreAuthorize"].Value) {
+	if !assets.GetBoolFromString(*o.Conf["LocalPreAuthorize"].Value) {
 		if o.localAuth.version > 0 {
 			for _, a := range o.localAuth.list {
 				if a.IdTag == r.IdTag && a.IdTagInfo.Status == types.AuthorizationStatusAccepted {
