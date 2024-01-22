@@ -18,10 +18,10 @@ var config = map[string]core.ConfigurationKey{
 	// 	Readonly: false,
 	// },
 	// optional boolean
-	// "AuthorizationCacheEnabled": {
-	// 	Key:      "AuthorizationCacheEnabled",
-	// 	Readonly: false,
-	// },
+	"AuthorizationCacheEnabled": {
+		Key:      "AuthorizationCacheEnabled",
+		Readonly: false,
+	},
 	// TODO: required and can be readonly boolean, evaluate if we should create a config to set if is read or read and write
 	"AuthorizeRemoteTxRequests": {
 		Key:      "AuthorizeRemoteTxRequests",

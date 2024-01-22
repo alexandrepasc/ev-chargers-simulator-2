@@ -21,6 +21,7 @@ type Asset struct {
 	AuthorizeRemote bool          `json:"authorizeRemote" validate:"boolean"`                                                               // Configuration AuthorizeRemoteTxRequests
 	AuthList        bool          `json:"authList" validate:"boolean"`                                                                      // Enable or disable authorization local list
 	LocalAuth       bool          `json:"localAuth" validate:"boolean"`                                                                     // Enable or disable LocalPreAuthorize configuration
+	AuthCache       bool          `json:"authCache" validate:"boolean"`                                                                     // Enable or disable AuthorizationCacheEnabled configuration
 	Evses           []Evse        `json:"evses,omitempty" validate:"omitempty,required"`                                                    // List of evses that the asset has
 }
 

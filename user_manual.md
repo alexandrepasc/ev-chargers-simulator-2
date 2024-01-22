@@ -294,6 +294,8 @@ Now looking into the core of this application, the **Simulators**. There is on e
 - `currentType`: Type of current of the asset (ac or dc)
 - `authorizeRemote`: Configuration AuthorizeRemoteTxRequests
 - `authList`: Enable or disable authorization local list
+- `LocalAuth`: Enable or disable LocalPreAuthorize configuration
+- `AuthCache`: Enable or disable AuthorizationCacheEnabled configuration
 - `evses`: List of evses that the asset has
   - `id`: Evse identifier number
   - `connectors`: The list of connectors of the evse

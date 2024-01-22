@@ -62,6 +62,12 @@ func (o *Ocpp16) setStartUpConfigurations() {
 		Value:    assets.GetStringPointer(strconv.FormatBool(o.Asset.AuthorizeRemote)),
 	}
 
+	o.Conf["AuthorizationCacheEnabled"] = core.ConfigurationKey{
+		Key:      o.Conf["AuthorizationCacheEnabled"].Key,
+		Readonly: o.Conf["AuthorizationCacheEnabled"].Readonly,
+		Value:    assets.GetStringPointer(strconv.FormatBool(o.Asset.AuthCache)),
+	}
+
 	o.Conf["NumberOfConnectors"] = core.ConfigurationKey{
 		Key:      o.Conf["NumberOfConnectors"].Key,
 		Readonly: o.Conf["NumberOfConnectors"].Readonly,
@@ -306,6 +312,13 @@ func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionReq
 
 		o.logger.Log(lm2, err, assets.Fatal)
 	}
+
+	o.authCache = append(o.authCache, localauth.AuthorizationData{
+		IdTag: r.IdTag,
+		IdTagInfo: &types.IdTagInfo{
+			Status: types.AuthorizationStatusAccepted,
+		},
+	})
 
 	if !auth {
 		// TODO: the store of the charging profile should not be set at this point, since the validations if the session can be started are not done yet
