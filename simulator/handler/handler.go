@@ -153,16 +153,17 @@ func (h *Handler) GetStatus() Status {
 	var ai int
 
 	for i := range h.Info {
-		if pmi == &i {
+		if *pmi == i {
 			continue
 		}
 
 		var aux = Assets{
-			ID:     h.Info[i].UUID,
-			Name:   h.Info[i].Name,
-			State:  string(h.Info[i].Status),
-			Power:  h.Info[i].Power,
-			Energy: h.Info[i].Energy,
+			ID:      h.Info[i].UUID,
+			Name:    h.Info[i].Name,
+			State:   string(h.Info[i].Status),
+			Power:   h.Info[i].Power,
+			Energy:  h.Info[i].Energy,
+			Current: h.Info[i].Current,
 		}
 
 		a[ai] = aux
