@@ -43,8 +43,11 @@ func (o *Ocpp16) setStartUpConfigurations() {
 
 	o.heartbeatC = 0
 
-	o.logger.Log(map[string]string{"protocol": string(o.Asset.Protocol), "function": "setStartUpConfigurations", "simulator": o.Asset.Name},
-		o.L.Get(text.StartUpConfigurations), assets.Info)
+	o.logger.Log(map[string]string{
+		"protocol":  string(o.Asset.Protocol),
+		"function":  "setStartUpConfigurations",
+		"simulator": o.Asset.Name,
+	}, o.L.Get(text.StartUpConfigurations), assets.Info)
 
 	// This will load only the password since there is no information in the documentation regarding how to set the user in the cp
 	// TODO: do not think that this is correct another review to this should be made
@@ -313,13 +316,6 @@ func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionReq
 		o.logger.Log(lm2, err, assets.Fatal)
 	}
 
-	o.authCache = append(o.authCache, localauth.AuthorizationData{
-		IdTag: r.IdTag,
-		IdTagInfo: &types.IdTagInfo{
-			Status: types.AuthorizationStatusAccepted,
-		},
-	})
-
 	if !auth {
 		// TODO: the store of the charging profile should not be set at this point, since the validations if the session can be started are not done yet
 		o.chargeProfile = r.ChargingProfile
@@ -422,6 +418,21 @@ func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionReq
 				o.sendStatusNotification(&o.Asset.Evses[0].Connectors[i], &info, nil)
 
 				return
+			}
+
+			var v, vErr = strconv.ParseBool(*o.Conf["AuthorizationCacheEnabled"].Value)
+			if vErr != nil {
+				var lm2 = map[string]string{
+					"protocol":  string(o.Asset.Protocol),
+					"function":  "processRemoteStartTransaction",
+					"simulator": o.Asset.Name,
+				}
+
+				o.logger.Log(lm2, err, assets.Fatal)
+			}
+
+			if v {
+				o.authCache = handleAuthCacheList(o.authCache, localauth.AuthorizationData{IdTag: r.IdTag})
 			}
 		}
 	}
@@ -2183,4 +2194,71 @@ func getAlignedDataCurrent(e *simulator.Evse, ph int) float64 {
 	}
 
 	return cc
+}
+
+/*
+3.5.1. Authorization Cache
+Handles the logic to maintain the list of authorization cache when a new entry appear. The list
+has a max size and if it is reached there are some rules to handle the update to the list. It
+returns the updated authorization cache list updated or not ([]localauth.AuthorizationData).
+
+cl	-	Authorization cache list store in the simulator ([]localauth.AuthorizationData)
+
+ne	-	New authorization entry (localauth.AuthorizationData)
+*/
+func handleAuthCacheList(cl []localauth.AuthorizationData, ne localauth.AuthorizationData) []localauth.AuthorizationData {
+	var isNew = true
+
+	// look if the tag is already in the list and if so update it with the new information
+	for ci, c := range cl {
+		if c.IdTag != ne.IdTag {
+			continue
+		}
+
+		cl[ci].IdTagInfo.Status = ne.IdTagInfo.Status
+		cl[ci].IdTagInfo.ParentIdTag = ne.IdTagInfo.ParentIdTag
+		cl[ci].IdTagInfo.ExpiryDate = ne.IdTagInfo.ExpiryDate
+
+		isNew = false
+	}
+
+	// if the tag is not present in the list
+	if isNew {
+		// if there is no space in the list to add a new tag information
+		if len(cl) == assets.DefAuthCacheSize {
+			var rOld = true
+
+			// TODO: is missing the validation of the expiry date
+			for ci, c := range cl {
+				// if the auth status is accepted
+				if c.IdTagInfo.Status == types.AuthorizationStatusAccepted {
+					continue
+				}
+
+				// if the auth status is not accepted
+				var nSlice []localauth.AuthorizationData
+
+				nSlice = append(nSlice, cl[:ci]...)
+
+				nSlice = append(nSlice, cl[ci+1:]...)
+
+				cl = nSlice
+
+				rOld = false
+			}
+
+			// if needs to remove the older register
+			if rOld {
+				var newSlice = make([]localauth.AuthorizationData, assets.DefAuthCacheSize-1)
+
+				copy(newSlice, cl[1:assets.DefAuthCacheSize])
+
+				cl = newSlice
+			}
+		}
+
+		cl = append(cl, ne)
+	}
+
+	return cl
 }
