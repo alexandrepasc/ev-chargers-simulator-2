@@ -31,6 +31,9 @@ jobs:
       - name: Build MacOS AMD 64
         run: env GOOS=darwin GOARCH=amd64 go build -o ./ev-chargers-simulator-macos-amd64
 
+      - name: Build Windows AMD 64
+        run: env GOOS=windows GOARCH=amd64 go build -o ./ev-chargers-simulator-windows-amd64.exe
+
       - name: Build Linux ARM 64
         run: env GOOS=linux GOARCH=arm64 GOARM=7 go build -o ./ev-chargers-simulator-linux-arm64
 
@@ -44,8 +47,15 @@ jobs:
       - name: Create MacOS AMD64 Artifact v${{ env.RELEASE_VERSION }}
         uses: actions/upload-artifact@v3
         with:
-          name: EV Chargers Simulator Linux AMD64 v${{ env.RELEASE_VERSION }}
+          name: EV Chargers Simulator MacOS AMD64 v${{ env.RELEASE_VERSION }}
           path: ev-chargers-simulator-macos-amd64
+          retention-days: 1
+
+      - name: Create Windows AMD64 Artifact v${{ env.RELEASE_VERSION }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: EV Chargers Simulator Windows AMD64 v${{ env.RELEASE_VERSION }}
+          path: ev-chargers-simulator-windows-amd64.exe
           retention-days: 1
 
       - name: Create Linux ARM64 Artifact v${{ env.RELEASE_VERSION }}
@@ -85,4 +95,4 @@ jobs:
           allowUpdates: true
           replacesArtifacts: true
           bodyFile: 'changelog.md'
-          artifacts: 'ev-chargers-simulator-linux-amd64,ev-chargers-simulator-macos-amd64,ev-chargers-simulator-linux-arm64,changelog.md,user_manual.pdf'
+          artifacts: 'ev-chargers-simulator-linux-amd64,ev-chargers-simulator-macos-amd64,ev-chargers-simulator-windows-amd64.exe,ev-chargers-simulator-linux-arm64,changelog.md,user_manual.pdf'
