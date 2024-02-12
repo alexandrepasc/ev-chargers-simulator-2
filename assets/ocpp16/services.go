@@ -2,6 +2,7 @@ package ocpp16
 
 import (
 	"fmt"
+	"math/rand"
 	"strconv"
 	"strings"
 	"sync"
@@ -410,7 +411,7 @@ func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionReq
 		}
 
 		if na {
-			var ba, _ = o.sendAuthorize(r.IdTag)
+			var ba = o.sendAuthorize(r.IdTag)
 			if !ba {
 				o.Asset.Evses[0].Connectors[i].DP.Position = 0
 
@@ -1331,6 +1332,11 @@ func (o *Ocpp16) updateData() {
 					if cs != c.Data[o.Asset.Evses[x].Connectors[y].DP.Position].ChargingState {
 						var info = "Change status"
 
+						const (
+							mC int = 20
+							dN int = 2
+						)
+
 						o.sendStatusNotification(&o.Asset.Evses[x].Connectors[y], &info, nil)
 
 						// if the connector goes to the finish state
@@ -1338,6 +1344,7 @@ func (o *Ocpp16) updateData() {
 							o.sendStopTransaction(o.Asset.Evses[x].CIDTag, &o.Asset.Evses[x].Connectors[y])
 							o.txnAlignedData = []types.MeterValue{}
 							o.txnSampledData = []types.MeterValue{}
+							o.Asset.Evses[x].CIDTag = ""
 
 							// if the reset request was used activate the boot sequence and disable the reset trigger
 							if o.resetSeq.IsToTrigger {
@@ -1352,42 +1359,58 @@ func (o *Ocpp16) updateData() {
 							}
 						}
 
-						// If the connector starts charging send the start transaction request
-						if c.Data[o.Asset.Evses[x].Connectors[y].DP.Position].ChargingState == int64(assets.Charging) {
-							// TODO: need to review the id tag
-							var resp = o.sendStartTransaction("QWEASDZXC", &o.Asset.Evses[x].Connectors[y])
+						// if the connector goes to the preparing state
+						if c.Data[o.Asset.Evses[x].Connectors[y].DP.Position].ChargingState == int64(assets.Preparing) {
+							var la, laErr = strconv.ParseBool(*o.Conf["LocalPreAuthorize"].Value)
 
-							var lm = map[string]string{
-								"protocol":  string(o.Asset.Protocol),
-								"function":  "updateData",
-								"feature":   resp.GetFeatureName(),
-								"simulator": o.Asset.Name,
-								"sender":    assets.CS,
-								"type":      assets.Response,
+							if laErr != nil {
+								var lm2 = map[string]string{
+									"protocol":  string(o.Asset.Protocol),
+									"function":  "updateData",
+									"simulator": o.Asset.Name,
+								}
+
+								o.logger.Log(lm2, laErr, assets.Fatal)
 							}
+
+							o.Asset.Evses[x].CIDTag = getRandomString(mC)
+
+							// if the local pre auth configuration is false
+							if !la {
+								var rb = o.sendAuthorize(o.Asset.Evses[x].CIDTag)
+
+								// if the authorization fails send the data to the second last data position with the max duration (that last should be finish)
+								if !rb {
+									o.Asset.Evses[x].Connectors[y].DP.Position = int64(len(o.Asset.Evses[x].Connectors[y].Data) - dN)
+									o.Asset.Evses[x].Connectors[y].DP.Ticker = o.Asset.Evses[x].Connectors[y].Data[int64(len(o.Asset.Evses[x].Connectors[y].Data)-dN)].Duration
+									o.Asset.Evses[x].CIDTag = ""
+								}
+							}
+
+							// if the local pre auth configuration is true
+							var resp = o.sendStartTransaction(o.Asset.Evses[x].CIDTag, &o.Asset.Evses[x].Connectors[y])
 
 							var stoii, errB = strconv.ParseBool(*o.Conf["StopTransactionOnInvalidId"].Value)
 
 							if errB != nil {
-								o.logger.Log(lm, errB, assets.Error)
+								var lm2 = map[string]string{
+									"protocol":  string(o.Asset.Protocol),
+									"function":  "updateData",
+									"simulator": o.Asset.Name,
+								}
+
+								o.logger.Log(lm2, errB, assets.Fatal)
+
 								return
 							}
 
+							// if the stop transaction on invalid id configuration is set to true
 							if stoii {
+								// if the start transaction response is not accepted
 								if resp.IdTagInfo.Status != types.AuthorizationStatusAccepted {
-									o.logger.Log(lm, resp, assets.Info)
-
-									for i := c.DP.Position; i < int64(len(c.Data)); i++ {
-										if c.Data[i].ChargingState == int64(assets.Finishing) {
-											o.Asset.Evses[x].Connectors[y].DP.Position = i
-											o.Asset.Evses[x].Connectors[y].DP.Ticker = 0
-											// reset the current soc when the position changes
-											o.Asset.Evses[x].Connectors[y].CurrentSoC =
-												o.Asset.Evses[x].Connectors[y].Data[o.Asset.Evses[x].Connectors[y].DP.Position].StartSoC
-
-											break
-										}
-									}
+									o.Asset.Evses[x].Connectors[y].DP.Position = int64(len(o.Asset.Evses[x].Connectors[y].Data) - dN)
+									o.Asset.Evses[x].Connectors[y].DP.Ticker = o.Asset.Evses[x].Connectors[y].Data[int64(len(o.Asset.Evses[x].Connectors[y].Data)-dN)].Duration
+									o.Asset.Evses[x].CIDTag = ""
 								}
 							}
 						}
@@ -1651,11 +1674,11 @@ func (o *Ocpp16) sendStopTransaction(id string, c *simulator.Connector) {
 
 /*
 Sends the authorize request to the CS and returns true (bool) if the id was accepted, false if
-not, and in all the cases the response is returned.
+not.
 
 id	-	The user tag id that tries to start the session (string)
 */
-func (o *Ocpp16) sendAuthorize(id string) (rb bool, r *core.AuthorizeConfirmation) {
+func (o *Ocpp16) sendAuthorize(id string) bool {
 	var lm = map[string]string{
 		"protocol":  string(o.Asset.Protocol),
 		"function":  "sendAuthorize",
@@ -1680,7 +1703,7 @@ func (o *Ocpp16) sendAuthorize(id string) (rb bool, r *core.AuthorizeConfirmatio
 
 	if err != nil {
 		o.logger.Log(lm, err, assets.Error)
-		return false, nil
+		return false
 	}
 
 	o.logger.Log(lm, res.(*core.AuthorizeConfirmation), assets.Info)
@@ -1704,7 +1727,7 @@ func (o *Ocpp16) sendAuthorize(id string) (rb bool, r *core.AuthorizeConfirmatio
 		})
 	}
 
-	return res.(*core.AuthorizeConfirmation).IdTagInfo.Status == types.AuthorizationStatusAccepted, res.(*core.AuthorizeConfirmation)
+	return res.(*core.AuthorizeConfirmation).IdTagInfo.Status == types.AuthorizationStatusAccepted
 }
 
 /*
@@ -2309,4 +2332,26 @@ func handleAuthCacheList(cl []localauth.AuthorizationData, ne localauth.Authoriz
 	}
 
 	return cl
+}
+
+/*
+Will generate a random string with lower letters, caps letters, and numbers with the max char size
+sent in the parameter. It will return the string generated value.
+
+n	-	The max characters number for the generated string (int)
+*/
+func getRandomString(n int) string {
+	var source = rand.NewSource(time.Now().UnixNano())
+	//nolint:gosec // because for this reason it does not make sense to use the crypto
+	var rng = rand.New(source)
+
+	var runes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890")
+
+	var b = make([]rune, n)
+
+	for i := range b {
+		b[i] = runes[rng.Intn(len(runes))]
+	}
+
+	return string(b)
 }
