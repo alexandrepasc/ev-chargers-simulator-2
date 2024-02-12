@@ -410,7 +410,8 @@ func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionReq
 		}
 
 		if na {
-			if !o.authorize(r.IdTag) {
+			var ba, _ = o.sendAuthorize(r.IdTag)
+			if !ba {
 				o.Asset.Evses[0].Connectors[i].DP.Position = 0
 
 				var info string = core.RemoteStartTransactionFeatureName
@@ -418,21 +419,6 @@ func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionReq
 				o.sendStatusNotification(&o.Asset.Evses[0].Connectors[i], &info, nil)
 
 				return
-			}
-
-			var v, vErr = strconv.ParseBool(*o.Conf["AuthorizationCacheEnabled"].Value)
-			if vErr != nil {
-				var lm2 = map[string]string{
-					"protocol":  string(o.Asset.Protocol),
-					"function":  "processRemoteStartTransaction",
-					"simulator": o.Asset.Name,
-				}
-
-				o.logger.Log(lm2, err, assets.Fatal)
-			}
-
-			if v {
-				o.authCache = handleAuthCacheList(o.authCache, localauth.AuthorizationData{IdTag: r.IdTag})
 			}
 		}
 	}
@@ -1551,6 +1537,25 @@ func (o *Ocpp16) startTransaction(id string, c *simulator.Connector) *core.Start
 
 	o.logger.Log(lm, res.(*core.StartTransactionConfirmation), assets.Info)
 
+	// update the authorization cache in case this is active for this simulator
+	var v, vErr = strconv.ParseBool(*o.Conf["AuthorizationCacheEnabled"].Value)
+	if vErr != nil {
+		var lm2 = map[string]string{
+			"protocol":  string(o.Asset.Protocol),
+			"function":  "startTransaction",
+			"simulator": o.Asset.Name,
+		}
+
+		o.logger.Log(lm2, err, assets.Fatal)
+	}
+
+	if v {
+		o.authCache = handleAuthCacheList(o.authCache, localauth.AuthorizationData{
+			IdTag:     id,
+			IdTagInfo: res.(*core.StartTransactionConfirmation).IdTagInfo,
+		})
+	}
+
 	return res.(*core.StartTransactionConfirmation)
 }
 
@@ -1565,7 +1570,7 @@ func (o *Ocpp16) stopTransaction(id string, c *simulator.Connector) {
 	var lm = map[string]string{
 		"protocol":  string(o.Asset.Protocol),
 		"function":  "stopTransaction",
-		"feature":   "StatusNotification",
+		"feature":   core.StopTransactionFeatureName,
 		"simulator": o.Asset.Name,
 		"sender":    assets.CP,
 		"type":      assets.Request,
@@ -1587,7 +1592,7 @@ func (o *Ocpp16) stopTransaction(id string, c *simulator.Connector) {
 
 	o.logger.Log(lm, req, assets.Info)
 
-	var _, err = o.s.SendRequest(req)
+	var res, err = o.s.SendRequest(req)
 
 	o.heartbeatC = 0
 
@@ -1612,25 +1617,48 @@ func (o *Ocpp16) stopTransaction(id string, c *simulator.Connector) {
 		for i := 0; i < int(tma); i++ {
 			time.Sleep(time.Duration(tmai))
 
-			_, err = o.s.SendRequest(req)
+			res, err = o.s.SendRequest(req)
 
 			if err == nil {
 				break
 			}
+
+			o.logger.Log(lm, err, assets.Error)
 		}
+	}
+
+	o.logger.Log(lm, res.(*core.StopTransactionConfirmation), assets.Info)
+
+	// update the authorization cache in case this is active for this simulator
+	var v, vErr = strconv.ParseBool(*o.Conf["AuthorizationCacheEnabled"].Value)
+	if vErr != nil {
+		var lm2 = map[string]string{
+			"protocol":  string(o.Asset.Protocol),
+			"function":  "stopTransaction",
+			"simulator": o.Asset.Name,
+		}
+
+		o.logger.Log(lm2, err, assets.Fatal)
+	}
+
+	if v {
+		o.authCache = handleAuthCacheList(o.authCache, localauth.AuthorizationData{
+			IdTag:     id,
+			IdTagInfo: res.(*core.StopTransactionConfirmation).IdTagInfo,
+		})
 	}
 }
 
 /*
-Sends the authorize request to the CS and returns true (bool) if the id was accepted, and false if
-not.
+Sends the authorize request to the CS and returns true (bool) if the id was accepted, false if
+not, and in all the cases the response is returned.
 
 id	-	The user tag id that tries to start the session (string)
 */
-func (o *Ocpp16) authorize(id string) bool {
+func (o *Ocpp16) sendAuthorize(id string) (rb bool, r *core.AuthorizeConfirmation) {
 	var lm = map[string]string{
 		"protocol":  string(o.Asset.Protocol),
-		"function":  "authorize",
+		"function":  "sendAuthorize",
 		"feature":   core.AuthorizeFeatureName,
 		"simulator": o.Asset.Name,
 		"sender":    assets.CP,
@@ -1652,12 +1680,31 @@ func (o *Ocpp16) authorize(id string) bool {
 
 	if err != nil {
 		o.logger.Log(lm, err, assets.Error)
-		return false
+		return false, nil
 	}
 
 	o.logger.Log(lm, res.(*core.AuthorizeConfirmation), assets.Info)
 
-	return res.(*core.AuthorizeConfirmation).IdTagInfo.Status == types.AuthorizationStatusAccepted
+	// update the authorization cache in case this is active for this simulator
+	var v, vErr = strconv.ParseBool(*o.Conf["AuthorizationCacheEnabled"].Value)
+	if vErr != nil {
+		var lm2 = map[string]string{
+			"protocol":  string(o.Asset.Protocol),
+			"function":  "sendAuthorize",
+			"simulator": o.Asset.Name,
+		}
+
+		o.logger.Log(lm2, err, assets.Fatal)
+	}
+
+	if v {
+		o.authCache = handleAuthCacheList(o.authCache, localauth.AuthorizationData{
+			IdTag:     id,
+			IdTagInfo: res.(*core.AuthorizeConfirmation).IdTagInfo,
+		})
+	}
+
+	return res.(*core.AuthorizeConfirmation).IdTagInfo.Status == types.AuthorizationStatusAccepted, res.(*core.AuthorizeConfirmation)
 }
 
 /*
@@ -1966,6 +2013,7 @@ func (o *Ocpp16) notAutoChargePoint(c *simulator.Connector, x, y int) {
 
 			if cs != c.Data[o.Asset.Evses[x].Connectors[y].DP.Position].ChargingState {
 				var info = "Change status"
+
 				o.sendStatusNotification(&o.Asset.Evses[x].Connectors[y], &info, nil)
 
 				if c.Data[o.Asset.Evses[x].Connectors[y].DP.Position].ChargingState == int64(assets.Finishing) {
