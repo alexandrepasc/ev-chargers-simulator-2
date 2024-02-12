@@ -100,7 +100,9 @@ func (s *Simulators) postSimulators(c *gin.Context) {
 		var r = errors.ErroMsg{
 			Message: msg,
 		}
+
 		v := errors.StructValidate(r, c, s.Lang)
+
 		if v {
 			c.IndentedJSON(http.StatusBadRequest, r)
 		}
@@ -267,7 +269,9 @@ func (s *Simulators) postModels(c *gin.Context) {
 		var r = errors.ErroMsg{
 			Message: msg,
 		}
+
 		v := errors.StructValidate(r, c, s.Lang)
+
 		if v {
 			c.IndentedJSON(cod, r)
 		}
