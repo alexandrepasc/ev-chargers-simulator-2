@@ -296,15 +296,6 @@ validate if any of them can be activated, if so activate it.
 // TODO: need to check the start transaction to go throw the preparing state instead of directly to charging
 // TODO: need to check the best way to handle the id tag being used in the current transaction
 func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionRequest) {
-	var lm = map[string]string{
-		"protocol":  string(o.Asset.Protocol),
-		"function":  "processRemoteStartTransaction",
-		"feature":   core.RemoteStartTransactionFeatureName,
-		"simulator": o.Asset.Name,
-		"sender":    assets.CP,
-		"type":      assets.Request,
-	}
-
 	var auth, err = strconv.ParseBool(*o.Conf["AuthorizeRemoteTxRequests"].Value)
 
 	if err != nil {
@@ -317,6 +308,21 @@ func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionReq
 		o.logger.Log(lm2, err, assets.Fatal)
 	}
 
+	var stoii, errB = strconv.ParseBool(*o.Conf["StopTransactionOnInvalidId"].Value)
+
+	if errB != nil {
+		var lm2 = map[string]string{
+			"protocol":  string(o.Asset.Protocol),
+			"function":  "processRemoteStartTransaction",
+			"simulator": o.Asset.Name,
+		}
+
+		o.logger.Log(lm2, errB, assets.Fatal)
+
+		return
+	}
+
+	// if there is no need to call the authorize after the remote start transaction
 	if !auth {
 		// TODO: the store of the charging profile should not be set at this point, since the validations if the session can be started are not done yet
 		o.chargeProfile = r.ChargingProfile
@@ -342,18 +348,33 @@ func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionReq
 						continue
 					}
 
+					// if it can unlock the connector
 					o.Asset.Evses[0].Connectors[i].Enabled = true
 
-					o.Asset.Evses[0].Connectors[i].DP.Position = 2
+					// the connector should go to the preparing state until it can finish all the needed actions
+					o.Asset.Evses[0].Connectors[i].DP.Position = 1
 					o.Asset.Evses[0].Connectors[i].DP.Ticker = 0
-
-					fmt.Println(o.Asset.Evses[0].Connectors[i].DP)
-
-					o.sendStartTransaction(r.IdTag, &o.Asset.Evses[0].Connectors[i])
 
 					var info string = core.RemoteStartTransactionFeatureName
 
 					o.sendStatusNotification(&o.Asset.Evses[0].Connectors[i], &info, nil)
+
+					o.Asset.Evses[0].CIDTag = r.IdTag
+
+					fmt.Println(o.Asset.Evses[0].Connectors[i].DP)
+
+					var resp = o.sendStartTransaction(r.IdTag, &o.Asset.Evses[0].Connectors[i])
+
+					if stoii {
+						// if the start transaction response is not accepted
+						if resp.IdTagInfo.Status != types.AuthorizationStatusAccepted {
+							o.Asset.Evses[0].Connectors[i].DP.Position = int64(len(o.Asset.Evses[0].Connectors[i].Data) - 1)
+							o.Asset.Evses[0].Connectors[i].DP.Ticker = 0
+							o.Asset.Evses[0].CIDTag = ""
+
+							o.sendStatusNotification(&o.Asset.Evses[0].Connectors[i], &info, nil)
+						}
+					}
 
 					return
 				}
@@ -362,6 +383,8 @@ func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionReq
 			}
 		}
 
+		// TODO: Not sure if this action is correct need to investigate
+		// if no connector id is sent in the request
 		if canEnable(o.Asset.Evses[0].Connectors) {
 			for i, c := range o.Asset.Evses[0].Connectors {
 				if c.Availability != string(assets.Operative) {
@@ -371,6 +394,8 @@ func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionReq
 				o.Asset.Evses[0].Connectors[i].Enabled = true
 
 				o.Asset.Evses[0].Connectors[i].DP.Position = 2
+
+				o.Asset.Evses[0].CIDTag = r.IdTag
 
 				o.sendStartTransaction(strconv.FormatInt(c.ID, 10), &o.Asset.Evses[0].Connectors[i])
 
@@ -432,13 +457,6 @@ func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionReq
 
 	var resp = o.sendStartTransaction(o.Asset.Evses[0].CIDTag, c)
 
-	var stoii, errB = strconv.ParseBool(*o.Conf["StopTransactionOnInvalidId"].Value)
-
-	if errB != nil {
-		o.logger.Log(lm, errB, assets.Error)
-		return
-	}
-
 	if !stoii {
 		return
 	}
@@ -479,6 +497,8 @@ func (o *Ocpp16) processRemoteStopTransaction(r *core.RemoteStopTransactionReque
 			go o.sendStatusNotification(&o.Asset.Evses[0].Connectors[i], &info, nil)
 
 			go o.sendStopTransaction(o.Asset.Evses[0].CIDTag, &o.Asset.Evses[0].Connectors[i])
+
+			o.Asset.Evses[0].CIDTag = ""
 
 			return &core.RemoteStopTransactionConfirmation{Status: types.RemoteStartStopStatusAccepted}
 		}
@@ -2053,6 +2073,8 @@ func (o *Ocpp16) notAutoChargePoint(c *simulator.Connector, x, y int) {
 
 						o.resetSeq.IsToTrigger = false
 					}
+
+					o.Asset.Evses[x].CIDTag = ""
 				}
 			}
 		}
@@ -2280,17 +2302,20 @@ ne	-	New authorization entry (localauth.AuthorizationData)
 func handleAuthCacheList(cl []localauth.AuthorizationData, ne localauth.AuthorizationData) []localauth.AuthorizationData {
 	var isNew = true
 
-	// look if the tag is already in the list and if so update it with the new information
-	for ci, c := range cl {
-		if c.IdTag != ne.IdTag {
-			continue
+	// if the array is empty we can assume that the tag is new
+	if len(cl) == 0 {
+		// look if the tag is already in the list and if so update it with the new information
+		for ci, c := range cl {
+			if c.IdTag != ne.IdTag {
+				continue
+			}
+
+			cl[ci].IdTagInfo.Status = ne.IdTagInfo.Status
+			cl[ci].IdTagInfo.ParentIdTag = ne.IdTagInfo.ParentIdTag
+			cl[ci].IdTagInfo.ExpiryDate = ne.IdTagInfo.ExpiryDate
+
+			isNew = false
 		}
-
-		cl[ci].IdTagInfo.Status = ne.IdTagInfo.Status
-		cl[ci].IdTagInfo.ParentIdTag = ne.IdTagInfo.ParentIdTag
-		cl[ci].IdTagInfo.ExpiryDate = ne.IdTagInfo.ExpiryDate
-
-		isNew = false
 	}
 
 	// if the tag is not present in the list
