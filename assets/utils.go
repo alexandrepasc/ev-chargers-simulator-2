@@ -524,6 +524,13 @@ func GetStringPointer(s string) *string {
 	return &s
 }
 
+/*
+Parse a string value to a boolean variable and returns it (bool).
+
+Triggers a fatal error in case it wasn't able to parse it.
+
+v	-	The string value to be parsed (string)
+*/
 func GetBoolFromString(v string) bool {
 	var b, err = strconv.ParseBool(v)
 

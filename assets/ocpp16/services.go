@@ -295,6 +295,7 @@ validate if any of them can be activated, if so activate it.
 */
 // TODO: need to check the start transaction to go throw the preparing state instead of directly to charging
 // TODO: need to check the best way to handle the id tag being used in the current transaction
+//nolint:gocyclo // because dev
 func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionRequest) {
 	var auth, err = strconv.ParseBool(*o.Conf["AuthorizeRemoteTxRequests"].Value)
 
@@ -308,19 +309,7 @@ func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionReq
 		o.logger.Log(lm2, err, assets.Fatal)
 	}
 
-	var stoii, errB = strconv.ParseBool(*o.Conf["StopTransactionOnInvalidId"].Value)
-
-	if errB != nil {
-		var lm2 = map[string]string{
-			"protocol":  string(o.Asset.Protocol),
-			"function":  "processRemoteStartTransaction",
-			"simulator": o.Asset.Name,
-		}
-
-		o.logger.Log(lm2, errB, assets.Fatal)
-
-		return
-	}
+	var stoii = assets.GetBoolFromString(*o.Conf["StopTransactionOnInvalidId"].Value) // stop transaction on invalid id
 
 	// if there is no need to call the authorize after the remote start transaction
 	if !auth {
@@ -411,65 +400,133 @@ func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionReq
 		starts the session by it self. This behaviour is to try to authorize the tag in the local auth
 		list and/or requesting the authorize request ot the CS.
 	*/
+	var (
+		ci int
+		c  *simulator.Connector
+	)
 
-	var c, i = o.getConnectorAndIndex(r.ConnectorId)
+	// if cs did not send the connector id
+	if r.ConnectorId == nil {
+		ci, c = getActiveConnector(o.Asset.Evses[0])
+
+		// check if any of the connectors is active
+		if ci > -1 {
+			return
+		}
+
+		// get an connector that is not enabled
+		for i := range o.Asset.Evses[0].Connectors {
+			if !o.Asset.Evses[0].Connectors[i].Enabled {
+				ci = i
+				c = &o.Asset.Evses[0].Connectors[i]
+
+				break
+			}
+		}
+	} else {
+		c, ci = o.getConnectorAndIndex(r.ConnectorId)
+	}
 
 	if c.Availability != string(assets.Operative) {
 		return
 	}
 
-	o.Asset.Evses[0].Connectors[i].DP.Position = 1
+	o.Asset.Evses[0].Connectors[ci].Enabled = true
+	o.Asset.Evses[0].Connectors[ci].DP.Position = 1
+	o.Asset.Evses[0].Connectors[ci].DP.Ticker = 0
 
-	var info string = core.RemoteStartTransactionFeatureName
+	o.sendStatusNotification(&o.Asset.Evses[0].Connectors[ci], assets.GetStringPointer(core.RemoteStartTransactionFeatureName), nil)
 
-	o.sendStatusNotification(&o.Asset.Evses[0].Connectors[i], &info, nil)
+	var (
+		na       = true  // needs to remote authorize
+		isAuthOk = false // the tag id is authorized
+	)
 
-	var na = true
+	// TODO: implement assets.GetBoolFromString function when exists the need to convert a string to boolean
+	// if needs to do a local authorization
+	if assets.GetBoolFromString(*o.Conf["LocalPreAuthorize"].Value) {
+		// if the authorization list is active
+		if o.Asset.AuthList {
+			if o.localAuth.version > 0 {
+				for _, a := range o.localAuth.list {
+					// if an entry with the id tag exists
+					if a.IdTag == r.IdTag {
+						na = false
 
-	if !assets.GetBoolFromString(*o.Conf["LocalPreAuthorize"].Value) {
-		if o.localAuth.version > 0 {
-			for _, a := range o.localAuth.list {
-				if a.IdTag == r.IdTag && a.IdTagInfo.Status == types.AuthorizationStatusAccepted {
-					na = false
+						// if the status of the entry is accepted
+						if a.IdTagInfo.Status == types.AuthorizationStatusAccepted {
+							isAuthOk = true
+						}
+
+						break
+					}
 				}
 			}
 		}
 
+		// if needs to look for the authorization in the cache list
 		if na {
-			var ba = o.sendAuthorize(r.IdTag)
-			if !ba {
-				o.Asset.Evses[0].Connectors[i].DP.Position = 0
+			// if the authorization cache is active
+			if assets.GetBoolFromString(*o.Conf["AuthorizationCacheEnabled"].Value) {
+				for _, a := range o.authCache {
+					// if an entry with the id tag exists
+					if a.IdTag == r.IdTag {
+						na = false
 
-				var info string = core.RemoteStartTransactionFeatureName
+						// if the status of the entry is accepted
+						if a.IdTagInfo.Status == types.AuthorizationStatusAccepted {
+							isAuthOk = true
+						}
 
-				o.sendStatusNotification(&o.Asset.Evses[0].Connectors[i], &info, nil)
-
-				return
+						break
+					}
+				}
 			}
 		}
 	}
 
-	o.Asset.Evses[0].Connectors[i].Enabled = true
+	// if is still needs to authorize the id tag
+	if na {
+		var ar = o.sendAuthorize(r.IdTag) // authorization response status
 
-	o.chargeProfile = r.ChargingProfile
+		// if the authorize request is rejected by the cs
+		if ar {
+			isAuthOk = true
+		}
+	}
+
+	// if the authorization fails for the id tag
+	if !isAuthOk {
+		o.Asset.Evses[0].Connectors[ci].Enabled = false
+		o.Asset.Evses[0].Connectors[ci].DP.Position = 0
+		o.Asset.Evses[0].Connectors[ci].DP.Ticker = 0
+
+		o.sendStatusNotification(&o.Asset.Evses[0].Connectors[ci], assets.GetStringPointer("Failed authorization"), nil)
+
+		return
+	}
 
 	o.Asset.Evses[0].CIDTag = r.IdTag
 
+	// TODO: this functionality needs to be reviewed
+	o.chargeProfile = r.ChargingProfile
+
 	var resp = o.sendStartTransaction(o.Asset.Evses[0].CIDTag, c)
 
+	// if the stop transaction on invalid id is false ignore the start transaction response
 	if !stoii {
 		return
 	}
 
+	// if the start transaction returns not accepted for the id tag
 	if resp.IdTagInfo.Status != types.AuthorizationStatusAccepted {
-		o.Asset.Evses[0].Connectors[i].DP.Position = 0
-		o.Asset.Evses[0].Connectors[i].Enabled = false
+		o.Asset.Evses[0].Connectors[ci].DP.Position = 0
+		o.Asset.Evses[0].Connectors[ci].DP.Ticker = 0
+		o.Asset.Evses[0].Connectors[ci].Enabled = false
 		o.txnAlignedData = []types.MeterValue{}
 		o.txnSampledData = []types.MeterValue{}
 
-		var info string = core.RemoteStartTransactionFeatureName
-
-		o.sendStatusNotification(&o.Asset.Evses[0].Connectors[i], &info, nil)
+		o.sendStatusNotification(&o.Asset.Evses[0].Connectors[ci], assets.GetStringPointer("Failed authorization"), nil)
 	}
 }
 
@@ -2121,7 +2178,7 @@ func (o *Ocpp16) getConnectorAndIndex(id *int) (ci *simulator.Connector, index i
 }
 
 /*
-Get from the evse the connecto that is active, in case one of the connectors is active returns
+Get from the evse the connector that is active, in case one of the connectors is active returns
 the evse connector index (int) and the connector structure (*simulator.Connector).
 
 In case none of the connectors is active will return the index -1 and the structure as nil.
