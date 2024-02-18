@@ -351,7 +351,7 @@ func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionReq
 							if a.IdTagInfo.Status == types.AuthorizationStatusAccepted {
 								isAuthOk = true
 							}
-	
+
 							break
 						}
 					}
