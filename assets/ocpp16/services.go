@@ -1,7 +1,6 @@
 package ocpp16
 
 import (
-	"fmt"
 	"math/rand"
 	"strconv"
 	"strings"
@@ -293,116 +292,14 @@ authorize config.
 Validates if the connector selected is not active, activate it. If no connector were selected
 validate if any of them can be activated, if so activate it.
 */
-// TODO: need to check the start transaction to go throw the preparing state instead of directly to charging
 // TODO: need to check the best way to handle the id tag being used in the current transaction
-//nolint:gocyclo // because dev
 func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionRequest) {
-	var auth, err = strconv.ParseBool(*o.Conf["AuthorizeRemoteTxRequests"].Value)
-
-	if err != nil {
-		var lm2 = map[string]string{
-			"protocol":  string(o.Asset.Protocol),
-			"function":  "processRemoteStartTransaction",
-			"simulator": o.Asset.Name,
-		}
-
-		o.logger.Log(lm2, err, assets.Fatal)
-	}
-
-	var stoii = assets.GetBoolFromString(*o.Conf["StopTransactionOnInvalidId"].Value) // stop transaction on invalid id
-
-	// if there is no need to call the authorize after the remote start transaction
-	if !auth {
-		// TODO: the store of the charging profile should not be set at this point, since the validations if the session can be started are not done yet
-		o.chargeProfile = r.ChargingProfile
-
-		// At the moment not know how to identify the evse from the request so will only consider 1
-		if r.ConnectorId != nil {
-			var ok = true
-
-			for _, c := range o.Asset.Evses[0].Connectors {
-				if c.Enabled {
-					ok = false
-				}
-			}
-
-			if ok {
-				for i, c := range o.Asset.Evses[0].Connectors {
-					if c.ID != int64(*r.ConnectorId) {
-						continue
-					}
-
-					// check if the connector is available
-					if c.Availability != string(assets.Operative) {
-						continue
-					}
-
-					// if it can unlock the connector
-					o.Asset.Evses[0].Connectors[i].Enabled = true
-
-					// the connector should go to the preparing state until it can finish all the needed actions
-					o.Asset.Evses[0].Connectors[i].DP.Position = 1
-					o.Asset.Evses[0].Connectors[i].DP.Ticker = 0
-
-					var info string = core.RemoteStartTransactionFeatureName
-
-					o.sendStatusNotification(&o.Asset.Evses[0].Connectors[i], &info, nil)
-
-					o.Asset.Evses[0].CIDTag = r.IdTag
-
-					fmt.Println(o.Asset.Evses[0].Connectors[i].DP)
-
-					var resp = o.sendStartTransaction(r.IdTag, &o.Asset.Evses[0].Connectors[i])
-
-					if stoii {
-						// if the start transaction response is not accepted
-						if resp.IdTagInfo.Status != types.AuthorizationStatusAccepted {
-							o.Asset.Evses[0].Connectors[i].DP.Position = int64(len(o.Asset.Evses[0].Connectors[i].Data) - 1)
-							o.Asset.Evses[0].Connectors[i].DP.Ticker = 0
-							o.Asset.Evses[0].CIDTag = ""
-
-							o.sendStatusNotification(&o.Asset.Evses[0].Connectors[i], &info, nil)
-						}
-					}
-
-					return
-				}
-			} else {
-				return
-			}
-		}
-
-		// TODO: Not sure if this action is correct need to investigate
-		// if no connector id is sent in the request
-		if canEnable(o.Asset.Evses[0].Connectors) {
-			for i, c := range o.Asset.Evses[0].Connectors {
-				if c.Availability != string(assets.Operative) {
-					continue
-				}
-
-				o.Asset.Evses[0].Connectors[i].Enabled = true
-
-				o.Asset.Evses[0].Connectors[i].DP.Position = 2
-
-				o.Asset.Evses[0].CIDTag = r.IdTag
-
-				o.sendStartTransaction(strconv.FormatInt(c.ID, 10), &o.Asset.Evses[0].Connectors[i])
-
-				return
-			}
-		} else {
-			return
-		}
-	}
-
-	/*
-		In case the AuthorizeRemoteTxRequests (AuthorizeRemote) is true, the CP will behave as it
-		starts the session by it self. This behaviour is to try to authorize the tag in the local auth
-		list and/or requesting the authorize request ot the CS.
-	*/
 	var (
-		ci int
-		c  *simulator.Connector
+		auth     = assets.GetBoolFromString("processRemoteStartTransaction", *o.Conf["AuthorizeRemoteTxRequests"].Value)
+		ci       int                  // connector index
+		c        *simulator.Connector // connector struct
+		na       = true               // needs to remote authorize
+		isAuthOk = false              // the tag id is authorized
 	)
 
 	// if cs did not send the connector id
@@ -427,76 +324,66 @@ func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionReq
 		c, ci = o.getConnectorAndIndex(r.ConnectorId)
 	}
 
-	if c.Availability != string(assets.Operative) {
-		return
-	}
-
 	o.Asset.Evses[0].Connectors[ci].Enabled = true
 	o.Asset.Evses[0].Connectors[ci].DP.Position = 1
 	o.Asset.Evses[0].Connectors[ci].DP.Ticker = 0
 
 	o.sendStatusNotification(&o.Asset.Evses[0].Connectors[ci], assets.GetStringPointer(core.RemoteStartTransactionFeatureName), nil)
 
-	var (
-		na       = true  // needs to remote authorize
-		isAuthOk = false // the tag id is authorized
-	)
+	/*
+		In case the AuthorizeRemoteTxRequests (AuthorizeRemote) is true, the CP will behave as it
+		starts the session by it self. This behaviour is to try to authorize the tag in the local auth
+		list and/or requesting the authorize request ot the CS.
+	*/
 
-	// TODO: implement assets.GetBoolFromString function when exists the need to convert a string to boolean
-	// if needs to do a local authorization
-	if assets.GetBoolFromString(*o.Conf["LocalPreAuthorize"].Value) {
-		// if the authorization list is active
-		if o.Asset.AuthList {
-			if o.localAuth.version > 0 {
-				for _, a := range o.localAuth.list {
-					// if an entry with the id tag exists
-					if a.IdTag == r.IdTag {
-						na = false
+	if auth {
+		// if needs to do a local authorization
+		if assets.GetBoolFromString("processRemoteStartTransaction", *o.Conf["LocalPreAuthorize"].Value) {
+			// if the authorization list is active
+			if o.Asset.AuthList {
+				if o.localAuth.version > 0 {
+					for _, a := range o.localAuth.list {
+						// if an entry with the id tag exists
+						if a.IdTag == r.IdTag {
+							na = false
 
-						// if the status of the entry is accepted
-						if a.IdTagInfo.Status == types.AuthorizationStatusAccepted {
-							isAuthOk = true
+							// if the status of the entry is accepted
+							if a.IdTagInfo.Status == types.AuthorizationStatusAccepted {
+								isAuthOk = true
+							}
+	
+							break
 						}
-
-						break
 					}
 				}
 			}
 		}
 
-		// if needs to look for the authorization in the cache list
-		if na {
-			// if the authorization cache is active
-			if assets.GetBoolFromString(*o.Conf["AuthorizationCacheEnabled"].Value) {
-				for _, a := range o.authCache {
-					// if an entry with the id tag exists
-					if a.IdTag == r.IdTag {
-						na = false
+		// if needs to look for the authorization in the cache list and cache is enabled
+		if na && assets.GetBoolFromString("processRemoteStartTransaction", *o.Conf["AuthorizationCacheEnabled"].Value) {
+			for _, a := range o.authCache {
+				// if an entry with the id tag exists
+				if a.IdTag == r.IdTag {
+					na = false
 
-						// if the status of the entry is accepted
-						if a.IdTagInfo.Status == types.AuthorizationStatusAccepted {
-							isAuthOk = true
-						}
-
-						break
+					// if the status of the entry is accepted
+					if a.IdTagInfo.Status == types.AuthorizationStatusAccepted {
+						isAuthOk = true
 					}
+
+					break
 				}
 			}
 		}
-	}
 
-	// if is still needs to authorize the id tag
-	if na {
-		var ar = o.sendAuthorize(r.IdTag) // authorization response status
-
-		// if the authorize request is rejected by the cs
-		if ar {
+		// if still needs to authorize the id tag and the authorize response if accepted
+		if na && o.sendAuthorize(r.IdTag) {
 			isAuthOk = true
 		}
 	}
 
-	// if the authorization fails for the id tag
-	if !isAuthOk {
+	// if meeds to authorize before starting a transaction and the auth failed
+	if auth && !isAuthOk {
 		o.Asset.Evses[0].Connectors[ci].Enabled = false
 		o.Asset.Evses[0].Connectors[ci].DP.Position = 0
 		o.Asset.Evses[0].Connectors[ci].DP.Ticker = 0
@@ -513,8 +400,7 @@ func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionReq
 
 	var resp = o.sendStartTransaction(o.Asset.Evses[0].CIDTag, c)
 
-	// if the stop transaction on invalid id is false ignore the start transaction response
-	if !stoii {
+	if !assets.GetBoolFromString("processRemoteStartTransaction", *o.Conf["StopTransactionOnInvalidId"].Value) {
 		return
 	}
 
@@ -1438,17 +1324,7 @@ func (o *Ocpp16) updateData() {
 
 						// if the connector goes to the preparing state
 						if c.Data[o.Asset.Evses[x].Connectors[y].DP.Position].ChargingState == int64(assets.Preparing) {
-							var la, laErr = strconv.ParseBool(*o.Conf["LocalPreAuthorize"].Value)
-
-							if laErr != nil {
-								var lm2 = map[string]string{
-									"protocol":  string(o.Asset.Protocol),
-									"function":  "updateData",
-									"simulator": o.Asset.Name,
-								}
-
-								o.logger.Log(lm2, laErr, assets.Fatal)
-							}
+							var la = assets.GetBoolFromString("updateData", *o.Conf["LocalPreAuthorize"].Value)
 
 							o.Asset.Evses[x].CIDTag = getRandomString(mC)
 
@@ -1467,19 +1343,7 @@ func (o *Ocpp16) updateData() {
 							// if the local pre auth configuration is true
 							var resp = o.sendStartTransaction(o.Asset.Evses[x].CIDTag, &o.Asset.Evses[x].Connectors[y])
 
-							var stoii, errB = strconv.ParseBool(*o.Conf["StopTransactionOnInvalidId"].Value)
-
-							if errB != nil {
-								var lm2 = map[string]string{
-									"protocol":  string(o.Asset.Protocol),
-									"function":  "updateData",
-									"simulator": o.Asset.Name,
-								}
-
-								o.logger.Log(lm2, errB, assets.Fatal)
-
-								return
-							}
+							var stoii = assets.GetBoolFromString("updateData", *o.Conf["StopTransactionOnInvalidId"].Value)
 
 							// if the stop transaction on invalid id configuration is set to true
 							if stoii {
@@ -1638,16 +1502,7 @@ func (o *Ocpp16) sendStartTransaction(id string, c *simulator.Connector) *core.S
 	o.logger.Log(lm, res.(*core.StartTransactionConfirmation), assets.Info)
 
 	// update the authorization cache in case this is active for this simulator
-	var v, vErr = strconv.ParseBool(*o.Conf["AuthorizationCacheEnabled"].Value)
-	if vErr != nil {
-		var lm2 = map[string]string{
-			"protocol":  string(o.Asset.Protocol),
-			"function":  "sendStartTransaction",
-			"simulator": o.Asset.Name,
-		}
-
-		o.logger.Log(lm2, err, assets.Fatal)
-	}
+	var v = assets.GetBoolFromString("sendStartTransaction", *o.Conf["AuthorizationCacheEnabled"].Value)
 
 	if v {
 		o.authCache = handleAuthCacheList(o.authCache, localauth.AuthorizationData{
@@ -1730,16 +1585,7 @@ func (o *Ocpp16) sendStopTransaction(id string, c *simulator.Connector) {
 	o.logger.Log(lm, res.(*core.StopTransactionConfirmation), assets.Info)
 
 	// update the authorization cache in case this is active for this simulator
-	var v, vErr = strconv.ParseBool(*o.Conf["AuthorizationCacheEnabled"].Value)
-	if vErr != nil {
-		var lm2 = map[string]string{
-			"protocol":  string(o.Asset.Protocol),
-			"function":  "sendStopTransaction",
-			"simulator": o.Asset.Name,
-		}
-
-		o.logger.Log(lm2, err, assets.Fatal)
-	}
+	var v = assets.GetBoolFromString("sendStopTransaction", *o.Conf["AuthorizationCacheEnabled"].Value)
 
 	if v {
 		o.authCache = handleAuthCacheList(o.authCache, localauth.AuthorizationData{
@@ -1786,16 +1632,7 @@ func (o *Ocpp16) sendAuthorize(id string) bool {
 	o.logger.Log(lm, res.(*core.AuthorizeConfirmation), assets.Info)
 
 	// update the authorization cache in case this is active for this simulator
-	var v, vErr = strconv.ParseBool(*o.Conf["AuthorizationCacheEnabled"].Value)
-	if vErr != nil {
-		var lm2 = map[string]string{
-			"protocol":  string(o.Asset.Protocol),
-			"function":  "sendAuthorize",
-			"simulator": o.Asset.Name,
-		}
-
-		o.logger.Log(lm2, err, assets.Fatal)
-	}
+	var v = assets.GetBoolFromString("sendAuthorize", *o.Conf["AuthorizationCacheEnabled"].Value)
 
 	if v {
 		o.authCache = handleAuthCacheList(o.authCache, localauth.AuthorizationData{
