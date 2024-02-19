@@ -524,11 +524,20 @@ func GetStringPointer(s string) *string {
 	return &s
 }
 
-func GetBoolFromString(v string) bool {
+/*
+Parse a string value to a boolean variable and returns it (bool).
+
+Triggers a fatal error in case it wasn't able to parse it.
+
+f	-	A string with the function name that called the function (string)
+
+v	-	The string value to be parsed (string)
+*/
+func GetBoolFromString(f, v string) bool {
 	var b, err = strconv.ParseBool(v)
 
 	if err != nil {
-		common.Log("GetBoolFromString").Fatal(err)
+		common.Log("GetBoolFromString - " + f).Fatal(err)
 	}
 
 	return b

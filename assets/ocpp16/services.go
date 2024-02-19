@@ -1,7 +1,7 @@
 package ocpp16
 
 import (
-	"fmt"
+	"math/rand"
 	"strconv"
 	"strings"
 	"sync"
@@ -43,8 +43,11 @@ func (o *Ocpp16) setStartUpConfigurations() {
 
 	o.heartbeatC = 0
 
-	o.logger.Log(map[string]string{"protocol": string(o.Asset.Protocol), "function": "setStartUpConfigurations", "simulator": o.Asset.Name},
-		o.L.Get(text.StartUpConfigurations), assets.Info)
+	o.logger.Log(map[string]string{
+		"protocol":  string(o.Asset.Protocol),
+		"function":  "setStartUpConfigurations",
+		"simulator": o.Asset.Name,
+	}, o.L.Get(text.StartUpConfigurations), assets.Info)
 
 	// This will load only the password since there is no information in the documentation regarding how to set the user in the cp
 	// TODO: do not think that this is correct another review to this should be made
@@ -60,6 +63,12 @@ func (o *Ocpp16) setStartUpConfigurations() {
 		Key:      o.Conf["AuthorizeRemoteTxRequests"].Key,
 		Readonly: o.Conf["AuthorizeRemoteTxRequests"].Readonly,
 		Value:    assets.GetStringPointer(strconv.FormatBool(o.Asset.AuthorizeRemote)),
+	}
+
+	o.Conf["AuthorizationCacheEnabled"] = core.ConfigurationKey{
+		Key:      o.Conf["AuthorizationCacheEnabled"].Key,
+		Readonly: o.Conf["AuthorizationCacheEnabled"].Readonly,
+		Value:    assets.GetStringPointer(strconv.FormatBool(o.Asset.AuthCache)),
 	}
 
 	o.Conf["NumberOfConnectors"] = core.ConfigurationKey{
@@ -173,7 +182,7 @@ func (o *Ocpp16) setStartUpConfigurations() {
 	o.Conf["LocalPreAuthorize"] = core.ConfigurationKey{
 		Key:      o.Conf["LocalPreAuthorize"].Key,
 		Readonly: o.Conf["LocalPreAuthorize"].Readonly,
-		Value:    assets.GetStringPointer(strconv.FormatBool(assets.DefLocalPreAuthorize)),
+		Value:    assets.GetStringPointer(strconv.FormatBool(o.Asset.LocalAuth)),
 	}
 
 	o.tick = 0
@@ -283,93 +292,43 @@ authorize config.
 Validates if the connector selected is not active, activate it. If no connector were selected
 validate if any of them can be activated, if so activate it.
 */
-// TODO: need to check the start transaction to go throw the preparing state instead of directly to charging
 // TODO: need to check the best way to handle the id tag being used in the current transaction
 func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionRequest) {
-	var lm = map[string]string{
-		"protocol":  string(o.Asset.Protocol),
-		"function":  "processRemoteStartTransaction",
-		"feature":   "StartTransaction",
-		"simulator": o.Asset.Name,
-		"sender":    assets.CP,
-		"type":      assets.Request,
-	}
+	var (
+		auth     = assets.GetBoolFromString("processRemoteStartTransaction", *o.Conf["AuthorizeRemoteTxRequests"].Value)
+		ci       int                  // connector index
+		c        *simulator.Connector // connector struct
+		na       = true               // needs to remote authorize
+		isAuthOk = false              // the tag id is authorized
+	)
 
-	var auth, err = strconv.ParseBool(*o.Conf["AuthorizeRemoteTxRequests"].Value)
+	// if cs did not send the connector id
+	if r.ConnectorId == nil {
+		ci, c = getActiveConnector(o.Asset.Evses[0])
 
-	if err != nil {
-		var lm2 = map[string]string{
-			"protocol":  string(o.Asset.Protocol),
-			"function":  "processRemoteStartTransaction",
-			"simulator": o.Asset.Name,
-		}
-
-		o.logger.Log(lm2, err, assets.Fatal)
-	}
-
-	if !auth {
-		// TODO: the store of the charging profile should not be set at this point, since the validations if the session can be started are not done yet
-		o.chargeProfile = r.ChargingProfile
-
-		// At the moment not know how to identify the evse from the request so will only consider 1
-		if r.ConnectorId != nil {
-			var ok = true
-
-			for _, c := range o.Asset.Evses[0].Connectors {
-				if c.Enabled {
-					ok = false
-				}
-			}
-
-			if ok {
-				for i, c := range o.Asset.Evses[0].Connectors {
-					if c.ID != int64(*r.ConnectorId) {
-						continue
-					}
-
-					// check if the connector is available
-					if c.Availability != string(assets.Operative) {
-						continue
-					}
-
-					o.Asset.Evses[0].Connectors[i].Enabled = true
-
-					o.Asset.Evses[0].Connectors[i].DP.Position = 2
-					o.Asset.Evses[0].Connectors[i].DP.Ticker = 0
-
-					fmt.Println(o.Asset.Evses[0].Connectors[i].DP)
-
-					o.startTransaction(r.IdTag, &o.Asset.Evses[0].Connectors[i])
-
-					var info string = core.RemoteStartTransactionFeatureName
-
-					o.sendStatusNotification(&o.Asset.Evses[0].Connectors[i], &info, nil)
-
-					return
-				}
-			} else {
-				return
-			}
-		}
-
-		if canEnable(o.Asset.Evses[0].Connectors) {
-			for i, c := range o.Asset.Evses[0].Connectors {
-				if c.Availability != string(assets.Operative) {
-					continue
-				}
-
-				o.Asset.Evses[0].Connectors[i].Enabled = true
-
-				o.Asset.Evses[0].Connectors[i].DP.Position = 2
-
-				o.startTransaction(strconv.FormatInt(c.ID, 10), &o.Asset.Evses[0].Connectors[i])
-
-				return
-			}
-		} else {
+		// check if any of the connectors is active
+		if ci > -1 {
 			return
 		}
+
+		// get an connector that is not enabled
+		for i := range o.Asset.Evses[0].Connectors {
+			if !o.Asset.Evses[0].Connectors[i].Enabled {
+				ci = i
+				c = &o.Asset.Evses[0].Connectors[i]
+
+				break
+			}
+		}
+	} else {
+		c, ci = o.getConnectorAndIndex(r.ConnectorId)
 	}
+
+	o.Asset.Evses[0].Connectors[ci].Enabled = true
+	o.Asset.Evses[0].Connectors[ci].DP.Position = 1
+	o.Asset.Evses[0].Connectors[ci].DP.Ticker = 0
+
+	o.sendStatusNotification(&o.Asset.Evses[0].Connectors[ci], assets.GetStringPointer(core.RemoteStartTransactionFeatureName), nil)
 
 	/*
 		In case the AuthorizeRemoteTxRequests (AuthorizeRemote) is true, the CP will behave as it
@@ -377,70 +336,83 @@ func (o *Ocpp16) processRemoteStartTransaction(r *core.RemoteStartTransactionReq
 		list and/or requesting the authorize request ot the CS.
 	*/
 
-	var c, i = o.getConnectorAndIndex(r.ConnectorId)
+	if auth {
+		// if needs to do a local authorization
+		if assets.GetBoolFromString("processRemoteStartTransaction", *o.Conf["LocalPreAuthorize"].Value) {
+			// if the authorization list is active
+			if o.Asset.AuthList {
+				if o.localAuth.version > 0 {
+					for _, a := range o.localAuth.list {
+						// if an entry with the id tag exists
+						if a.IdTag == r.IdTag {
+							na = false
 
-	if c.Availability != string(assets.Operative) {
-		return
-	}
+							// if the status of the entry is accepted
+							if a.IdTagInfo.Status == types.AuthorizationStatusAccepted {
+								isAuthOk = true
+							}
 
-	o.Asset.Evses[0].Connectors[i].DP.Position = 1
-
-	var info string = core.RemoteStartTransactionFeatureName
-
-	o.sendStatusNotification(&o.Asset.Evses[0].Connectors[i], &info, nil)
-
-	var na = true
-
-	if assets.GetBoolFromString(*o.Conf["LocalPreAuthorize"].Value) {
-		if o.localAuth.version > 0 {
-			for _, a := range o.localAuth.list {
-				if a.IdTag == r.IdTag && a.IdTagInfo.Status == types.AuthorizationStatusAccepted {
-					na = false
+							break
+						}
+					}
 				}
 			}
 		}
 
-		if na {
-			if !o.authorize(r.IdTag) {
-				o.Asset.Evses[0].Connectors[i].DP.Position = 0
+		// if needs to look for the authorization in the cache list and cache is enabled
+		if na && assets.GetBoolFromString("processRemoteStartTransaction", *o.Conf["AuthorizationCacheEnabled"].Value) {
+			for _, a := range o.authCache {
+				// if an entry with the id tag exists
+				if a.IdTag == r.IdTag {
+					na = false
 
-				var info string = core.RemoteStartTransactionFeatureName
+					// if the status of the entry is accepted
+					if a.IdTagInfo.Status == types.AuthorizationStatusAccepted {
+						isAuthOk = true
+					}
 
-				o.sendStatusNotification(&o.Asset.Evses[0].Connectors[i], &info, nil)
-
-				return
+					break
+				}
 			}
+		}
+
+		// if still needs to authorize the id tag and the authorize response if accepted
+		if na && o.sendAuthorize(r.IdTag) {
+			isAuthOk = true
 		}
 	}
 
-	o.Asset.Evses[0].Connectors[i].Enabled = true
+	// if meeds to authorize before starting a transaction and the auth failed
+	if auth && !isAuthOk {
+		o.Asset.Evses[0].Connectors[ci].Enabled = false
+		o.Asset.Evses[0].Connectors[ci].DP.Position = 0
+		o.Asset.Evses[0].Connectors[ci].DP.Ticker = 0
 
-	o.chargeProfile = r.ChargingProfile
+		o.sendStatusNotification(&o.Asset.Evses[0].Connectors[ci], assets.GetStringPointer("Failed authorization"), nil)
+
+		return
+	}
 
 	o.Asset.Evses[0].CIDTag = r.IdTag
 
-	var resp = o.startTransaction(o.Asset.Evses[0].CIDTag, c)
+	// TODO: this functionality needs to be reviewed
+	o.chargeProfile = r.ChargingProfile
 
-	var stoii, errB = strconv.ParseBool(*o.Conf["StopTransactionOnInvalidId"].Value)
+	var resp = o.sendStartTransaction(o.Asset.Evses[0].CIDTag, c)
 
-	if errB != nil {
-		o.logger.Log(lm, errB, assets.Error)
+	if !assets.GetBoolFromString("processRemoteStartTransaction", *o.Conf["StopTransactionOnInvalidId"].Value) {
 		return
 	}
 
-	if !stoii {
-		return
-	}
-
+	// if the start transaction returns not accepted for the id tag
 	if resp.IdTagInfo.Status != types.AuthorizationStatusAccepted {
-		o.Asset.Evses[0].Connectors[i].DP.Position = 0
-		o.Asset.Evses[0].Connectors[i].Enabled = false
+		o.Asset.Evses[0].Connectors[ci].DP.Position = 0
+		o.Asset.Evses[0].Connectors[ci].DP.Ticker = 0
+		o.Asset.Evses[0].Connectors[ci].Enabled = false
 		o.txnAlignedData = []types.MeterValue{}
 		o.txnSampledData = []types.MeterValue{}
 
-		var info string = core.RemoteStartTransactionFeatureName
-
-		o.sendStatusNotification(&o.Asset.Evses[0].Connectors[i], &info, nil)
+		o.sendStatusNotification(&o.Asset.Evses[0].Connectors[ci], assets.GetStringPointer("Failed authorization"), nil)
 	}
 }
 
@@ -467,7 +439,9 @@ func (o *Ocpp16) processRemoteStopTransaction(r *core.RemoteStopTransactionReque
 			var info string = core.RemoteStopTransactionFeatureName
 			go o.sendStatusNotification(&o.Asset.Evses[0].Connectors[i], &info, nil)
 
-			go o.stopTransaction(o.Asset.Evses[0].CIDTag, &o.Asset.Evses[0].Connectors[i])
+			go o.sendStopTransaction(o.Asset.Evses[0].CIDTag, &o.Asset.Evses[0].Connectors[i])
+
+			o.Asset.Evses[0].CIDTag = ""
 
 			return &core.RemoteStopTransactionConfirmation{Status: types.RemoteStartStopStatusAccepted}
 		}
@@ -1321,13 +1295,19 @@ func (o *Ocpp16) updateData() {
 					if cs != c.Data[o.Asset.Evses[x].Connectors[y].DP.Position].ChargingState {
 						var info = "Change status"
 
+						const (
+							mC int = 20
+							dN int = 2
+						)
+
 						o.sendStatusNotification(&o.Asset.Evses[x].Connectors[y], &info, nil)
 
 						// if the connector goes to the finish state
 						if c.Data[o.Asset.Evses[x].Connectors[y].DP.Position].ChargingState == int64(assets.Finishing) {
-							o.stopTransaction(o.Asset.Evses[x].CIDTag, &o.Asset.Evses[x].Connectors[y])
+							o.sendStopTransaction(o.Asset.Evses[x].CIDTag, &o.Asset.Evses[x].Connectors[y])
 							o.txnAlignedData = []types.MeterValue{}
 							o.txnSampledData = []types.MeterValue{}
+							o.Asset.Evses[x].CIDTag = ""
 
 							// if the reset request was used activate the boot sequence and disable the reset trigger
 							if o.resetSeq.IsToTrigger {
@@ -1342,42 +1322,36 @@ func (o *Ocpp16) updateData() {
 							}
 						}
 
-						// If the connector starts charging send the start transaction request
-						if c.Data[o.Asset.Evses[x].Connectors[y].DP.Position].ChargingState == int64(assets.Charging) {
-							// TODO: need to review the id tag
-							var resp = o.startTransaction("QWEASDZXC", &o.Asset.Evses[x].Connectors[y])
+						// if the connector goes to the preparing state
+						if c.Data[o.Asset.Evses[x].Connectors[y].DP.Position].ChargingState == int64(assets.Preparing) {
+							var la = assets.GetBoolFromString("updateData", *o.Conf["LocalPreAuthorize"].Value)
 
-							var lm = map[string]string{
-								"protocol":  string(o.Asset.Protocol),
-								"function":  "updateData",
-								"feature":   resp.GetFeatureName(),
-								"simulator": o.Asset.Name,
-								"sender":    assets.CS,
-								"type":      assets.Response,
+							o.Asset.Evses[x].CIDTag = getRandomString(mC)
+
+							// if the local pre auth configuration is false
+							if !la {
+								var rb = o.sendAuthorize(o.Asset.Evses[x].CIDTag)
+
+								// if the authorization fails send the data to the second last data position with the max duration (that last should be finish)
+								if !rb {
+									o.Asset.Evses[x].Connectors[y].DP.Position = int64(len(o.Asset.Evses[x].Connectors[y].Data) - dN)
+									o.Asset.Evses[x].Connectors[y].DP.Ticker = o.Asset.Evses[x].Connectors[y].Data[int64(len(o.Asset.Evses[x].Connectors[y].Data)-dN)].Duration
+									o.Asset.Evses[x].CIDTag = ""
+								}
 							}
 
-							var stoii, errB = strconv.ParseBool(*o.Conf["StopTransactionOnInvalidId"].Value)
+							// if the local pre auth configuration is true
+							var resp = o.sendStartTransaction(o.Asset.Evses[x].CIDTag, &o.Asset.Evses[x].Connectors[y])
 
-							if errB != nil {
-								o.logger.Log(lm, errB, assets.Error)
-								return
-							}
+							var stoii = assets.GetBoolFromString("updateData", *o.Conf["StopTransactionOnInvalidId"].Value)
 
+							// if the stop transaction on invalid id configuration is set to true
 							if stoii {
+								// if the start transaction response is not accepted
 								if resp.IdTagInfo.Status != types.AuthorizationStatusAccepted {
-									o.logger.Log(lm, resp, assets.Info)
-
-									for i := c.DP.Position; i < int64(len(c.Data)); i++ {
-										if c.Data[i].ChargingState == int64(assets.Finishing) {
-											o.Asset.Evses[x].Connectors[y].DP.Position = i
-											o.Asset.Evses[x].Connectors[y].DP.Ticker = 0
-											// reset the current soc when the position changes
-											o.Asset.Evses[x].Connectors[y].CurrentSoC =
-												o.Asset.Evses[x].Connectors[y].Data[o.Asset.Evses[x].Connectors[y].DP.Position].StartSoC
-
-											break
-										}
-									}
+									o.Asset.Evses[x].Connectors[y].DP.Position = int64(len(o.Asset.Evses[x].Connectors[y].Data) - dN)
+									o.Asset.Evses[x].Connectors[y].DP.Ticker = o.Asset.Evses[x].Connectors[y].Data[int64(len(o.Asset.Evses[x].Connectors[y].Data)-dN)].Duration
+									o.Asset.Evses[x].CIDTag = ""
 								}
 							}
 						}
@@ -1472,10 +1446,10 @@ id	-	The tag id used to authorize the session (string)
 
 c	-	The connector that will be used in the session (*simulator.Connector)
 */
-func (o *Ocpp16) startTransaction(id string, c *simulator.Connector) *core.StartTransactionConfirmation {
+func (o *Ocpp16) sendStartTransaction(id string, c *simulator.Connector) *core.StartTransactionConfirmation {
 	var lm = map[string]string{
 		"protocol":  string(o.Asset.Protocol),
-		"function":  "startTransaction",
+		"function":  "sendStartTransaction",
 		"feature":   core.StartTransactionFeatureName,
 		"simulator": o.Asset.Name,
 		"sender":    assets.CP,
@@ -1527,6 +1501,14 @@ func (o *Ocpp16) startTransaction(id string, c *simulator.Connector) *core.Start
 
 	o.logger.Log(lm, res.(*core.StartTransactionConfirmation), assets.Info)
 
+	// update the authorization cache in case this is active for this simulator
+	if assets.GetBoolFromString("sendStartTransaction", *o.Conf["AuthorizationCacheEnabled"].Value) {
+		o.authCache = handleAuthCacheList(o.authCache, localauth.AuthorizationData{
+			IdTag:     id,
+			IdTagInfo: res.(*core.StartTransactionConfirmation).IdTagInfo,
+		})
+	}
+
 	return res.(*core.StartTransactionConfirmation)
 }
 
@@ -1537,11 +1519,11 @@ id	-	Session id tag (string)
 
 c	-	Evse connector information (*simulator.Connector)
 */
-func (o *Ocpp16) stopTransaction(id string, c *simulator.Connector) {
+func (o *Ocpp16) sendStopTransaction(id string, c *simulator.Connector) {
 	var lm = map[string]string{
 		"protocol":  string(o.Asset.Protocol),
-		"function":  "stopTransaction",
-		"feature":   "StatusNotification",
+		"function":  "sendStopTransaction",
+		"feature":   core.StopTransactionFeatureName,
 		"simulator": o.Asset.Name,
 		"sender":    assets.CP,
 		"type":      assets.Request,
@@ -1563,7 +1545,7 @@ func (o *Ocpp16) stopTransaction(id string, c *simulator.Connector) {
 
 	o.logger.Log(lm, req, assets.Info)
 
-	var _, err = o.s.SendRequest(req)
+	var res, err = o.s.SendRequest(req)
 
 	o.heartbeatC = 0
 
@@ -1588,25 +1570,37 @@ func (o *Ocpp16) stopTransaction(id string, c *simulator.Connector) {
 		for i := 0; i < int(tma); i++ {
 			time.Sleep(time.Duration(tmai))
 
-			_, err = o.s.SendRequest(req)
+			res, err = o.s.SendRequest(req)
 
 			if err == nil {
 				break
 			}
+
+			o.logger.Log(lm, err, assets.Error)
 		}
+	}
+
+	o.logger.Log(lm, res.(*core.StopTransactionConfirmation), assets.Info)
+
+	// update the authorization cache in case this is active for this simulator
+	if assets.GetBoolFromString("sendStopTransaction", *o.Conf["AuthorizationCacheEnabled"].Value) {
+		o.authCache = handleAuthCacheList(o.authCache, localauth.AuthorizationData{
+			IdTag:     id,
+			IdTagInfo: res.(*core.StopTransactionConfirmation).IdTagInfo,
+		})
 	}
 }
 
 /*
-Sends the authorize request to the CS and returns true (bool) if the id was accepted, and false if
+Sends the authorize request to the CS and returns true (bool) if the id was accepted, false if
 not.
 
 id	-	The user tag id that tries to start the session (string)
 */
-func (o *Ocpp16) authorize(id string) bool {
+func (o *Ocpp16) sendAuthorize(id string) bool {
 	var lm = map[string]string{
 		"protocol":  string(o.Asset.Protocol),
-		"function":  "authorize",
+		"function":  "sendAuthorize",
 		"feature":   core.AuthorizeFeatureName,
 		"simulator": o.Asset.Name,
 		"sender":    assets.CP,
@@ -1632,6 +1626,14 @@ func (o *Ocpp16) authorize(id string) bool {
 	}
 
 	o.logger.Log(lm, res.(*core.AuthorizeConfirmation), assets.Info)
+
+	// update the authorization cache in case this is active for this simulator
+	if assets.GetBoolFromString("sendAuthorize", *o.Conf["AuthorizationCacheEnabled"].Value) {
+		o.authCache = handleAuthCacheList(o.authCache, localauth.AuthorizationData{
+			IdTag:     id,
+			IdTagInfo: res.(*core.AuthorizeConfirmation).IdTagInfo,
+		})
+	}
 
 	return res.(*core.AuthorizeConfirmation).IdTagInfo.Status == types.AuthorizationStatusAccepted
 }
@@ -1942,10 +1944,11 @@ func (o *Ocpp16) notAutoChargePoint(c *simulator.Connector, x, y int) {
 
 			if cs != c.Data[o.Asset.Evses[x].Connectors[y].DP.Position].ChargingState {
 				var info = "Change status"
+
 				o.sendStatusNotification(&o.Asset.Evses[x].Connectors[y], &info, nil)
 
 				if c.Data[o.Asset.Evses[x].Connectors[y].DP.Position].ChargingState == int64(assets.Finishing) {
-					o.stopTransaction(o.Asset.Evses[x].CIDTag, &o.Asset.Evses[x].Connectors[y])
+					o.sendStopTransaction(o.Asset.Evses[x].CIDTag, &o.Asset.Evses[x].Connectors[y])
 
 					// if the reset request was used, activate the boot sequence and disable the reset trigger
 					if o.resetSeq.IsToTrigger {
@@ -1958,6 +1961,8 @@ func (o *Ocpp16) notAutoChargePoint(c *simulator.Connector, x, y int) {
 
 						o.resetSeq.IsToTrigger = false
 					}
+
+					o.Asset.Evses[x].CIDTag = ""
 				}
 			}
 		}
@@ -2004,7 +2009,7 @@ func (o *Ocpp16) getConnectorAndIndex(id *int) (ci *simulator.Connector, index i
 }
 
 /*
-Get from the evse the connecto that is active, in case one of the connectors is active returns
+Get from the evse the connector that is active, in case one of the connectors is active returns
 the evse connector index (int) and the connector structure (*simulator.Connector).
 
 In case none of the connectors is active will return the index -1 and the structure as nil.
@@ -2170,4 +2175,96 @@ func getAlignedDataCurrent(e *simulator.Evse, ph int) float64 {
 	}
 
 	return cc
+}
+
+/*
+3.5.1. Authorization Cache
+Handles the logic to maintain the list of authorization cache when a new entry appear. The list
+has a max size and if it is reached there are some rules to handle the update to the list. It
+returns the updated authorization cache list updated or not ([]localauth.AuthorizationData).
+
+cl	-	Authorization cache list store in the simulator ([]localauth.AuthorizationData)
+
+ne	-	New authorization entry (localauth.AuthorizationData)
+*/
+func handleAuthCacheList(cl []localauth.AuthorizationData, ne localauth.AuthorizationData) []localauth.AuthorizationData {
+	var isNew = true
+
+	// if the array is empty we can assume that the tag is new
+	if len(cl) == 0 {
+		// look if the tag is already in the list and if so update it with the new information
+		for ci, c := range cl {
+			if c.IdTag != ne.IdTag {
+				continue
+			}
+
+			cl[ci].IdTagInfo.Status = ne.IdTagInfo.Status
+			cl[ci].IdTagInfo.ParentIdTag = ne.IdTagInfo.ParentIdTag
+			cl[ci].IdTagInfo.ExpiryDate = ne.IdTagInfo.ExpiryDate
+
+			isNew = false
+		}
+	}
+
+	// if the tag is not present in the list
+	if isNew {
+		// if there is no space in the list to add a new tag information
+		if len(cl) == assets.DefAuthCacheSize {
+			var rOld = true
+
+			// TODO: is missing the validation of the expiry date
+			for ci, c := range cl {
+				// if the auth status is accepted
+				if c.IdTagInfo.Status == types.AuthorizationStatusAccepted {
+					continue
+				}
+
+				// if the auth status is not accepted
+				var nSlice []localauth.AuthorizationData
+
+				nSlice = append(nSlice, cl[:ci]...)
+
+				nSlice = append(nSlice, cl[ci+1:]...)
+
+				cl = nSlice
+
+				rOld = false
+			}
+
+			// if needs to remove the older register
+			if rOld {
+				var newSlice = make([]localauth.AuthorizationData, assets.DefAuthCacheSize-1)
+
+				copy(newSlice, cl[1:assets.DefAuthCacheSize])
+
+				cl = newSlice
+			}
+		}
+
+		cl = append(cl, ne)
+	}
+
+	return cl
+}
+
+/*
+Will generate a random string with lower letters, caps letters, and numbers with the max char size
+sent in the parameter. It will return the string generated value.
+
+n	-	The max characters number for the generated string (int)
+*/
+func getRandomString(n int) string {
+	var source = rand.NewSource(time.Now().UnixNano())
+	//nolint:gosec // because for this reason it does not make sense to use the crypto
+	var rng = rand.New(source)
+
+	var runes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890")
+
+	var b = make([]rune, n)
+
+	for i := range b {
+		b[i] = runes[rng.Intn(len(runes))]
+	}
+
+	return string(b)
 }

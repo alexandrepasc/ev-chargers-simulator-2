@@ -38,11 +38,12 @@ type Ocpp16 struct {
 		version int64                         // Version identifier
 		list    []localauth.AuthorizationData // List with the authorization information
 	}
-	chargeProfile  *types.ChargingProfile // Charging profile set by the CS
-	txnAlignedData []types.MeterValue     // Store the transaction aligned data
-	txnSampledData []types.MeterValue     // store the transaction sampled data
-	tick           int64                  // Ticker to enable trigger scheduled events
-	heartbeatC     int64                  // Heartbeat count to handle the request interval
+	authCache      []localauth.AuthorizationData // Store the authorization cache
+	chargeProfile  *types.ChargingProfile        // Charging profile set by the CS
+	txnAlignedData []types.MeterValue            // Store the transaction aligned data
+	txnSampledData []types.MeterValue            // store the transaction sampled data
+	tick           int64                         // Ticker to enable trigger scheduled events
+	heartbeatC     int64                         // Heartbeat count to handle the request interval
 	st             time.Time
 }
 

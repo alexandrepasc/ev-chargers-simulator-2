@@ -18,9 +18,10 @@ type Status struct {
 }
 
 type Assets struct {
-	ID     uuid.UUID `json:"id"`     // Asset identifier
-	Name   string    `json:"name"`   // Asset name
-	State  string    `json:"state"`  // State of the asset (acive, inactive)
-	Power  float64   `json:"power"`  // Current asset power
-	Energy float64   `json:"energy"` // Energy consumption of the execution
+	ID      uuid.UUID `json:"id"`      // Asset identifier
+	Name    string    `json:"name"`    // Asset name
+	State   string    `json:"state"`   // State of the asset (acive, inactive)
+	Power   float64   `json:"power"`   // Current asset power
+	Energy  float64   `json:"energy"`  // Energy consumption of the execution
+	Current float64   `json:"current"` // Current consumption of the execution
 }

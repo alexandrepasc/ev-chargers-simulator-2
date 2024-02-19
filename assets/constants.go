@@ -53,6 +53,7 @@ const (
 	DefFrequency                         string = "1"
 	DefReactivePower                     string = "0"
 	DefRPM                               string = "100"
+	DefAuthCacheSize                     int    = 10 // The maximum number of authorizations stored in the cache list
 
 	wsConn  ConnectType = "ws://"
 	wssConn ConnectType = "wss://"
@@ -72,7 +73,7 @@ var (
 	EnergyActiveImportInterval   = "Energy.Active.Import.Interval"   // Absolute amount of "active electrical energy" (Wh or kWh) imported (from the grid supply) during an associated time "interval", specified by a Metervalues ReadingContext, and applicable interval duration configuration values (in seconds) for "ClockAlignedDataInterval" and "MeterValueSampleInterval".
 	EnergyReactiveExportInterval = "Energy.Reactive.Export.Interval" // Absolute amount of "reactive electrical energy" (VARh or kVARh) exported (to the grid) during an associated time "interval", specified by a Metervalues ReadingContext, and applicable interval duration configuration values (in seconds) for "ClockAlignedDataInterval" and "MeterValueSampleInterval".
 	EnergyReactiveImportInterval = "Energy.Reactive.Import.Interval" // Absolute amount of "reactive electrical energy" (VARh or kVARh) imported (from the grid supply) during an associated time "interval", specified by a Metervalues ReadingContext, and applicable interval duration configuration values (in seconds) for "ClockAlignedDataInterval" and "MeterValueSampleInterval".
-	Frequency                    = "Frequency"                       // Instantaneous reading of powerline frequency. NOTE: OCPP 1.6 does not have a UnitOfMeasure for frequency, the UnitOfMeasure for any SampledValue with measurand: Frequency is Hertz.
+	Frequency                    = "Frequency"                       // Instantaneous reading of power line frequency. NOTE: OCPP 1.6 does not have a UnitOfMeasure for frequency, the UnitOfMeasure for any SampledValue with measurand: Frequency is Hertz.
 	PowerActiveExport            = "Power.Active.Export"             // Instantaneous active power exported by EV. (W or kW)
 	PowerActiveImport            = "Power.Active.Import"             // Instantaneous active power imported by EV. (W or kW)
 	PowerFactor                  = "Power.Factor"                    // Instantaneous power factor of total energy flow
