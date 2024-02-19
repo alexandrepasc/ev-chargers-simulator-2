@@ -2,7 +2,7 @@
 
 |         |    Version   |
 | ------- | ------------ |
-| Product | **v0.22.14** |
+| Product | **v0.23.14** |
 | Manual  | **Rev1**     |
 
 <div class="page"/>
