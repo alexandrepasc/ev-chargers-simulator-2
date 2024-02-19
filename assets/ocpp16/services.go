@@ -1502,9 +1502,7 @@ func (o *Ocpp16) sendStartTransaction(id string, c *simulator.Connector) *core.S
 	o.logger.Log(lm, res.(*core.StartTransactionConfirmation), assets.Info)
 
 	// update the authorization cache in case this is active for this simulator
-	var v = assets.GetBoolFromString("sendStartTransaction", *o.Conf["AuthorizationCacheEnabled"].Value)
-
-	if v {
+	if assets.GetBoolFromString("sendStartTransaction", *o.Conf["AuthorizationCacheEnabled"].Value) {
 		o.authCache = handleAuthCacheList(o.authCache, localauth.AuthorizationData{
 			IdTag:     id,
 			IdTagInfo: res.(*core.StartTransactionConfirmation).IdTagInfo,
@@ -1585,9 +1583,7 @@ func (o *Ocpp16) sendStopTransaction(id string, c *simulator.Connector) {
 	o.logger.Log(lm, res.(*core.StopTransactionConfirmation), assets.Info)
 
 	// update the authorization cache in case this is active for this simulator
-	var v = assets.GetBoolFromString("sendStopTransaction", *o.Conf["AuthorizationCacheEnabled"].Value)
-
-	if v {
+	if assets.GetBoolFromString("sendStopTransaction", *o.Conf["AuthorizationCacheEnabled"].Value) {
 		o.authCache = handleAuthCacheList(o.authCache, localauth.AuthorizationData{
 			IdTag:     id,
 			IdTagInfo: res.(*core.StopTransactionConfirmation).IdTagInfo,
@@ -1632,9 +1628,7 @@ func (o *Ocpp16) sendAuthorize(id string) bool {
 	o.logger.Log(lm, res.(*core.AuthorizeConfirmation), assets.Info)
 
 	// update the authorization cache in case this is active for this simulator
-	var v = assets.GetBoolFromString("sendAuthorize", *o.Conf["AuthorizationCacheEnabled"].Value)
-
-	if v {
+	if assets.GetBoolFromString("sendAuthorize", *o.Conf["AuthorizationCacheEnabled"].Value) {
 		o.authCache = handleAuthCacheList(o.authCache, localauth.AuthorizationData{
 			IdTag:     id,
 			IdTagInfo: res.(*core.AuthorizeConfirmation).IdTagInfo,
