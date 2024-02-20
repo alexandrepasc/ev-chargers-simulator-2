@@ -15,6 +15,8 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/localauth"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
+	"github.com/lorenzodonini/ocpp-go/ocppj"
+	"github.com/lorenzodonini/ocpp-go/ws"
 	"github.com/sirupsen/logrus"
 )
 
@@ -66,6 +68,11 @@ func (o *Ocpp16) Start(c chan common.Channel, q chan bool) {
 
 	o.logger.Logger.SetFormatter(&logrus.TextFormatter{FullTimestamp: true})
 
+	if o.logger.Level == logrus.DebugLevel {
+		ocppj.SetLogger(o.logger.Logger)
+		ws.SetLogger(o.logger.Logger)
+	}
+
 	var lm = map[string]string{
 		"protocol":  string(o.Asset.Protocol),
 		"function":  "Start",
@@ -109,9 +116,9 @@ func (o *Ocpp16) Start(c chan common.Channel, q chan bool) {
 			}
 		}
 
-		go o.updateData()
+		o.updateData()
 
-		go o.processSampledData()
+		o.processSampledData()
 
 		o.processAlignedData()
 
