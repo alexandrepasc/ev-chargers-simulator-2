@@ -294,14 +294,16 @@ Create a new websocket client with the parameter timeout and returns it (*ws.Cli
 
 t	-	Timeout value (int64)
 
-u		-	Basic authentication username (string)
+u	-	Basic authentication username (string)
 
-p		-	Basic authentication password (string)
+p	-	Basic authentication password (string)
 
 ba	-	If the client should have the http basic authentication (bool)
 */
 func GetWsClient(t int64, u, p *string, ba bool) (wsc *ws.Client) {
 	wsc = ws.NewClient()
+
+	const pwdm int64 = 2 // pong wait duration multiplier
 
 	if ba {
 		wsc.SetBasicAuth(*u, *p)
@@ -311,7 +313,7 @@ func GetWsClient(t int64, u, p *string, ba bool) (wsc *ws.Client) {
 		HandshakeTimeout: time.Second * time.Duration(t),
 		WriteWait:        time.Second * time.Duration(t),
 		PingPeriod:       time.Second * time.Duration(t),
-		PongWait:         time.Second * time.Duration(t),
+		PongWait:         time.Second * time.Duration(pwdm*t),
 	}
 
 	wsc.SetTimeoutConfig(cfg)
@@ -339,6 +341,8 @@ ba		-	If the client should have the http basic authentication (bool)
 l		-	Translation language (translation.Translation)
 */
 func GetTLSWsClient(t int64, ca, cert, key, u, p string, ba bool, l translation.Translation) (wsc *ws.Client) {
+	const pwdm int64 = 2 // pong wait duration multiplier
+
 	var certPool, errcp = x509.SystemCertPool()
 	if errcp != nil {
 		common.Log("GetTlsWsClient").Error(errcp)
@@ -374,7 +378,7 @@ func GetTLSWsClient(t int64, ca, cert, key, u, p string, ba bool, l translation.
 		HandshakeTimeout: time.Second * time.Duration(t),
 		WriteWait:        time.Second * time.Duration(t),
 		PingPeriod:       time.Second * time.Duration(t),
-		PongWait:         time.Second * time.Duration(t),
+		PongWait:         time.Second * time.Duration(pwdm*t),
 	}
 
 	wsc.SetTimeoutConfig(cfg)
@@ -384,7 +388,7 @@ func GetTLSWsClient(t int64, ca, cert, key, u, p string, ba bool, l translation.
 
 /*
 Handles the counter from the simulator and handles the max int64 value, in case it is reaching the
-max value (max int64 value - 7) it will be reseted to 0 and will return the value (int64).
+max value (max int64 value - 7) it will be reset to 0 and will return the value (int64).
 
 t	-	Ticker value (int64)
 */
