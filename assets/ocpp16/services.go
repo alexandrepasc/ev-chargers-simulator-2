@@ -4,7 +4,6 @@ import (
 	"math/rand"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/alexandrepasc/ev-chargers-simulator-2/assets"
@@ -15,15 +14,11 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 )
 
-var lock sync.RWMutex
-
 /*
 Set the starting configurations for the asset.
 */
 func (o *Ocpp16) setStartUpConfigurations() {
-	lock.Lock()
-
-	o.Conf = config
+	o.Conf = o.getConfigKeys()
 
 	o.connectSeq = true
 
@@ -201,8 +196,6 @@ func (o *Ocpp16) setStartUpConfigurations() {
 	if !o.Asset.AuthList {
 		o.localAuth.version = -1
 	}
-
-	lock.Unlock()
 }
 
 /*
